@@ -34,12 +34,10 @@ def split_training_set_into_chunks(target, source, env):
     current_line_number = 0
     current_file_number = 0
     while current_file_number < num_chunks:
-        print "file number ", current_file_number, " line number ", current_line_number
         current_file_obj = open_with_unicode_bzip2(target[current_file_number], 'w')
         current_file_obj.write(training_file_obj.readline())
         current_line_number += 1
         while current_line_number % lines_per_chunk > 0:
-            print "file number ", current_file_number, " line number ", current_line_number
             current_file_obj.write(training_file_obj.readline())
             current_line_number += 1
         current_file_number += 1
