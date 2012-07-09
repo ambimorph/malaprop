@@ -2,7 +2,8 @@
 # SConstruct
 
 import codecs, bz2, random, subprocess
-import WikipediaArticleRandomiser
+
+from code.preprocessing import WikipediaArticleRandomiser
 
 def open_with_unicode_bzip2(file_name, mode):
     assert mode in ['r', 'w']
@@ -51,11 +52,12 @@ def create_vocabularies(target, source, env):
     "Gets the unigram counts from the source files and puts the n most frequent words in the vocabulary file."
     return None
 
-data_directory = '../../data/'
+data_directory = 'data/'
 corpus_directory = data_directory + 'corpora/WestburyLab.wikicorp.201004/'
 randomised_wikipedia_articles_builder = Builder(action = randomise_wikipedia_articles)
 split_training_set_into_chunks_builder = Builder(action = split_training_set_into_chunks)
-env = Environment(BUILDERS = {'learning_sets' : randomised_wikipedia_articles_builder, 'training_chunks' : split_training_set_into_chunks_builder})
+
+env = Environment(PYTHONPATH = 'code/preprocessing', BUILDERS = {'learning_sets' : randomised_wikipedia_articles_builder, 'training_chunks' : split_training_set_into_chunks_builder})
 env.learning_sets([corpus_directory + x for x in ['training_set.bz2', 'development_set.bz2', 'test_set.bz2']], corpus_directory + 'WestburyLab.wikicorp.201004.txt.bz2')
 num_chunks = 167
 env.training_chunks([corpus_directory + 'training_set_chunks/training_set_chunk_' + '%03d' % num + '.bz2' for num in range(num_chunks)] + [corpus_directory + 'training_set_chunks/file_names'], [corpus_directory + 'training_set.bz2'])
