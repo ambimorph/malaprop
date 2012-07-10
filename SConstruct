@@ -47,18 +47,26 @@ def split_training_set_into_chunks(target, source, env):
     return None
 
 def create_vocabularies(target, source, env):
-    "Gets the unigram counts from the source files and puts the n most frequent words in the vocabulary file."
+    "For each n in vocabulary_sizes, gets the unigram counts from the source files and puts the n most frequent words in the vocabulary file."
+    srilm_make_batch_counts = subprocess.Popen(['make-batch-counts', target[0], '1', target[1], language_model_directory + 'temp_counts_directory', '-write-order 1'])
+    srilm_merge_batch_counts = subprocess.Popen(['merge-batch-counts', language_model_directory + 'temp_counts_directory'])
     return None
 
 data_directory = 'data/'
 corpus_directory = data_directory + 'corpora/WestburyLab.wikicorp.201004/'
-randomised_wikipedia_articles_builder = Builder(action = randomise_wikipedia_articles)
-split_training_set_into_chunks_builder = Builder(action = split_training_set_into_chunks)
-
-env = Environment(PYTHONPATH = 'code/preprocessing', BUILDERS = {'learning_sets' : randomised_wikipedia_articles_builder, 'training_chunks' : split_training_set_into_chunks_builder})
-env.learning_sets([corpus_directory + x for x in ['training_set.bz2', 'development_set.bz2', 'test_set.bz2']], corpus_directory + 'WestburyLab.wikicorp.201004.txt.bz2')
+language_model_directory = data_directory + 'language_models/WestburyLab.wikicorp.201004/'
 num_chunks = 167
+vocabulary_sizes = [50, 100]
+
+learning_sets_builder = Builder(action = randomise_wikipedia_articles)
+training_set_chunks_builder = Builder(action = split_training_set_into_chunks)
+vocabulary_builder = Builder(action = create_vocabularies)
+
+env = Environment(BUILDERS = {'learning_sets' : learning_sets_builder, 'training_chunks' : training_set_chunks_builder, 'vocabulary_files' : vocabulary_builder})
+
+env.learning_sets([corpus_directory + set_name for set_name in ['training_set.bz2', 'development_set.bz2', 'test_set.bz2']], corpus_directory + 'WestburyLab.wikicorp.201004.txt.bz2')
 env.training_chunks([corpus_directory + 'training_set_chunks/training_set_chunk_' + '%03d' % num + '.bz2' for num in range(num_chunks)] + [corpus_directory + 'training_set_chunks/file_names'], [corpus_directory + 'training_set.bz2'])
+env.vocabulary_files([language_model_directory + str(size) + 'K.vocab' for size in vocabulary_sizes], [corpus_directory + 'training_set_chunks/training_set_chunk_' + '%03d' % num + '.bz2' for num in range(num_chunks)] + [corpus_directory + 'training_set_chunks/file_names'])
 
 
 
