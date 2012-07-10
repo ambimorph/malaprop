@@ -48,7 +48,7 @@ def split_training_set_into_chunks(target, source, env):
 
 def create_vocabularies(target, source, env):
     "For each n in vocabulary_sizes, gets the unigram counts from the source files and puts the n most frequent words in the vocabulary file."
-    srilm_make_batch_counts = subprocess.Popen(['make-batch-counts', target[0], '1', target[1], language_model_directory + 'temp_counts_directory', '-write-order 1'])
+    srilm_make_batch_counts = subprocess.Popen(['make-batch-counts', target[0].path, '1', target[1].path, language_model_directory + 'temp_counts_directory', '-write-order 1'])
     srilm_merge_batch_counts = subprocess.Popen(['merge-batch-counts', language_model_directory + 'temp_counts_directory'])
     return None
 
