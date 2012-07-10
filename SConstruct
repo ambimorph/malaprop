@@ -66,7 +66,7 @@ env = Environment(BUILDERS = {'learning_sets' : learning_sets_builder, 'training
 
 env.learning_sets([corpus_directory + set_name for set_name in ['training_set.bz2', 'development_set.bz2', 'test_set.bz2']], corpus_directory + 'WestburyLab.wikicorp.201004.txt.bz2')
 env.training_chunks([corpus_directory + 'training_set_chunks/training_set_chunk_' + '%03d' % num + '.bz2' for num in range(num_chunks)] + [corpus_directory + 'training_set_chunks/file_names'], [corpus_directory + 'training_set.bz2'])
-env.vocabulary_files([language_model_directory + str(size) + 'K.vocab' for size in vocabulary_sizes], [corpus_directory + 'training_set_chunks/training_set_chunk_' + '%03d' % num + '.bz2' for num in range(num_chunks)] + [corpus_directory + 'training_set_chunks/file_names'])
+env.vocabulary_files([language_model_directory + str(size) + 'K.vocab' for size in vocabulary_sizes], [corpus_directory + 'training_set_chunks/training_set_chunk_' + '%03d' % num + '.bz2' for num in range(num_chunks)] + [corpus_directory + 'training_set_chunks/file_names', 'code/preprocessing/nltksegmentandtokenise.sh' ])
 
 
 
