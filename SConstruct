@@ -1,7 +1,7 @@
 # L. Amber Wilcox-O'Hearn 2012
 # SConstruct
 
-import codecs, bz2, random, subprocess
+import codecs, bz2, random, subprocess, os
 
 from code.preprocessing import WikipediaArticleRandomiser
 from code.language_modelling import vocabulary_cutter
@@ -38,6 +38,7 @@ def create_vocabularies(target, source, env):
     lines_per_chunk = 100000
     training_file_obj = open_with_unicode_bzip2(source[0].path, 'r')
     chunk_path = corpus_directory + 'training_set_chunks/'
+    os.mkdir(chunk_path)
     file_names_file_obj = open(chunk_path + 'file_names', 'w')
     current_line_number = 0
     current_file_number = 0
