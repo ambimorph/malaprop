@@ -1,1 +1,1 @@
-bzcat $1 | python /home/amber/research/preprocessing/scripts/NLTKSegmentThenTokenise.py
+bzcat $1 | python code/preprocessing/NLTKSegmentThenTokenise.py
