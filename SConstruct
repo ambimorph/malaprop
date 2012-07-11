@@ -29,7 +29,7 @@ def randomise_wikipedia_articles(target, source, env):
     return None
 
 def create_vocabularies(target, source, env):
-"For each n in vocabulary_sizes, gets the unigram counts from the source files and puts the n most frequent words in the vocabulary file."
+    "For each n in vocabulary_sizes, gets the unigram counts from the source files and puts the n most frequent words in the vocabulary file."
 
     # Split training set into chunks.
     # We take the training set and split it into files of 100000 lines each so that srilm can make counts without choking.
