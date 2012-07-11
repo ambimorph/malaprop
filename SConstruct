@@ -42,7 +42,7 @@ def create_vocabularies(target, source, env):
     current_line_number = 0
     current_file_number = 0
     while current_file_number < num_chunks:
-        current_filename = chunk_path + 'training_set_chunk_%03d' % current_file_number
+        current_filename = chunk_path + 'training_set_chunk_%03d' % current_file_number + '.bz2'
         file_names_file_obj.write(current_filename + '\n')
         current_file_obj = open_with_unicode_bzip2(current_filename, 'w')
         current_file_obj.write(training_file_obj.readline())
@@ -54,8 +54,8 @@ def create_vocabularies(target, source, env):
 
     # Run srilm make/merge-batch-counts
 
-    srilm_make_batch_counts = subprocess.Popen(['make-batch-counts', chunk_path + 'file_names', '1', 'code/preprocessing/nltksegmentandtokenise.sh', language_model_directory + 'temp_counts_directory', '-write-order 1'])
-    srilm_merge_batch_counts = subprocess.Popen(['merge-batch-counts', language_model_directory + 'temp_counts_directory'])
+    srilm_make_batch_counts = subprocess.call(['make-batch-counts', chunk_path + 'file_names', '1', 'code/preprocessing/nltksegmentandtokenise.sh', language_model_directory + 'temp_counts_directory', '-write-order 1'])
+    srilm_merge_batch_counts = subprocess.call(['merge-batch-counts', language_model_directory + 'temp_counts_directory'])
 
     # Make vocabularies
 
