@@ -39,20 +39,20 @@ def create_vocabularies(target, source, env):
     training_file_obj = open_with_unicode_bzip2(source[0].path, 'r')
     chunk_path = corpus_directory + 'training_set_chunks/'
     if not os.path.isdir(chunk_path):
-        os.mkdir(chunk_path)
-    file_names_file_obj = open(chunk_path + 'file_names', 'w')
-    current_line_number = 0
-    current_file_number = 0
-    while current_file_number < num_chunks:
-        current_filename = chunk_path + 'training_set_chunk_%03d' % current_file_number + '.bz2'
-        file_names_file_obj.write(current_filename + '\n')
-        current_file_obj = open_with_unicode_bzip2(current_filename, 'w')
-        current_file_obj.write(training_file_obj.readline())
-        current_line_number += 1
-        while current_line_number % lines_per_chunk > 0:
-            current_file_obj.write(training_file_obj.readline())
-            current_line_number += 1
-        current_file_number += 1
+          os.mkdir(chunk_path)
+          file_names_file_obj = open(chunk_path + 'file_names', 'w')
+          current_line_number = 0
+          current_file_number = 0
+          while current_file_number < num_chunks:
+              current_filename = chunk_path + 'training_set_chunk_%03d' % current_file_number + '.bz2'
+              file_names_file_obj.write(current_filename + '\n')
+              current_file_obj = open_with_unicode_bzip2(current_filename, 'w')
+              current_file_obj.write(training_file_obj.readline())
+              current_line_number += 1
+              while current_line_number % lines_per_chunk > 0:
+                  current_file_obj.write(training_file_obj.readline())
+                  current_line_number += 1
+              current_file_number += 1
 
     # Run srilm make/merge-batch-counts
 
