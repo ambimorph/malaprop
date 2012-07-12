@@ -38,7 +38,8 @@ def create_vocabularies(target, source, env):
     lines_per_chunk = 100000
     training_file_obj = open_with_unicode_bzip2(source[0].path, 'r')
     chunk_path = corpus_directory + 'training_set_chunks/'
-    os.mkdir(chunk_path)
+    if not os.path.isdir(chunk_path):
+        os.mkdir(chunk_path)
     file_names_file_obj = open(chunk_path + 'file_names', 'w')
     current_line_number = 0
     current_file_number = 0
