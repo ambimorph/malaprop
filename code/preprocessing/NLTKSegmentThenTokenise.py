@@ -10,13 +10,13 @@ class NLTKSegmenterPlusTokeniser():
         self.unicode_infile_obj = codecs.getreader('utf-8')(infile_obj)
         self.text = self.unicode_infile_obj.read()
         self.unicode_outfile_obj = codecs.getwriter('utf-8')(outfile_obj)
-        trainer = nltk.punkt.PunktTrainer()
+        trainer = nltk.tokenize.punkt.PunktTrainer()
         trainer.ABBREV = .15
         trainer.IGNORE_ABBREV_PENALTY = True
         trainer.INCLUDE_ALL_COLLOCS = True
         trainer.MIN_COLLOC_FREQ = 10
         trainer.train(self.text)
-        self.sbd = nltk.punkt.PunktSentenceTokenizer(trainer.get_params())
+        self.sbd = nltk.tokenize.punkt.PunktSentenceTokenizer(trainer.get_params())
 
         self._ellipses_and_whitespace_regexps = [
                 (re.compile(r'(\.\.+)', re.U), r' \1 '),
