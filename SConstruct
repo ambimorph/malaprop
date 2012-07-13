@@ -85,7 +85,15 @@ def create_vocabularies(target, source, env):
         assert target[i].path == vocabulary_file_name, 'Target was: ' + target[i].path
         vocabulary_file_obj = open_with_unicode_bzip2(vocabulary_file_name, 'w')
         print "hello10"
-        cutter = vocabulary_cutter.VocabularyCutter(unigram_counts_file_obj, vocabulary_file_obj)
+        try:
+            cutter = vocabulary_cutter.VocabularyCutter(unigram_counts_file_obj, vocabulary_file_obj)
+        except Exception, e:
+            print "hello11x"
+            print e
+            raise
+        except:
+            print "hello11xx0j"
+            raise
         print "hello11"
         cutter.cut_vocabulary(size)
 
