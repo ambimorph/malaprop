@@ -28,40 +28,78 @@ def randomise_wikipedia_articles(target, source, env):
 # e683df17e81a5732605eefc9618d0403  test_set.bz2
     return None
 
-def create_vocabularies(target, source, env):
-    "For each n in vocabulary_sizes, gets the unigram counts from the source files and puts the n most frequent words in the vocabulary file."
+def split_training_files_into_chunks(training_file_name)
 
-    # Split training set into chunks.
     # We take the training set and split it into files of 100000 lines each so that srilm can make counts without choking.
     # It also needs a list of the names of the resulting files.
 
     lines_per_chunk = 100000
-    training_file_obj = open_with_unicode_bzip2(source[0].path, 'r')
     chunk_path = corpus_directory + 'training_set_chunks/'
     if not os.path.isdir(chunk_path):
-          os.mkdir(chunk_path)
-          file_names_file_obj = open(chunk_path + 'file_names', 'w')
-          current_line_number = 0
-          current_file_number = 0
-          while current_file_number < num_chunks:
-              current_filename = chunk_path + 'training_set_chunk_%03d' % current_file_number + '.bz2'
-              file_names_file_obj.write(current_filename + '\n')
-              current_file_obj = open_with_unicode_bzip2(current_filename, 'w')
-              current_file_obj.write(training_file_obj.readline())
-              current_line_number += 1
-              while current_line_number % lines_per_chunk > 0:
-                  current_file_obj.write(training_file_obj.readline())
-                  current_line_number += 1
-              current_file_number += 1
+        training_file_obj = open_with_unicode_bzip2(training_file_name, 'r')
+        os.mkdir(chunk_path)
+        file_names_file_obj = open(chunk_path + 'file_names', 'w')
+        current_line_number = 0
+        current_file_number = 0
+        while current_file_number < num_chunks:
+            current_filename = chunk_path + 'training_set_chunk_%03d' % current_file_number + '.bz2'
+            file_names_file_obj.write(current_filename + '\n')
+            current_file_obj = open_with_unicode_bzip2(current_filename, 'w')
+            current_file_obj.write(training_file_obj.readline())
+            current_line_number += 1
+            while current_line_number % lines_per_chunk > 0:
+                current_file_obj.write(training_file_obj.readline())
+                current_line_number += 1
+            current_file_number += 1
+
+def create_vocabularies(target, source, env):
+    "For each n in vocabulary_sizes, gets the unigram counts from the source files and puts the n most frequent words in the vocabulary file."
+
+    split_training_files_into_chunks(source[0].path)
 
     # Run srilm make/merge-batch-counts
 
-    srilm_make_batch_counts = subprocess.call(['make-batch-counts', chunk_path + 'file_names', '1', 'code/preprocessing/nltksegmentandtokenise.sh', language_model_directory + 'temp_counts_directory', '-write-order 1'])
-    srilm_merge_batch_counts = subprocess.call(['merge-batch-counts', language_model_directory + 'temp_counts_directory'])
+     temporary_counts_directory = language_model_directory + 'temp_counts_directory'
+     if not os.path.isdir(temporary_counts_directory):
+            srilm_make_batch_counts = subprocess.call(['make-batch-counts', chunk_path + 'file_names', '1', 'code/preprocessing/nltksegmentandtokenise.sh', temporary_counts_directory, '-write-order 1'])
+            srilm_merge_batch_counts = subprocess.call(['merge-batch-counts', temporary_counts_directory])
 
     # Make vocabularies
 
+    unigram_counts_file_obj = open_with_unicode_bzip2('xxx', 'r')
+    for i in range(len(vocabulary_sizes)):
+        size = vocabulary_sizes[i]
+        vocabulary_file_name = language_model_directory + str(size) + 'K.vocab'
+        assert target[i].path == vocabulary_file_name, target[i].path
+        vocabulary_file_obj = open_with_unicode_bzip2(vocabulary_file_name, 'w')
+        cutter = vocabulary_cutter.VocabularyCutter(unigram_counts_file_obj, vocabulary_file_obj)
+        cutter.cut_vocabulary(size)
+
     # Delete count files
+    # shutil.rmtree(temporary_counts_directory)
+
+    return None
+
+def create_trigram_models(target, source, env):
+    
+    split_training_files_into_chunks(source[0].path)
+
+    # Run srilm make/merge-batch-counts
+
+     temporary_counts_directory = language_model_directory + 'temp_upto3_counts_directory'
+     if not os.path.isdir(temporary_counts_directory):
+            srilm_make_batch_counts = subprocess.call(['make-batch-counts', chunk_path + 'file_names', '1', 'code/preprocessing/nltksegmentandtokenise.sh', temporary_counts_directory])
+            srilm_merge_batch_counts = subprocess.call(['merge-batch-counts', temporary_counts_directory])
+            for i in range(len(vocabulary_sizes)):
+                size = vocabulary_sizes[i]
+                vocabulary_file_name = language_model_directory + str(size) + 'K.vocab'
+                trigram_model_name = language_model_directory + 'trigram_model_' + str(size) + 'K.arpa'
+                assert target[i].path == trigram_model_name, target[i].path
+                srilm_make_big_lm = subprocess.call(['make-big-lm', '-debug', '2', '-kndiscount3', '-unk', '-read', temporary_counts_directory + 'merge-iter7-1.ngrams.gz', '-vocab', vocabulary_file_name, '-lm', trigram_model_name])
+
+    # Do these only when everything else has worked!
+    # shutil.rmtree(chunk_path)  
+    # shutil.rmtree(temporary_counts_directory)
 
     return None
 
@@ -73,14 +111,15 @@ vocabulary_sizes = [50, 100]
 
 learning_sets_builder = Builder(action = randomise_wikipedia_articles)
 vocabulary_files_builder = Builder(action = create_vocabularies)
+trigram_models_builder = Builder(action = create_trigram_models)
 
-env = Environment(BUILDERS = {'learning_sets' : learning_sets_builder, 'vocabulary_files' : vocabulary_files_builder})
+env = Environment(BUILDERS = {'learning_sets' : learning_sets_builder, 'vocabulary_files' : vocabulary_files_builder, 'trigram_models' : trigram_models_builder})
 
 env.learning_sets([corpus_directory + set_name for set_name in ['training_set.bz2', 'development_set.bz2', 'test_set.bz2']], corpus_directory + 'WestburyLab.wikicorp.201004.txt.bz2')
 
 env.vocabulary_files([language_model_directory + str(size) + 'K.vocab' for size in vocabulary_sizes], [corpus_directory + 'training_set.bz2'])
 
-
+env.trigram_models([language_model_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes], [corpus_directory + 'training_set.bz2'] + [language_model_directory + str(size) + 'K.vocab' for size in vocabulary_sizes])
 
 
 # def build_language_model(target, source, env):
