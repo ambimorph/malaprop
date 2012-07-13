@@ -59,7 +59,7 @@ def create_vocabularies(target, source, env):
 
     # Run srilm make/merge-batch-counts
 
-    temporary_counts_directory = language_model_directory + 'temp_counts_directory'
+    temporary_counts_directory = language_model_directory + 'temp_counts_directory/'
     if not os.path.isdir(temporary_counts_directory):
             srilm_make_batch_counts = subprocess.call(['make-batch-counts', chunk_path + 'file_names', '1', 'code/preprocessing/nltksegmentandtokenise.sh', temporary_counts_directory, '-write-order 1'])
             srilm_merge_batch_counts = subprocess.call(['merge-batch-counts', temporary_counts_directory])
@@ -86,7 +86,7 @@ def create_trigram_models(target, source, env):
 
     # Run srilm make/merge-batch-counts
 
-    temporary_counts_directory = language_model_directory + 'temp_upto3_counts_directory'
+    temporary_counts_directory = language_model_directory + 'temp_upto3_counts_directory/'
     if not os.path.isdir(temporary_counts_directory):
             srilm_make_batch_counts = subprocess.call(['make-batch-counts', chunk_path + 'file_names', '1', 'code/preprocessing/nltksegmentandtokenise.sh', temporary_counts_directory])
             srilm_merge_batch_counts = subprocess.call(['merge-batch-counts', temporary_counts_directory])
