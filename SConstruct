@@ -86,9 +86,10 @@ def create_vocabularies(target, source, env):
         vocabulary_file_obj = open_with_unicode_bzip2(vocabulary_file_name, 'w')
         print "hello10"
         cutter = vocabulary_cutter.VocabularyCutter(unigram_counts_file_obj, vocabulary_file_obj)
+        print "hello11"
         cutter.cut_vocabulary(size)
 
-    print "hello11"
+    print "hello12"
     # Delete count files
     # shutil.rmtree(temporary_counts_directory)
 
