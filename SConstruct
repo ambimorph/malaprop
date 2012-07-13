@@ -52,6 +52,9 @@ def split_training_files_into_chunks(training_file_name):
                 current_line_number += 1
             current_file_number += 1
 
+        print "hello"
+        return
+
 def create_vocabularies(target, source, env):
     "For each n in vocabulary_sizes, gets the unigram counts from the source files and puts the n most frequent words in the vocabulary file."
 
