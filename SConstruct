@@ -70,7 +70,7 @@ def create_vocabularies(target, source, env):
     for i in range(len(vocabulary_sizes)):
         size = vocabulary_sizes[i]
         vocabulary_file_name = language_model_directory + str(size) + 'K.vocab'
-        assert target[i].path == vocabulary_file_name, target[i].path
+        assert target[i].path == vocabulary_file_name, 'Target was: ' + target[i].path
         vocabulary_file_obj = open_with_unicode_bzip2(vocabulary_file_name, 'w')
         cutter = vocabulary_cutter.VocabularyCutter(unigram_counts_file_obj, vocabulary_file_obj)
         cutter.cut_vocabulary(size)
