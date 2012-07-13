@@ -67,6 +67,7 @@ def create_vocabularies(target, source, env):
 
     # Run srilm make/merge-batch-counts
 
+    print "hello6"
     temporary_counts_directory = language_model_directory + 'temp_counts_directory/'
     if not os.path.isdir(temporary_counts_directory):
             srilm_make_batch_counts = subprocess.call(['make-batch-counts', chunk_path + 'file_names', '1', 'code/preprocessing/nltksegmentandtokenise.sh', temporary_counts_directory, '-write-order 1'])
@@ -74,6 +75,7 @@ def create_vocabularies(target, source, env):
 
     # Make vocabularies
 
+    print "hello7"
     unigram_counts_file_obj = open_with_unicode_bzip2(temporary_counts_directory + 'merge-iter7-1.ngrams.gz', 'r')
     for i in range(len(vocabulary_sizes)):
         size = vocabulary_sizes[i]
@@ -83,6 +85,7 @@ def create_vocabularies(target, source, env):
         cutter = vocabulary_cutter.VocabularyCutter(unigram_counts_file_obj, vocabulary_file_obj)
         cutter.cut_vocabulary(size)
 
+    print "hello8"
     # Delete count files
     # shutil.rmtree(temporary_counts_directory)
 
