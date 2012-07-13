@@ -66,7 +66,7 @@ def create_vocabularies(target, source, env):
 
     # Make vocabularies
 
-    unigram_counts_file_obj = open_with_unicode_bzip2('xxx', 'r')
+    unigram_counts_file_obj = open_with_unicode_bzip2(temporary_counts_directory + 'merge-iter7-1.ngrams.gz', 'r')
     for i in range(len(vocabulary_sizes)):
         size = vocabulary_sizes[i]
         vocabulary_file_name = language_model_directory + str(size) + 'K.vocab'
