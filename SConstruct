@@ -33,27 +33,32 @@ def split_training_files_into_chunks(training_file_name):
     # We take the training set and split it into files of 100000 lines each so that srilm can make counts without choking.
     # It also needs a list of the names of the resulting files.
 
-    print "hello"
+    print "hello0"
     lines_per_chunk = 100000
     chunk_path = corpus_directory + 'training_set_chunks/'
     if not os.path.isdir(chunk_path):
+        print "hello1"
         training_file_obj = open_with_unicode_bzip2(training_file_name, 'r')
         os.mkdir(chunk_path)
         file_names_file_obj = open(chunk_path + 'file_names', 'w')
         current_line_number = 0
         current_file_number = 0
         while current_file_number < num_chunks:
+            print "hello2"
             current_filename = chunk_path + 'training_set_chunk_%03d' % current_file_number + '.bz2'
             file_names_file_obj.write(current_filename + '\n')
             current_file_obj = open_with_unicode_bzip2(current_filename, 'w')
             current_file_obj.write(training_file_obj.readline())
             current_line_number += 1
             while current_line_number % lines_per_chunk > 0:
+                print "hello3"
                 current_file_obj.write(training_file_obj.readline())
                 current_line_number += 1
             current_file_number += 1
+            print "hello4"
+    print "hello5"
 
-        return
+    return
 
 def create_vocabularies(target, source, env):
     "For each n in vocabulary_sizes, gets the unigram counts from the source files and puts the n most frequent words in the vocabulary file."
