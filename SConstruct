@@ -33,6 +33,7 @@ def split_training_files_into_chunks(training_file_name):
     # We take the training set and split it into files of 100000 lines each so that srilm can make counts without choking.
     # It also needs a list of the names of the resulting files.
 
+    print "hello"
     lines_per_chunk = 100000
     chunk_path = corpus_directory + 'training_set_chunks/'
     if not os.path.isdir(chunk_path):
@@ -52,7 +53,6 @@ def split_training_files_into_chunks(training_file_name):
                 current_line_number += 1
             current_file_number += 1
 
-        print "hello"
         return
 
 def create_vocabularies(target, source, env):
