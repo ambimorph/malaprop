@@ -28,7 +28,7 @@ def randomise_wikipedia_articles(target, source, env):
 # e683df17e81a5732605eefc9618d0403  test_set.bz2
     return None
 
-def split_training_files_into_chunks(training_file_name)
+def split_training_files_into_chunks(training_file_name):
 
     # We take the training set and split it into files of 100000 lines each so that srilm can make counts without choking.
     # It also needs a list of the names of the resulting files.
@@ -59,8 +59,8 @@ def create_vocabularies(target, source, env):
 
     # Run srilm make/merge-batch-counts
 
-     temporary_counts_directory = language_model_directory + 'temp_counts_directory'
-     if not os.path.isdir(temporary_counts_directory):
+    temporary_counts_directory = language_model_directory + 'temp_counts_directory'
+    if not os.path.isdir(temporary_counts_directory):
             srilm_make_batch_counts = subprocess.call(['make-batch-counts', chunk_path + 'file_names', '1', 'code/preprocessing/nltksegmentandtokenise.sh', temporary_counts_directory, '-write-order 1'])
             srilm_merge_batch_counts = subprocess.call(['merge-batch-counts', temporary_counts_directory])
 
@@ -86,8 +86,8 @@ def create_trigram_models(target, source, env):
 
     # Run srilm make/merge-batch-counts
 
-     temporary_counts_directory = language_model_directory + 'temp_upto3_counts_directory'
-     if not os.path.isdir(temporary_counts_directory):
+    temporary_counts_directory = language_model_directory + 'temp_upto3_counts_directory'
+    if not os.path.isdir(temporary_counts_directory):
             srilm_make_batch_counts = subprocess.call(['make-batch-counts', chunk_path + 'file_names', '1', 'code/preprocessing/nltksegmentandtokenise.sh', temporary_counts_directory])
             srilm_merge_batch_counts = subprocess.call(['merge-batch-counts', temporary_counts_directory])
             for i in range(len(vocabulary_sizes)):
