@@ -1,7 +1,7 @@
 # L. Amber Wilcox-O'Hearn 2012
 # SConstruct
 
-import codecs, bz2, random, subprocess, os
+import codecs, bz2, gzip, random, subprocess, os
 
 from code.preprocessing import WikipediaArticleRandomiser
 from code.language_modelling import vocabulary_cutter
@@ -12,6 +12,13 @@ def open_with_unicode_bzip2(file_name, mode):
         return codecs.getreader('utf-8')(bz2.BZ2File(file_name, mode))
     elif mode == 'w':
         return codecs.getwriter('utf-8')(bz2.BZ2File(file_name, mode))
+
+def open_with_unicode_gzip(file_name, mode):
+    assert mode in ['r', 'w']
+    if mode == 'r':
+        return codecs.getreader('utf-8')(gzip.GzipFile(file_name, mode))
+    elif mode == 'w':
+        return codecs.getwriter('utf-8')(gzip.GzipFile(file_name, mode))
 
 def randomise_wikipedia_articles(target, source, env):
     "target is a list of files corresponding to the training, development, and test sets.  source is a single bzipped file of wikipedia articles."
@@ -33,30 +40,24 @@ def split_training_files_into_chunks(training_file_name):
     # We take the training set and split it into files of 100000 lines each so that srilm can make counts without choking.
     # It also needs a list of the names of the resulting files.
 
-    print "hello0"
     lines_per_chunk = 100000
     chunk_path = corpus_directory + 'training_set_chunks/'
     if not os.path.isdir(chunk_path):
-        print "hello1"
         training_file_obj = open_with_unicode_bzip2(training_file_name, 'r')
         os.mkdir(chunk_path)
         file_names_file_obj = open(chunk_path + 'file_names', 'w')
         current_line_number = 0
         current_file_number = 0
         while current_file_number < num_chunks:
-            print "hello2"
             current_filename = chunk_path + 'training_set_chunk_%03d' % current_file_number + '.bz2'
             file_names_file_obj.write(current_filename + '\n')
             current_file_obj = open_with_unicode_bzip2(current_filename, 'w')
             current_file_obj.write(training_file_obj.readline())
             current_line_number += 1
             while current_line_number % lines_per_chunk > 0:
-                print "hello3"
                 current_file_obj.write(training_file_obj.readline())
                 current_line_number += 1
             current_file_number += 1
-            print "hello4"
-    print "hello5"
 
     return
 
@@ -67,7 +68,6 @@ def create_vocabularies(target, source, env):
 
     # Run srilm make/merge-batch-counts
 
-    print "hello6"
     temporary_counts_directory = language_model_directory + 'temp_counts_directory/'
     if not os.path.isdir(temporary_counts_directory):
             srilm_make_batch_counts = subprocess.call(['make-batch-counts', chunk_path + 'file_names', '1', 'code/preprocessing/nltksegmentandtokenise.sh', temporary_counts_directory, '-write-order 1'])
@@ -75,13 +75,10 @@ def create_vocabularies(target, source, env):
 
     # Make vocabularies
 
-    print "hello7"
-    unigram_counts_file_obj = open_with_unicode_bzip2(temporary_counts_directory + 'merge-iter7-1.ngrams.gz', 'r')
+    unigram_counts_file_obj = open_with_unicode_gzip(temporary_counts_directory + 'merge-iter7-1.ngrams.gz', 'r')
     for i in range(len(vocabulary_sizes)):
-        print "hello8"
         size = vocabulary_sizes[i]
         vocabulary_file_name = language_model_directory + str(size) + 'K.vocab'
-        print "hello9"
         assert target[i].path == vocabulary_file_name, 'Target was: ' + target[i].path
         vocabulary_file_obj = open_with_unicode_bzip2(vocabulary_file_name, 'w')
         print "hello10o"
