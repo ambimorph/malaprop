@@ -78,23 +78,12 @@ def create_vocabularies(target, source, env):
     unigram_counts_file_obj = open_with_unicode_gzip(temporary_counts_directory + 'merge-iter7-1.ngrams.gz', 'r')
     for i in range(len(vocabulary_sizes)):
         size = vocabulary_sizes[i]
-        vocabulary_file_name = language_model_directory + str(size) + 'K.vocab'
+        vocabulary_file_name = language_model_directory + str(size) + 'K.vocab.bz2'
         assert target[i].path == vocabulary_file_name, 'Target was: ' + target[i].path
         vocabulary_file_obj = open_with_unicode_bzip2(vocabulary_file_name, 'w')
-        print "hello10o"
         cutter = vocabulary_cutter.VocabularyCutter(unigram_counts_file_obj, vocabulary_file_obj)
-        try:
-            cutter.cut_vocabulary(size)
-        except Exception, e:
-            print "hello11x"
-            print e
-            raise
-        except:
-            print "hello11xx0j"
-            raise
-        print "hello11"
+        cutter.cut_vocabulary(size*1000)
 
-    print "hello12"
     # Delete count files
     # shutil.rmtree(temporary_counts_directory)
 
