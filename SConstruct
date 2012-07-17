@@ -25,9 +25,9 @@ def open_with_unicode_gzip(file_name, mode):
 def open_with_unicode(file_name, mode):
     assert mode in ['r', 'w']
     if mode == 'r':
-        return codecs.getreader('utf-8')(file_name, mode)
+        return codecs.getreader('utf-8')(open((file_name, mode))
     elif mode == 'w':
-        return codecs.getwriter('utf-8')(file_name, mode)
+        return codecs.getwriter('utf-8')(open((file_name, mode))
 
 def randomise_wikipedia_articles(target, source, env):
     "target is a list of files corresponding to the training, development, and test sets.  source is a single bzipped file of wikipedia articles."
@@ -84,14 +84,11 @@ def create_vocabularies(target, source, env):
 
     # Make vocabularies
 
-    print "hello0"
     for i in range(len(vocabulary_sizes)):
-        print "hello1"
         unigram_counts_file_obj = open_with_unicode_gzip(temporary_counts_directory + 'merge-iter7-1.ngrams.gz', 'r')
         size = vocabulary_sizes[i]
         vocabulary_file_name = language_model_directory + str(size) + 'K.vocab'
         assert target[i].path == vocabulary_file_name, 'Target was: ' + target[i].path
-        print "hello2"
         vocabulary_file_obj = open_with_unicode(vocabulary_file_name, 'w')
         cutter = vocabulary_cutter.VocabularyCutter(unigram_counts_file_obj, vocabulary_file_obj)
         print "hello3"
