@@ -25,9 +25,9 @@ def open_with_unicode_gzip(file_name, mode):
 def open_with_unicode(file_name, mode):
     assert mode in ['r', 'w']
     if mode == 'r':
-        return codecs.getreader('utf-8')(open((file_name, mode))
+        return codecs.getreader('utf-8')(open(file_name, mode))
     elif mode == 'w':
-        return codecs.getwriter('utf-8')(open((file_name, mode))
+        return codecs.getwriter('utf-8')(open(file_name, mode))
 
 def randomise_wikipedia_articles(target, source, env):
     "target is a list of files corresponding to the training, development, and test sets.  source is a single bzipped file of wikipedia articles."
