@@ -84,14 +84,19 @@ def create_vocabularies(target, source, env):
 
     # Make vocabularies
 
+    print "hello0"
     for i in range(len(vocabulary_sizes)):
+        print "hello1"
         unigram_counts_file_obj = open_with_unicode_gzip(temporary_counts_directory + 'merge-iter7-1.ngrams.gz', 'r')
         size = vocabulary_sizes[i]
         vocabulary_file_name = language_model_directory + str(size) + 'K.vocab'
         assert target[i].path == vocabulary_file_name, 'Target was: ' + target[i].path
+        print "hello2"
         vocabulary_file_obj = open_with_unicode(vocabulary_file_name, 'w')
         cutter = vocabulary_cutter.VocabularyCutter(unigram_counts_file_obj, vocabulary_file_obj)
+        print "hello3"
         cutter.cut_vocabulary(size*1000)
+        print "hello4"
 
     # Delete count files
     # shutil.rmtree(temporary_counts_directory)
@@ -121,17 +126,24 @@ def create_trigram_models(target, source, env):
 
     return None
 
+def create_error_sets(target, source, env):
+
+    return None
+
 data_directory = 'data/'
 corpus_directory = data_directory + 'corpora/WestburyLab.wikicorp.201004/'
 language_model_directory = data_directory + 'language_models/WestburyLab.wikicorp.201004/'
+error_set_directory = data_directory + 'error_sets/WestburyLab.wikicorp.201004/'
 num_chunks = 167
 vocabulary_sizes = [50, 100]
+error_rate = 200
 
 learning_sets_builder = Builder(action = randomise_wikipedia_articles)
 vocabulary_files_builder = Builder(action = create_vocabularies)
 trigram_models_builder = Builder(action = create_trigram_models)
+error_set_builder = Builder(action = create_error_sets)
 
-env = Environment(BUILDERS = {'learning_sets' : learning_sets_builder, 'vocabulary_files' : vocabulary_files_builder, 'trigram_models' : trigram_models_builder})
+env = Environment(BUILDERS = {'learning_sets' : learning_sets_builder, 'vocabulary_files' : vocabulary_files_builder, 'trigram_models' : trigram_models_builder, 'error_sets' : error_set_builder})
 
 env.learning_sets([corpus_directory + set_name for set_name in ['training_set.bz2', 'development_set.bz2', 'test_set.bz2']], corpus_directory + 'WestburyLab.wikicorp.201004.txt.bz2')
 
@@ -139,19 +151,4 @@ env.vocabulary_files([language_model_directory + str(size) + 'K.vocab' for size 
 
 env.trigram_models([language_model_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes], [corpus_directory + 'training_set.bz2'] + [language_model_directory + str(size) + 'K.vocab' for size in vocabulary_sizes])
 
-
-# def build_language_model(target, source, env):
-#     subprocess.Popen(['make-big-lm', '-kndiscount', '-unk', '-read', source[0], '-vocab', source[1], '-lm', target])
-#     return None
-# bld_lm = Builder(action = build_language_model)
-# env = Environment(BUILDERS = {'LM' : bld_lm})
-# env.LM(
-#env.LM('corpora_and_models/westbury_wikipedia_2010_04/training_set/trigram_model_50K.arpa', ['corpora_and_models/westbury_wikipedia_2010_04/training_set/counts_upto3/*ngrams.gz', 'corpora_and_models/westbury_wikipedia_2010_04/training_set/50K.vocab'])
-
-
-
-# env.Command('corpora_and_models/westbury_wikipedia_2010_04/training_set/trigram_model_50K.arpa', ['corpora_and_models/westbury_wikipedia_2010_04/training_set/counts_upto3/*ngrams.gz', 'corpora_and_models/westbury_wikipedia_2010_04/training_set/50K.vocab'], "make-big-lm -kndiscount -unk -read $SOURCE[0] -vocab $SOURCE[1] -lm $TARGET")
-
-#env.Command('test_scons.arpa', ['/*ngrams.gz', 'corpora_and_models/westbury_wikipedia_2010_04/training_set/50K.vocab'], "make-big-lm -kndiscount -unk -read $SOURCE[0] -vocab $SOURCE[1] -lm $TARGET")
-
-#env.Command(['corpora_and_models/westbury_wikipedia_2010_04/training_set/train.bz2', 'corpora_and_models/westbury_wikipedia_2010_04/development_set/devel.bz2', 'corpora_and_models/westbury_wikipedia_2010_04/test_set/test.bz2'], ['corpora_and_models/westbury_wikipedia_2010_04/original.bz2'], "bzcat $SOURCE | python language_modelling_scripts/wikipedia_article_randomiser.py")
+env.error_sets([error_set_directory + 'errors_every_200_words_' + str(size) + 'K_vocabulary.bz2' for size in vocabulary_sizes], [corpus_directory + 'development_set.bz2'] + [language_model_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes])
