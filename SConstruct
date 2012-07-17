@@ -6,6 +6,8 @@ import codecs, bz2, gzip, random, subprocess, os
 from code.preprocessing import WikipediaArticleRandomiser
 from code.language_modelling import vocabulary_cutter
 
+# Make these into one unicode open function with compression options.
+
 def open_with_unicode_bzip2(file_name, mode):
     assert mode in ['r', 'w']
     if mode == 'r':
@@ -19,6 +21,13 @@ def open_with_unicode_gzip(file_name, mode):
         return codecs.getreader('utf-8')(gzip.GzipFile(file_name, mode))
     elif mode == 'w':
         return codecs.getwriter('utf-8')(gzip.GzipFile(file_name, mode))
+
+def open_with_unicode(file_name, mode):
+    assert mode in ['r', 'w']
+    if mode == 'r':
+        return codecs.getreader('utf-8')(file_name, mode)
+    elif mode == 'w':
+        return codecs.getwriter('utf-8')(file_name, mode)
 
 def randomise_wikipedia_articles(target, source, env):
     "target is a list of files corresponding to the training, development, and test sets.  source is a single bzipped file of wikipedia articles."
@@ -75,12 +84,12 @@ def create_vocabularies(target, source, env):
 
     # Make vocabularies
 
-    unigram_counts_file_obj = open_with_unicode_gzip(temporary_counts_directory + 'merge-iter7-1.ngrams.gz', 'r')
     for i in range(len(vocabulary_sizes)):
+        unigram_counts_file_obj = open_with_unicode_gzip(temporary_counts_directory + 'merge-iter7-1.ngrams.gz', 'r')
         size = vocabulary_sizes[i]
-        vocabulary_file_name = language_model_directory + str(size) + 'K.vocab.bz2'
+        vocabulary_file_name = language_model_directory + str(size) + 'K.vocab'
         assert target[i].path == vocabulary_file_name, 'Target was: ' + target[i].path
-        vocabulary_file_obj = open_with_unicode_bzip2(vocabulary_file_name, 'w')
+        vocabulary_file_obj = open_with_unicode(vocabulary_file_name, 'w')
         cutter = vocabulary_cutter.VocabularyCutter(unigram_counts_file_obj, vocabulary_file_obj)
         cutter.cut_vocabulary(size*1000)
 
@@ -126,9 +135,9 @@ env = Environment(BUILDERS = {'learning_sets' : learning_sets_builder, 'vocabula
 
 env.learning_sets([corpus_directory + set_name for set_name in ['training_set.bz2', 'development_set.bz2', 'test_set.bz2']], corpus_directory + 'WestburyLab.wikicorp.201004.txt.bz2')
 
-env.vocabulary_files([language_model_directory + str(size) + 'K.vocab.bz2' for size in vocabulary_sizes], [corpus_directory + 'training_set.bz2'])
+env.vocabulary_files([language_model_directory + str(size) + 'K.vocab' for size in vocabulary_sizes], [corpus_directory + 'training_set.bz2'])
 
-env.trigram_models([language_model_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes], [corpus_directory + 'training_set.bz2'] + [language_model_directory + str(size) + 'K.vocab.bz2' for size in vocabulary_sizes])
+env.trigram_models([language_model_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes], [corpus_directory + 'training_set.bz2'] + [language_model_directory + str(size) + 'K.vocab' for size in vocabulary_sizes])
 
 
 # def build_language_model(target, source, env):
