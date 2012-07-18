@@ -50,7 +50,6 @@ def split_training_files_into_chunks(training_file_name):
     # It also needs a list of the names of the resulting files.
 
     lines_per_chunk = 100000
-    chunk_path = corpus_directory + 'training_set_chunks/'
     if not os.path.isdir(chunk_path):
         training_file_obj = open_with_unicode_bzip2(training_file_name, 'r')
         os.mkdir(chunk_path)
@@ -129,6 +128,7 @@ def create_error_sets(target, source, env):
 
 data_directory = 'data/'
 corpus_directory = data_directory + 'corpora/WestburyLab.wikicorp.201004/'
+chunk_path = corpus_directory + 'training_set_chunks/'
 language_model_directory = data_directory + 'language_models/WestburyLab.wikicorp.201004/'
 error_set_directory = data_directory + 'error_sets/WestburyLab.wikicorp.201004/'
 num_chunks = 167
