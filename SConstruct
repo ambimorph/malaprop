@@ -106,15 +106,15 @@ def create_trigram_models(target, source, env):
     # Run srilm make/merge-batch-counts
 
     temporary_counts_directory = language_model_directory + 'temp_upto3_counts_directory/'
-    if not os.path.isdir(temporary_counts_directory):
+    if not os.path.isdir(temporary_counts_directory): # or if can't find temporary_counts_directory + 'merge-iter7-1.ngrams.gz'
             srilm_make_batch_counts = subprocess.call(['make-batch-counts', chunk_path + 'file_names', '1', 'code/preprocessing/nltksegmentandtokenise.sh', temporary_counts_directory])
             srilm_merge_batch_counts = subprocess.call(['merge-batch-counts', temporary_counts_directory])
-            for i in range(len(vocabulary_sizes)):
-                size = vocabulary_sizes[i]
-                vocabulary_file_name = language_model_directory + str(size) + 'K.vocab'
-                trigram_model_name = language_model_directory + 'trigram_model_' + str(size) + 'K.arpa'
-                assert target[i].path == trigram_model_name, target[i].path
-                srilm_make_big_lm = subprocess.call(['make-big-lm', '-debug', '2', '-kndiscount3', '-unk', '-read', temporary_counts_directory + 'merge-iter7-1.ngrams.gz', '-vocab', vocabulary_file_name, '-lm', trigram_model_name])
+    for i in range(len(vocabulary_sizes)):
+        size = vocabulary_sizes[i]
+        vocabulary_file_name = language_model_directory + str(size) + 'K.vocab'
+        trigram_model_name = language_model_directory + 'trigram_model_' + str(size) + 'K.arpa'
+        assert target[i].path == trigram_model_name, target[i].path
+        srilm_make_big_lm = subprocess.call(['make-big-lm', '-debug', '2', '-kndiscount3', '-unk', '-read', temporary_counts_directory + 'merge-iter7-1.ngrams.gz', '-vocab', vocabulary_file_name, '-lm', trigram_model_name])
 
     # Do these only when everything else has worked!
     # shutil.rmtree(chunk_path)  
