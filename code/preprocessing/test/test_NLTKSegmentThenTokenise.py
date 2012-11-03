@@ -8,7 +8,7 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
     
     @classmethod
     def setUpClass(self):
-        self.training_text_file = open('data/segmenter_training', 'r')
+        self.training_text_file = open('test_data/segmenter_training', 'r')
 
     def run_assertions(self, out_file_obj, expected_output):
     
