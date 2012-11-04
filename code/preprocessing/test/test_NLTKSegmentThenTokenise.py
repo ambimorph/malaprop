@@ -85,8 +85,8 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
         self.run_assertions(out_file_obj, expected_output)
 
     def test_mid_word(self):
-        text_to_segment_tokenise = u'a line-or-three or 100,000.1 lines.  This&that.\nL. Amber Wilcox-O\'Hearn\n'+"They're his, not my brother's.\n3m/s"
-        expected_output = 'a line - or - three or <3-digit-integer>,<3-digit-integer>.<1-digit-integer> lines .\nthis & that .\nl. amber wilcox - o\'hearn\nthey\'re his , not my brother\'s .\n<1-digit-integer>m / s\n'
+        text_to_segment_tokenise = u'a line-or-three or 100,000.1 lines.  This&that.\nH. Amber Wilcox-O\'Hearn\n'+"They're his, not my brother's.\n3m/s"
+        expected_output = 'a line - or - three or <3-digit-integer>,<3-digit-integer>.<1-digit-integer> lines .\nthis & that .\nh. amber wilcox - o\'hearn\nthey\'re his , not my brother\'s .\n<1-digit-integer>m / s\n'
         out_file_obj = StringIO.StringIO()
         seg_tok = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(self.training_text_file, out_file_obj)
         seg_tok.segment_and_tokenise(text_to_segment_tokenise)
