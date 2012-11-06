@@ -2,7 +2,15 @@
 # NLTKSegmentThenTokenise.py
 
 import nltk
-import re, sys, codecs, unicodedata
+import re, sys, codecs, unicodedata, string
+
+# TODO: 
+# Compensate for initials problem.
+# Refactor to first create a nested list:
+# Level 1: Split into sentences based on PunktSentenceTokenizer
+# Level 2: Split on whitespace.  This is *lossy*, but that's what I intend right now.
+# Level 3: This is where the segmenter comes in.  It will be a pair: the first is the string that actually appeared, the second is a list of segmented tokens.  This will deal with situations like punctuation to be separated from words, and classifiers like <4-digit-number>.
+# Then there will be two ways to get the output: either return the list, or print the lossy segmented version. (?)
 
 class NLTKSegmenterPlusTokeniser():
 
