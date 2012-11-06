@@ -63,6 +63,52 @@ class NLTKSegmenterPlusTokeniser():
             i += 1 
         reattached_lines.append(u' '.join(current_line))
         return reattached_lines
+
+    def is_an_initial(self, word):
+        if len(word) == 2 and unicodedata.category(word[0])[0] == 'L' and word[1] == u'.':
+            return True
+        return False
+    def starts_with_a_capital(self, word):
+        pass
+
+# do we need to insert extra breaks to solve justinian i. the?
+    def apply_ugly_hack_to_reattach_wrong_splits_in_certain_cases_with_initials(self, lines):
+        # NLTK currently splits sentences between 2 initials.  Hacking those back together.
+        # Also has the effect of collapsing whitespace to a single space char.
+        lines = list(lines)
+        if len(lines) == 0: return []
+        reattached_lines = []
+        i = 0
+        current_line = lines[i].split()
+        while i < len(lines) - 1:
+            reattach = False
+            next_line = lines[i+1].split()
+            last_word = current_line[-1]
+            current_line_ends_in_an_initial = False
+            next_line_starts_with_a_capital = False
+            first_word_of_next_line = next_line[0]
+            if len(first_word_of_next_line) > 1 and unicodedata.category(first_word_of_next_line[0]) == 'Lu':
+                next_line_starts_with_a_capital = True
+            if self.is_an_initial(last_word) and next_line_starts_with_a_capital:
+                nltk_ortho_context = self.sbd._params.ortho_context[next_line[0].lower()]
+                if nltk_ortho_context <= 46:
+                    reattach = True
+                else:
+                    nltk_ortho_context_bit_string = bin(nltk_ortho_context)
+                    if (len(nltk_ortho_context_bit_string) < 6 or nltk_ortho_context_bit_string[-4] == '0') and \
+                            (len(nltk_ortho_context_bit_string) > 2 and nltk_ortho_context_bit_string[-1] == '1') or \
+                            (len(nltk_ortho_context_bit_string) > 3 and nltk_ortho_context_bit_string[-2] == '1') or \
+                            (len(nltk_ortho_context_bit_string) > 4 and nltk_ortho_context_bit_string[-3] == '1'):
+                        reattach = True
+
+            if reattach:
+                    current_line += next_line
+            else:
+                reattached_lines.append(u' '.join(current_line))
+                current_line = next_line
+            i += 1 
+        reattached_lines.append(u' '.join(current_line))
+        return reattached_lines
                 
 
 
@@ -140,7 +186,8 @@ class NLTKSegmenterPlusTokeniser():
         if text == None: text = self.text
         for line in (t for t in text.split('\n')):
             sentences = self.sbd.sentences_from_text(line, realign_boundaries=True)
-            sentences = self.reattach_wrong_splits_due_to_multiple_initials(sentences)
+    #        sentences = self.reattach_wrong_splits_due_to_multiple_initials(sentences)
+            sentences = self.apply_ugly_hack_to_reattach_wrong_splits_in_certain_cases_with_initials(sentences)
             for sentence in sentences:
                 sentence = self.split_sentence_final_period_when_not_abbreviation(self.sbd, sentence)
                 sentence = self.space_separate_non_period_punctuation_and_regularize_digit_strings(sentence)
