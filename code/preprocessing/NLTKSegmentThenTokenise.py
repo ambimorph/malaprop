@@ -25,6 +25,9 @@ class NLTKSegmenterPlusTokeniser():
         trainer.MIN_COLLOC_FREQ = 10
         trainer.train(self.text)
         self.sbd = nltk.tokenize.punkt.PunktSentenceTokenizer(trainer.get_params())
+#        # Adding all letters as "abbreviations", since they are likely to occur as initials, even when not in the training data.
+#        for l in unicode(string.ascii_letters):
+#                self.sbd._params.abbrev_types.add(l)
 
         self._ellipses_and_whitespace_regexps = [
                 (re.compile(r'(\.\.+)', re.U), r' \1 '),
@@ -69,7 +72,10 @@ class NLTKSegmenterPlusTokeniser():
             return True
         return False
     def starts_with_a_capital(self, word):
-        pass
+        if len(word) > 0 and unicodedata.category(word[0]) == 'Lu':
+            return True
+        return False
+        
 
 # do we need to insert extra breaks to solve justinian i. the?
     def apply_ugly_hack_to_reattach_wrong_splits_in_certain_cases_with_initials(self, lines):
@@ -84,22 +90,24 @@ class NLTKSegmenterPlusTokeniser():
             reattach = False
             next_line = lines[i+1].split()
             last_word = current_line[-1]
-            current_line_ends_in_an_initial = False
             next_line_starts_with_a_capital = False
             first_word_of_next_line = next_line[0]
             if len(first_word_of_next_line) > 1 and unicodedata.category(first_word_of_next_line[0]) == 'Lu':
                 next_line_starts_with_a_capital = True
-            if self.is_an_initial(last_word) and next_line_starts_with_a_capital:
-                nltk_ortho_context = self.sbd._params.ortho_context[next_line[0].lower()]
-                if nltk_ortho_context <= 46:
+            if self.is_an_initial(last_word):# and next_line_starts_with_a_capital:
+                if unicodedata.category(first_word_of_next_line[0])[0] != 'L':
                     reattach = True
-                else:
-                    nltk_ortho_context_bit_string = bin(nltk_ortho_context)
-                    if (len(nltk_ortho_context_bit_string) < 6 or nltk_ortho_context_bit_string[-4] == '0') and \
-                            (len(nltk_ortho_context_bit_string) > 2 and nltk_ortho_context_bit_string[-1] == '1') or \
-                            (len(nltk_ortho_context_bit_string) > 3 and nltk_ortho_context_bit_string[-2] == '1') or \
-                            (len(nltk_ortho_context_bit_string) > 4 and nltk_ortho_context_bit_string[-3] == '1'):
+                elif next_line_starts_with_a_capital:
+                    nltk_ortho_context = self.sbd._params.ortho_context[next_line[0].lower()]
+                    if nltk_ortho_context <= 46:
                         reattach = True
+                    else:
+                        nltk_ortho_context_bit_string = bin(nltk_ortho_context)
+                        if (len(nltk_ortho_context_bit_string) < 6 or nltk_ortho_context_bit_string[-4] == '0') and \
+                                (len(nltk_ortho_context_bit_string) > 2 and nltk_ortho_context_bit_string[-1] == '1') or \
+                                (len(nltk_ortho_context_bit_string) > 3 and nltk_ortho_context_bit_string[-2] == '1') or \
+                                (len(nltk_ortho_context_bit_string) > 4 and nltk_ortho_context_bit_string[-3] == '1'):
+                            reattach = True
 
             if reattach:
                     current_line += next_line
