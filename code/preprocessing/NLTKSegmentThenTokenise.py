@@ -47,25 +47,6 @@ class NLTKSegmenterPlusTokeniser():
             return True
         return False
 
-    def nltk_classifies_this_as_a_sentence_starter(self, word):
-        # nltk_ortho_context is a bitsting that represents attestation of capitalization in different sentence positions
-        # See nltk/tokenize/punkt.py
-        nltk_ortho_context = self.sbd._params.ortho_context[word]
-        bit_str = bin(nltk_ortho_context)
-        # Not a sentence starter if starts with punctuation
-        if unicodedata.category(word[0])[0] == 'P': return False
-        # Yes, if capitalized, has occurred in lowercase, and never occurs capitalized mid-sentence.
-        if unicodedata.category(word[0]) == 'Lu' and bin(nltk_ortho_context >> 3) != '0b0' \
-                and len(bit_str) > 3 and bit_str[-2] == '0':
-            return True
-        # No, if lowercase, and has occurred in uppercase or has never occured lowercase at the beginning of a sentence.
-        if unicodedata.category(word[0]) == 'Ll' \
-                and ((bit_str[-1] == '1' or (len(bit_str) > 3 and bit_str[-2] == '1') or (len(bit_str) > 4 and bit_str[-3] == '1')) \
-                or (len(bit_str) < 6 or bit_str[-4] == '0')):
-            return False
-        # Unknown otherwise
-        return 'unknown'
-
     def apply_ugly_hack_to_reattach_wrong_splits_in_certain_cases_with_initials(self, lines):
         # NLTK currently splits sentences between 2 initials.  Hacking those back together.
         # Also has the effect of collapsing whitespace to a single space char.
