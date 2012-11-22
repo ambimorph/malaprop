@@ -38,46 +38,34 @@ class NLTKSegmenterPlusTokeniser():
                 (re.compile(r'(\s)*<NEWLINE>(\s)*', re.U), r'\n'),
             ]
 
-    def reattach_wrong_splits_due_to_multiple_initials(self, lines):
-        # NLTK currently splits sentences between 2 initials.  Hacking those back together.
-        # Also has the effect of collapsing whitespace to a single space char.
-        lines = list(lines)
-        if len(lines) == 0: return []
-        reattached_lines = []
-        i = 0
-        current_line = lines[i].split()
-        while i < len(lines) - 1:
-            next_line = lines[i+1].split()
-            last_word = current_line[-1]
-            current_line_ends_in_an_initial = False
-            next_line_starts_with_an_initial = False
-            if len(last_word) > 1 and (len(last_word) == 2 or unicodedata.category(last_word[-3]) in 'Zs'):
-                if unicodedata.category(last_word[-2])[0] == 'L' and last_word[-1] == u'.':
-                    current_line_ends_in_an_initial = True
-                    first_word_of_next_line = next_line[0]
-                    if len(first_word_of_next_line) > 1 and unicodedata.category(first_word_of_next_line[0])[0] == 'L' and first_word_of_next_line[1] == u'.':
-                        if len(first_word_of_next_line) == 2 or unicodedata.category(first_word_of_next_line[2]) in 'Zs':
-                                next_line_starts_with_an_initial = True
-            if current_line_ends_in_an_initial and next_line_starts_with_an_initial:
-                current_line += next_line
-            else:
-                reattached_lines.append(u' '.join(current_line))
-                current_line = next_line
-            i += 1 
-        reattached_lines.append(u' '.join(current_line))
-        return reattached_lines
-
     def is_an_initial(self, word):
         if len(word) == 2 and unicodedata.category(word[0])[0] == 'L' and word[1] == u'.':
             return True
         return False
-    def starts_with_a_capital(self, word):
-        if len(word) > 0 and unicodedata.category(word[0]) == 'Lu':
+    def multi_char_word_and_starts_with_a_capital(self, word):
+        if len(word) > 1 and unicodedata.category(word[0]) == 'Lu':
             return True
         return False
-        
 
-# do we need to insert extra breaks to solve justinian i. the?
+    def nltk_classifies_this_as_a_sentence_starter(self, word):
+        # nltk_ortho_context is a bitsting that represents attestation of capitalization in different sentence positions
+        # See nltk/tokenize/punkt.py
+        nltk_ortho_context = self.sbd._params.ortho_context[word]
+        bit_str = bin(nltk_ortho_context)
+        # Not a sentence starter if starts with punctuation
+        if unicodedata.category(word[0])[0] == 'P': return False
+        # Yes, if capitalized, has occurred in lowercase, and never occurs capitalized mid-sentence.
+        if unicodedata.category(word[0]) == 'Lu' and bin(nltk_ortho_context >> 3) != '0b0' \
+                and len(bit_str) > 3 and bit_str[-2] == '0':
+            return True
+        # No, if lowercase, and has occurred in uppercase or has never occured lowercase at the beginning of a sentence.
+        if unicodedata.category(word[0]) == 'Ll' \
+                and ((bit_str[-1] == '1' or (len(bit_str) > 3 and bit_str[-2] == '1') or (len(bit_str) > 4 and bit_str[-3] == '1')) \
+                or (len(bit_str) < 6 or bit_str[-4] == '0')):
+            return False
+        # Unknown otherwise
+        return 'unknown'
+
     def apply_ugly_hack_to_reattach_wrong_splits_in_certain_cases_with_initials(self, lines):
         # NLTK currently splits sentences between 2 initials.  Hacking those back together.
         # Also has the effect of collapsing whitespace to a single space char.
@@ -94,20 +82,14 @@ class NLTKSegmenterPlusTokeniser():
             first_word_of_next_line = next_line[0]
             if len(first_word_of_next_line) > 1 and unicodedata.category(first_word_of_next_line[0]) == 'Lu':
                 next_line_starts_with_a_capital = True
-            if self.is_an_initial(last_word):# and next_line_starts_with_a_capital:
+            if self.is_an_initial(last_word):
+                nltk_ortho_context = self.sbd._params.ortho_context[first_word_of_next_line.lower()]
                 if unicodedata.category(first_word_of_next_line[0])[0] != 'L':
                     reattach = True
-                elif next_line_starts_with_a_capital:
-                    nltk_ortho_context = self.sbd._params.ortho_context[next_line[0].lower()]
-                    if nltk_ortho_context <= 46:
-                        reattach = True
-                    else:
-                        nltk_ortho_context_bit_string = bin(nltk_ortho_context)
-                        if (len(nltk_ortho_context_bit_string) < 6 or nltk_ortho_context_bit_string[-4] == '0') and \
-                                (len(nltk_ortho_context_bit_string) > 2 and nltk_ortho_context_bit_string[-1] == '1') or \
-                                (len(nltk_ortho_context_bit_string) > 3 and nltk_ortho_context_bit_string[-2] == '1') or \
-                                (len(nltk_ortho_context_bit_string) > 4 and nltk_ortho_context_bit_string[-3] == '1'):
-                            reattach = True
+                elif self.multi_char_word_and_starts_with_a_capital(first_word_of_next_line) and \
+                        nltk_ortho_context <= 46 or \ # This is an ugly and imperfect hack.  See mailing list for nltk.
+                        self.is_an_initial(first_word_of_next_line):
+                    reattach = True
 
             if reattach:
                     current_line += next_line
