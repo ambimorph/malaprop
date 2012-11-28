@@ -5,12 +5,11 @@ import nltk
 import re, sys, codecs, unicodedata, string
 
 # TODO: 
-# Compensate for initials problem.
-# Refactor to first create a nested list:
-# Level 1: Split into sentences based on PunktSentenceTokenizer
-# Level 2: Split on whitespace.  This is *lossy*, but that's what I intend right now.
-# Level 3: This is where the segmenter comes in.  It will be a pair: the first is the string that actually appeared, the second is a list of segmented tokens.  This will deal with situations like punctuation to be separated from words, and classifiers like <4-digit-number>.
-# Then there will be two ways to get the output: either return the list, or print the lossy segmented version. (?)
+# Refactor to output either:
+# 1: List of tuples, where the tuples correspond to the segmentation decisions of PunktSentenceTokenizer (+ hack): 
+# first item: sentence with whitespace lossily collapsed into a single space,
+# second item: list of token segmentation points, including at whitespace.
+# 2: Plain text output of segmentation points applied to sentences, as well as lowercasing and number transforms, if desired.
 
 class NLTKSegmenterPlusTokeniser():
 
@@ -25,9 +24,6 @@ class NLTKSegmenterPlusTokeniser():
         trainer.MIN_COLLOC_FREQ = 10
         trainer.train(self.text)
         self.sbd = nltk.tokenize.punkt.PunktSentenceTokenizer(trainer.get_params())
-#        # Adding all letters as "abbreviations", since they are likely to occur as initials, even when not in the training data.
-#        for l in unicode(string.ascii_letters):
-#                self.sbd._params.abbrev_types.add(l)
 
         self._ellipses_and_whitespace_regexps = [
                 (re.compile(r'(\.\.+)', re.U), r' \1 '),
@@ -67,8 +63,9 @@ class NLTKSegmenterPlusTokeniser():
                 nltk_ortho_context = self.sbd._params.ortho_context[first_word_of_next_line.lower()]
                 if unicodedata.category(first_word_of_next_line[0])[0] != 'L':
                     reattach = True
+                # The following is an ugly and imperfect hack.  See mailing list for nltk.
                 elif self.multi_char_word_and_starts_with_a_capital(first_word_of_next_line) and \
-                        nltk_ortho_context <= 46 or \ # This is an ugly and imperfect hack.  See mailing list for nltk.
+                        nltk_ortho_context <= 46 or \
                         self.is_an_initial(first_word_of_next_line):
                     reattach = True
 
@@ -157,7 +154,6 @@ class NLTKSegmenterPlusTokeniser():
         if text == None: text = self.text
         for line in (t for t in text.split('\n')):
             sentences = self.sbd.sentences_from_text(line, realign_boundaries=True)
-    #        sentences = self.reattach_wrong_splits_due_to_multiple_initials(sentences)
             sentences = self.apply_ugly_hack_to_reattach_wrong_splits_in_certain_cases_with_initials(sentences)
             for sentence in sentences:
                 sentence = self.split_sentence_final_period_when_not_abbreviation(self.sbd, sentence)
@@ -165,6 +161,31 @@ class NLTKSegmenterPlusTokeniser():
                 sentence = self.clean_up_ellipses_and_whitespace_and_make_all_lowercase(sentence)
                 self.unicode_outfile_obj.write(sentence)
                 self.unicode_outfile_obj.write('\n')
+
+
+    def list_of_internal_token_boundaries(self, sentence):
+        return []
+
+    def list_of_special_tokens(self, sentence):
+        return []
+
+    def tokenise(self, sentence_and_token_information):
+        return u''
+
+    def segmented_and_tokenised(self, text=None, file_output=False):
+        assert text is None or isinstance(text, unicode), text
+        if text == None: text = self.text
+        for line in (t for t in text.split('\n')):
+            list_of_tuples = []
+            sentences = self.sbd.sentences_from_text(line, realign_boundaries=True)
+            sentences = self.apply_ugly_hack_to_reattach_wrong_splits_in_certain_cases_with_initials(sentences)
+            for sentence in sentences:
+                sentence_and_token_information = (sentence, self.list_of_internal_token_boundaries(sentence), self.list_of_special_tokens(sentence))
+                list_of_tuples.append(sentence_and_token_information)
+                if file_output:
+                    self.unicode_outfile_obj.write(self.tokenise(sentence_and_token_information)) # include \n here
+            return list_of_tuples
+        
 
 
 if __name__ == '__main__':
