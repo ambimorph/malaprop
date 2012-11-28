@@ -19,12 +19,14 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
             for i in range(len(list_output)):
                 assert list_output[i] == expected_list_of_tuple_output[i]
         except AssertionError, exp:
-            print "Expected ", 
-            for tup in expected_list_of_tuple_output:
-                print tup,
-            print "\nbut got ", 
-            for tup in list_output:
-                print tup
+            for i in range(len(expected_list_of_tuple_output)):
+                for j in range(len(expected_list_of_tuple_output[i])):
+                    if expected_list_of_tuple_output[i][j] == list_output[i][j]:
+                        print "Matched"
+                        print expected_list_of_tuple_output[i][j]
+                    else:
+                        print "Did not match"
+                        print "Expected ", expected_list_of_tuple_output[i][j], "\nbut got  ", list_output[i][j]
             raise exp
 
         assert isinstance(out_file_obj.getvalue(), str), (type(out_file_obj.getvalue()), repr(out_file_obj.getvalue()))
@@ -60,11 +62,11 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
         text_to_segment_tokenise = u'Another libertarian tradition is that of unschooling and the free school in which child-led activity replaces pedagogic approaches. Experiments in Germany led to A. S. Neill founding what became Summerhill School in 1921. Summerhill is often cited as an example of anarchism in practice. However, although Summerhill and other free schools are radically libertarian, they differ in principle from those of Ferrer by not advocating an overtly-political class struggle-approach.\nThe Academy of Motion Picture Arts and Sciences itself was conceived by Metro-Goldwyn-Mayer studio boss Louis B. Mayer.  The 1st Academy Awards ceremony was held on Thursday, May 16, 1929, at the Hotel Roosevelt in Hollywood to honor outstanding film achievements of 1927 and 1928.\nWhen the Western Roman Empire collapsed, Berbers became independent again in many areas, while the Vandals took control over other parts, where they remained until expelled by the generals of the Byzantine Emperor, Justinian I. The Byzantine Empire then retained a precarious grip on the east of the country until the coming of the Arabs in the eighth century.'
         expected_list_of_tuple_output = [ \
             (u'Another libertarian tradition is that of unschooling and the free school in which child-led activity replaces pedagogic approaches.', \
-            [7, 8, 19, 20, 29, 30, 32, 33, 37, 38, 40, 41, 52, 53, 56, 57, 60, 61, 65, 66, 72, 73, 75, 76, 81, 82, 91, 92, 100, 101, 109, 110, 119, 120, 130], \
+            [7, 8, 19, 20, 29, 30, 32, 33, 37, 38, 40, 41, 52, 53, 56, 57, 60, 61, 65, 66, 72, 73, 75, 76, 81, 82, 87, 88, 91, 92, 100, 101, 109, 110, 119, 120, 130], \
             []), \
             (u'Experiments in Germany led to A. S. Neill founding what became Summerhill School in 1921.', \
-            [11, 12, 14, 15, 22, 23, 26, 27, 29, 30, 31, 32, 33, 34, 35, 36, 41, 42, 50, 51, 55, 56, 62, 63, 73, 74, 80, 81, 83, 84, 88], \
-            [(84, 4, '<4-digit-integer>')]), \
+            [11, 12, 14, 15, 22, 23, 26, 27, 29, 30, 32, 33, 35, 36, 41, 42, 50, 51, 55, 56, 62, 63, 73, 74, 80, 81, 83, 84, 88], \
+            [(84, 4, u'<4-digit-integer>')]), \
             (u'Summerhill is often cited as an example of anarchism in practice.', \
             [10, 11, 13, 14, 19, 20, 25, 26, 28, 29, 31, 32, 39, 40, 42, 43, 52, 53, 55, 56, 64], \
             []), \
@@ -76,7 +78,7 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
             []), \
             (u'The 1st Academy Awards ceremony was held on Thursday, May 16, 1929, at the Hotel Roosevelt in Hollywood to honor outstanding film achievements of 1927 and 1928.', \
             [3, 4, 7, 8, 15, 16, 22, 23, 31, 32, 35, 36, 40, 41, 43, 44, 52, 53, 54, 57, 58, 60, 61, 62, 66, 67, 68, 70, 71, 74, 75, 80, 81, 90, 91, 93, 94, 103, 104, 106, 107, 112, 113, 124, 125, 129, 130, 142, 143, 145, 146, 150, 151, 154, 155, 159], \
-            [(4, 1, '<1-digit-integer>'), (58, 2, '<2-digit-integer>'), (62, 4, '<4-digit-integer>'), (146, 4, '<4-digit-integer>'), (155, 4, '<4-digit-integer>')]), \
+            [(4, 1, u'<1-digit-integer>'), (58, 2, u'<2-digit-integer>'), (62, 4, u'<4-digit-integer>'), (146, 4, u'<4-digit-integer>'), (155, 4, u'<4-digit-integer>')]), \
             (u'When the Western Roman Empire collapsed, Berbers became independent again in many areas, while the Vandals took control over other parts, where they remained until expelled by the generals of the Byzantine Emperor, Justinian I.', \
             [4, 5, 8, 9, 16, 17, 22, 23, 29, 30, 39, 40, 41, 48, 49, 55, 56, 67, 68, 73, 74, 76, 77, 81, 82, 87, 88, 89, 94, 95, 98, 99, 106, 107, 111, 112, 119, 120, 124, 125, 130, 131, 136, 137, 138, 143, 144, 148, 149, 157, 158, 163, 164, 172, 173, 175, 176, 179, 180, 188, 189, 191, 192, 195, 196, 205, 206, 213, 214, 215, 224, 225], \
             []), \
@@ -118,7 +120,7 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
         expected_list_of_tuple_output = [ \
             (u'Hidehiko Shimizu (born 4 November 1954) is a former Japanese football player.', \
             [8, 9, 16, 17, 18, 22, 23, 24, 25, 33, 34, 38, 39, 40, 42, 43, 44, 45, 51, 52, 60, 61, 69, 70, 76], \
-            [(23, 1, '<1-digit-integer>'), (34, 4, '<4-digit-integer>')]), \
+            [(23, 1, u'<1-digit-integer>'), (34, 4, u'<4-digit-integer>')]), \
             (u'He has played for Nissan Motors.', \
             [2, 3, 6, 7, 13, 14, 17, 18, 24, 25, 31], \
             [])]
@@ -160,11 +162,11 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
         expected_list_of_tuple_output = [ \
             ( u'a line-or-three or 100,000.1 lines.', \
             [1, 2, 6, 7, 9, 10, 15, 16, 18, 19, 28, 29, 34], \
-            [(19, 9, '<3-digit-integer>,<3-digit-integer>.<1-digit-integer>')]), \
+            [(19, 9, u'<3-digit-integer>,<3-digit-integer>.<1-digit-integer>')]), \
             (u'This&that.', [4, 5], []), \
             (u'H. Amber Wilcox-O\'Hearn', [2, 3, 8, 9, 15, 16], []), \
             (u"They're his, not my brother's", [7, 8, 11, 12, 13, 16, 17, 19, 20], []), \
-            (u"3m/s", [2, 3], [(0, 2, '<1-digit-integer>m')])]
+            (u"3m/s", [2, 3], [(0, 2, u'<1-digit-integer>m')])]
         expected_text_output = 'a line - or - three or <3-digit-integer>,<3-digit-integer>.<1-digit-integer> lines .\nthis & that .\nh. amber wilcox - o\'hearn\nthey\'re his , not my brother\'s .\n<1-digit-integer>m / s\n'
         out_file_obj = StringIO.StringIO()
         seg_tok = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(self.training_text_file, out_file_obj)
@@ -185,7 +187,7 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
 
     def test_dollar_percent_and_strings_of_consecutive_numbers(self):
         text_to_segment_tokenise = u"$1.50, 30%"
-        expected_list_of_tuple_output = [(u"$1.50, 30%", [1, 5, 6, 7, 9], [(1, 4, '<1-digit-integer>.<2-digit-integer>'), (7, 2, '<2-digit-integer>')])]
+        expected_list_of_tuple_output = [(u"$1.50, 30%", [1, 5, 6, 7, 9], [(1, 4, u'<1-digit-integer>.<2-digit-integer>'), (7, 2, u'<2-digit-integer>')])]
         expected_text_output = '$ <1-digit-integer>.<2-digit-integer> , <2-digit-integer> %\n'
         out_file_obj = StringIO.StringIO()
         seg_tok = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(self.training_text_file, out_file_obj)
@@ -194,7 +196,7 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
 
     def test_line_starts_with_punct_or_number(self):
         text_to_segment_tokenise = u'"This 34.\n'
-        expected_list_of_tuple_output = [(u'"This 34.', [1, 5, 6, 8], [(6, 2, '<2-digit-integer>')])]
+        expected_list_of_tuple_output = [(u'"This 34.', [1, 5, 6, 8], [(6, 2, u'<2-digit-integer>')])]
         expected_text_output = '" this <2-digit-integer> .\n'
         out_file_obj = StringIO.StringIO()
         seg_tok = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(self.training_text_file, out_file_obj)

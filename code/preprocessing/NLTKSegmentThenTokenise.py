@@ -163,11 +163,80 @@ class NLTKSegmenterPlusTokeniser():
                 self.unicode_outfile_obj.write('\n')
 
 
-    def list_of_internal_token_boundaries(self, sentence):
-        return []
+    def lists_of_internal_token_boundaries_and_special_tokens(self, line):
+        # if any chars are unicode punctuation and not periods, pad them with space,
+        # except at the beginning and end of the line, unless it is a
+        # contraction or an inter-numeric comma.
+        # replace strings of digits and commas with '<n-digit-integer>'
+        # I've traded some readability for doing it in one pass.
 
-    def list_of_special_tokens(self, sentence):
-        return []
+#        new_line = u''
+        boundaries_set = set([])
+        special_tokens = []
+        last_index = 0
+        digit_length = 0
+        number_punct = False
+        if unicodedata.category(line[0]) == 'Nd':
+            digit_length = 1
+        elif unicodedata.category(line[0])[0] in 'PS' and line[0] != '.':
+#            new_line +=  line[0] + u' '
+            boundaries_set.add(1)
+            last_index = 1
+        for i in [x+1 for x in range(len(line)-1)]:
+            if unicodedata.category(line[i]) == 'Nd':
+                # We're in a digit string.
+#                if digit_length == 0:
+#                    new_line += line[last_index:i]
+                last_index = i+1
+                digit_length += 1
+            else:
+                if digit_length > 0:
+                    # Either there is a period or comma in the digit string or
+                    # this ends the digit string. 
+                    if (line[i] == '.' or line[i] == ',') and i < len(line)-1 and unicodedata.category(line[i+1]) =='Nd':
+                        number_punct = True
+#                    new_line += u'<' + unicode(str(digit_length)) + u'-digit-integer>'
+                    special_tokens.append( (last_index - digit_length, digit_length,  u'<' + unicode(str(digit_length)) + u'-digit-integer>') )
+                    digit_length = 0
+                    last_index = i
+                if unicodedata.category(line[i])[0] in 'PSZ' and line[i] != '.' and not number_punct:
+                    if (line[i] == '\'' or line[i] == u'\xb4') and unicodedata.category(line[i-1])[0] == 'L' \
+                        and i < len(line)-1 and unicodedata.category(line[i+1])[0] == 'L':
+                        pass
+                    else:
+#                        new_line += line[last_index:i] + u' ' + line[i] + u' '
+                        boundaries_set.update([i, i+1])
+                        last_index = i+1
+                number_punct = False
+#        new_line  += line[last_index:]
+#        boundaries.sort()
+        # Mark a boundary before sentence-final period if not an abbrevation
+        i = len(line) - 1
+        while unicodedata.category(line[i])[0] not in 'LN' and i >= 0:
+            i -= 1
+        if i >= 0:
+            if i != len(line) - 1 and line[i+1] == '.':
+                period_index = i+1
+                # See if preceding token is an abbreviation or initial.
+                while unicodedata.category(line[i]) != 'Zs' and i >= 0:
+                    i -= 1
+                token_index = i+1
+                abbreviations = self.sbd._params.abbrev_types
+                if line[token_index:period_index].lower() not in abbreviations and \
+                        not (token_index + 1 == period_index and unicodedata.category(line[token_index]) == 'Lu'):
+                    boundaries_set.add(period_index)
+        boundaries = list(boundaries_set)
+        boundaries.sort()
+        return boundaries, special_tokens
+
+#        result = []
+#        i = 1 # Beginning of sentence is an implicit boundary.
+#        while i < len(sentence):
+#            char = sentence[i]
+#            unicode_category = unicodedata.category(char)
+#            if unicode_category[0] in 'PS' and char != u'.':
+#                if 
+#        return result
 
     def tokenise(self, sentence_and_token_information):
         return u''
@@ -179,7 +248,7 @@ class NLTKSegmenterPlusTokeniser():
             sentences = self.sbd.sentences_from_text(line, realign_boundaries=True)
             sentences = self.apply_ugly_hack_to_reattach_wrong_splits_in_certain_cases_with_initials(sentences)
             for sentence in sentences:
-                sentence_and_token_information = (sentence, self.list_of_internal_token_boundaries(sentence), self.list_of_special_tokens(sentence))
+                sentence_and_token_information = (sentence,) + self.lists_of_internal_token_boundaries_and_special_tokens(sentence)
                 yield sentence_and_token_information
                 if file_output:
                     self.unicode_outfile_obj.write(self.tokenise(sentence_and_token_information)) # include \n here
