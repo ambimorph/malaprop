@@ -176,15 +176,13 @@ class NLTKSegmenterPlusTokeniser():
         assert text is None or isinstance(text, unicode), text
         if text == None: text = self.text
         for line in (t for t in text.split('\n')):
-            list_of_tuples = []
             sentences = self.sbd.sentences_from_text(line, realign_boundaries=True)
             sentences = self.apply_ugly_hack_to_reattach_wrong_splits_in_certain_cases_with_initials(sentences)
             for sentence in sentences:
                 sentence_and_token_information = (sentence, self.list_of_internal_token_boundaries(sentence), self.list_of_special_tokens(sentence))
-                list_of_tuples.append(sentence_and_token_information)
+                yield sentence_and_token_information
                 if file_output:
                     self.unicode_outfile_obj.write(self.tokenise(sentence_and_token_information)) # include \n here
-            return list_of_tuples
         
 
 

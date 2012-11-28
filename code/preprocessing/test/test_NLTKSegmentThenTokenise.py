@@ -10,14 +10,21 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
     def setUpClass(self):
         self.training_text_file = open('test_data/segmenter_training', 'r')
 
-    def run_assertions(self, list_output, expected_list_of_tuple_output, out_file_obj, expected_text_output):
+    def run_assertions(self, tuple_generator, expected_list_of_tuple_output, out_file_obj, expected_text_output):
+        
+        list_output = [x for x in tuple_generator]
 
         try:
             assert len(list_output) == len(expected_list_of_tuple_output)
             for i in range(len(list_output)):
                 assert list_output[i] == expected_list_of_tuple_output[i]
         except AssertionError, exp:
-            print "Expected ", expected_list_of_tuple_output, ", but got ", list_output
+            print "Expected ", 
+            for tup in expected_list_of_tuple_output:
+                print tup,
+            print "\nbut got ", 
+            for tup in list_output:
+                print tup
             raise exp
 
         assert isinstance(out_file_obj.getvalue(), str), (type(out_file_obj.getvalue()), repr(out_file_obj.getvalue()))
@@ -45,8 +52,8 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
         out_file_obj = StringIO.StringIO()
         seg_tok = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(self.training_text_file, out_file_obj)
         seg_tok.segment_and_tokenise(text_to_segment_tokenise)
-        list_output = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
-        self.run_assertions(list_output, expected_list_of_tuple_output, out_file_obj, expected_text_output)
+        tuple_generator = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
+        self.run_assertions(tuple_generator, expected_list_of_tuple_output, out_file_obj, expected_text_output)
 
     def test_sentence_segmentation(self):
 
@@ -80,8 +87,8 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
             
         out_file_obj = StringIO.StringIO()
         seg_tok = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(self.training_text_file, out_file_obj)
-        list_output = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
-        self.run_assertions(list_output, expected_list_of_tuple_output, out_file_obj, expected_text_output)
+        tuple_generator = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
+        self.run_assertions(tuple_generator, expected_list_of_tuple_output, out_file_obj, expected_text_output)
 
 
     def test_quotations_and_multiple_punctuation(self):
@@ -103,8 +110,8 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
         expected_text_output = 'accordingly , " libertarian socialism " is sometimes used as a synonym for socialist anarchism , to distinguish it from " individualist libertarianism " ( individualist anarchism ) .\non the other hand , some use " libertarianism " to refer to individualistic free - market philosophy only , referring to free - market anarchism as " libertarian anarchism . "\n'+"citizens can oppose a decision ( ' besluit ' ) made by a public body ( ' bestuursorgaan ' ) within the administration\nthe treaty could be considered unpopular in scotland : sir george lockhart of carnwath , the only member of the scottish negotiating team against union , noted that ` the whole nation appears against the union ' and even sir john clerk of penicuik , an ardent pro - unionist and union negotiator , observed that the treaty was ` contrary to the inclinations of at least three - fourths of the kingdom ' .\n"
         out_file_obj = StringIO.StringIO()
         seg_tok = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(self.training_text_file, out_file_obj)
-        list_output = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
-        self.run_assertions(list_output, expected_list_of_tuple_output, out_file_obj, expected_text_output)
+        tuple_generator = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
+        self.run_assertions(tuple_generator, expected_list_of_tuple_output, out_file_obj, expected_text_output)
 
     def test_ints_with_or_without_following_punctuation(self):
         text_to_segment_tokenise = u'Hidehiko Shimizu (born 4 November 1954) is a former Japanese football player. He has played for Nissan Motors.'
@@ -118,8 +125,8 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
         expected_text_output = 'hidehiko shimizu ( born <1-digit-integer> november <4-digit-integer> ) is a former japanese football player .\nhe has played for nissan motors .\n'
         out_file_obj = StringIO.StringIO()
         seg_tok = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(self.training_text_file, out_file_obj)
-        list_output = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
-        self.run_assertions(list_output, expected_list_of_tuple_output, out_file_obj, expected_text_output)
+        tuple_generator = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
+        self.run_assertions(tuple_generator, expected_list_of_tuple_output, out_file_obj, expected_text_output)
 
     def test_end_of_document(self):
         text_to_segment_tokenise = u'---END.OF.DOCUMENT---'
@@ -127,8 +134,8 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
         expected_text_output = '- - - end.of.document - - -\n'
         out_file_obj = StringIO.StringIO()
         seg_tok = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(self.training_text_file, out_file_obj)
-        list_output = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
-        self.run_assertions(list_output, expected_list_of_tuple_output, out_file_obj, expected_text_output)
+        tuple_generator = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
+        self.run_assertions(tuple_generator, expected_list_of_tuple_output, out_file_obj, expected_text_output)
 
     def test_elipses(self):
         text_to_segment_tokenise = u"Elipses here... and there..."
@@ -136,8 +143,8 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
         expected_text_output = 'elipses here ... and there ...\n'
         out_file_obj = StringIO.StringIO()
         seg_tok = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(self.training_text_file, out_file_obj)
-        list_output = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
-        self.run_assertions(list_output, expected_list_of_tuple_output, out_file_obj, expected_text_output)
+        tuple_generator = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
+        self.run_assertions(tuple_generator, expected_list_of_tuple_output, out_file_obj, expected_text_output)
 
     def test_single_quotes(self):
         text_to_segment_tokenise = u"this 'could' be"
@@ -145,8 +152,8 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
         expected_text_output = 'this \' could \' be\n'
         out_file_obj = StringIO.StringIO()
         seg_tok = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(self.training_text_file, out_file_obj)
-        list_output = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
-        self.run_assertions(list_output, expected_list_of_tuple_output, out_file_obj, expected_text_output)
+        tuple_generator = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
+        self.run_assertions(tuple_generator, expected_list_of_tuple_output, out_file_obj, expected_text_output)
 
     def test_mid_word(self):
         text_to_segment_tokenise = u'a line-or-three or 100,000.1 lines.  This&that.\nH. Amber Wilcox-O\'Hearn\n'+"They're his, not my brother's.\n3m/s"
@@ -161,8 +168,8 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
         expected_text_output = 'a line - or - three or <3-digit-integer>,<3-digit-integer>.<1-digit-integer> lines .\nthis & that .\nh. amber wilcox - o\'hearn\nthey\'re his , not my brother\'s .\n<1-digit-integer>m / s\n'
         out_file_obj = StringIO.StringIO()
         seg_tok = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(self.training_text_file, out_file_obj)
-        list_output = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
-        self.run_assertions(list_output, expected_list_of_tuple_output, out_file_obj, expected_text_output)
+        tuple_generator = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
+        self.run_assertions(tuple_generator, expected_list_of_tuple_output, out_file_obj, expected_text_output)
 
     def test_sentence_final_punctuation(self):
         text_to_segment_tokenise = u'Finally.\nFinally?\nFinally!'
@@ -173,8 +180,8 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
         expected_text_output = 'finally .\nfinally ?\nfinally !\n'
         out_file_obj = StringIO.StringIO()
         seg_tok = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(self.training_text_file, out_file_obj)
-        list_output = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
-        self.run_assertions(list_output, expected_list_of_tuple_output, out_file_obj, expected_text_output)
+        tuple_generator = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
+        self.run_assertions(tuple_generator, expected_list_of_tuple_output, out_file_obj, expected_text_output)
 
     def test_dollar_percent_and_strings_of_consecutive_numbers(self):
         text_to_segment_tokenise = u"$1.50, 30%"
@@ -182,8 +189,8 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
         expected_text_output = '$ <1-digit-integer>.<2-digit-integer> , <2-digit-integer> %\n'
         out_file_obj = StringIO.StringIO()
         seg_tok = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(self.training_text_file, out_file_obj)
-        list_output = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
-        self.run_assertions(list_output, expected_list_of_tuple_output, out_file_obj, expected_text_output)
+        tuple_generator = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
+        self.run_assertions(tuple_generator, expected_list_of_tuple_output, out_file_obj, expected_text_output)
 
     def test_line_starts_with_punct_or_number(self):
         text_to_segment_tokenise = u'"This 34.\n'
@@ -191,8 +198,8 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
         expected_text_output = '" this <2-digit-integer> .\n'
         out_file_obj = StringIO.StringIO()
         seg_tok = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(self.training_text_file, out_file_obj)
-        list_output = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
-        self.run_assertions(list_output, expected_list_of_tuple_output, out_file_obj, expected_text_output)
+        tuple_generator = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
+        self.run_assertions(tuple_generator, expected_list_of_tuple_output, out_file_obj, expected_text_output)
 
     def test_abbreviations(self):
         # This is, of course, incorrectly segmented, but correctly characterises the behaviour of the segmenter.
@@ -204,8 +211,8 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
         expected_text_output = 'mr. shimizu was not born in the u.s. " you are just joking . "\n'
         out_file_obj = StringIO.StringIO()
         seg_tok = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(self.training_text_file, out_file_obj)
-        list_output = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
-        self.run_assertions(list_output, expected_list_of_tuple_output, out_file_obj, expected_text_output)
+        tuple_generator = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
+        self.run_assertions(tuple_generator, expected_list_of_tuple_output, out_file_obj, expected_text_output)
 
     def test_initials(self):
         text_to_segment_tokenise = u'Neither was J. S. Bach.'
@@ -213,8 +220,8 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
         expected_text_output = 'neither was j. s. bach .\n'
         out_file_obj = StringIO.StringIO()
         seg_tok = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(self.training_text_file, out_file_obj)
-        list_output = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
-        self.run_assertions(list_output, expected_list_of_tuple_output, out_file_obj, expected_text_output)
+        tuple_generator = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
+        self.run_assertions(tuple_generator, expected_list_of_tuple_output, out_file_obj, expected_text_output)
 
     def test_multiple_spaces_space_at_beginning_of_line(self):
         text_to_segment_tokenise = u'Extra  spaces     here \n and here'
@@ -222,8 +229,8 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
         expected_text_output = 'extra spaces here\nand here\n'
         out_file_obj = StringIO.StringIO()
         seg_tok = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(self.training_text_file, out_file_obj)
-        list_output = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
-        self.run_assertions(list_output, expected_list_of_tuple_output, out_file_obj, expected_text_output)
+        tuple_generator = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
+        self.run_assertions(tuple_generator, expected_list_of_tuple_output, out_file_obj, expected_text_output)
         
     def test_suffixes(self):
         text_to_segment_tokenise = u'Don\'t keep this together: -suffix'
@@ -231,8 +238,8 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
         expected_text_output = 'don\'t keep this together : - suffix\n'
         out_file_obj = StringIO.StringIO()
         seg_tok = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(self.training_text_file, out_file_obj)
-        list_output = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
-        self.run_assertions(list_output, expected_list_of_tuple_output, out_file_obj, expected_text_output)
+        tuple_generator = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
+        self.run_assertions(tuple_generator, expected_list_of_tuple_output, out_file_obj, expected_text_output)
 
 
 if __name__ == '__main__':
