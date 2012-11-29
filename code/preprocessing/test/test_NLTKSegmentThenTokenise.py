@@ -26,7 +26,7 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
                         print expected_list_of_tuple_output[i][j]
                     else:
                         print "Did not match"
-                        print "Expected ", expected_list_of_tuple_output[i][j], "\nbut got  ", list_output[i][j]
+                        print "Expected xxx", expected_list_of_tuple_output[i][j], "xxx\nbut got  xxx", list_output[i][j], "xxx"
             raise exp
 
         assert isinstance(out_file_obj.getvalue(), str), (type(out_file_obj.getvalue()), repr(out_file_obj.getvalue()))
@@ -107,7 +107,7 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
             [8, 9, 12, 13, 19, 20, 21, 22, 30, 31, 32, 33, 40, 41, 42, 43, 47, 48, 50, 51, 52, 53, 59, 60, 64, 65, 66, 67, 81, 82, 83, 84, 90, 91, 94, 95], \
             []), \
             (u"The Treaty could be considered unpopular in Scotland: Sir George Lockhart of Carnwath, the only member of the Scottish negotiating team against union, noted that `The whole nation appears against the Union' and even Sir John Clerk of Penicuik, an ardent pro-unionist and Union negotiator, observed that the treaty was `contrary to the inclinations of at least three-fourths of the Kingdom'.", \
-            [3, 4, 10, 11, 16, 17, 19, 20, 30, 31, 40, 41, 43, 44, 53, 54, 57, 58, 64, 65, 73, 74, 76, 77, 85, 86, 87, 90, 91, 95, 96, 102, 103, 105, 106, 109, 110, 118, 119, 130, 131, 135, 136, 143, 144, 149, 150, 151, 156, 157, 161, 162, 163, 166, 167, 172, 173, 179, 180, 187, 188, 195, 196, 199, 200, 205, 206, 207, 210, 211, 215, 216, 219, 220, 224, 225, 230, 231, 233, 234, 242, 243, 244, 246, 247, 253, 254, 257, 258, 266, 267, 270, 271, 276, 277, 287, 288, 289, 297, 298, 302, 303, 306, 307, 313, 314, 317, 318, 319, 327, 328, 330, 331, 334, 335, 347, 348, 350, 351, 353, 354, 359, 360, 365, 366, 373, 374, 376, 377, 380, 381, 388, 389], \
+            [3, 4, 10, 11, 16, 17, 19, 20, 30, 31, 40, 41, 43, 44, 52, 53, 54, 57, 58, 64, 65, 73, 74, 76, 77, 85, 86, 87, 90, 91, 95, 96, 102, 103, 105, 106, 109, 110, 118, 119, 130, 131, 135, 136, 143, 144, 149, 150, 151, 156, 157, 161, 162, 163, 166, 167, 172, 173, 179, 180, 187, 188, 195, 196, 199, 200, 205, 206, 207, 210, 211, 215, 216, 219, 220, 224, 225, 230, 231, 233, 234, 242, 243, 244, 246, 247, 253, 254, 257, 258, 266, 267, 270, 271, 276, 277, 287, 288, 289, 297, 298, 302, 303, 306, 307, 313, 314, 317, 318, 319, 327, 328, 330, 331, 334, 335, 347, 348, 350, 351, 353, 354, 359, 360, 365, 366, 373, 374, 376, 377, 380, 381, 388, 389], \
             [])]
         expected_text_output = 'accordingly , " libertarian socialism " is sometimes used as a synonym for socialist anarchism , to distinguish it from " individualist libertarianism " ( individualist anarchism ) .\non the other hand , some use " libertarianism " to refer to individualistic free - market philosophy only , referring to free - market anarchism as " libertarian anarchism . "\n'+"citizens can oppose a decision ( ' besluit ' ) made by a public body ( ' bestuursorgaan ' ) within the administration\nthe treaty could be considered unpopular in scotland : sir george lockhart of carnwath , the only member of the scottish negotiating team against union , noted that ` the whole nation appears against the union ' and even sir john clerk of penicuik , an ardent pro - unionist and union negotiator , observed that the treaty was ` contrary to the inclinations of at least three - fourths of the kingdom ' .\n"
         out_file_obj = StringIO.StringIO()
@@ -162,10 +162,10 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
         expected_list_of_tuple_output = [ \
             ( u'a line-or-three or 100,000.1 lines.', \
             [1, 2, 6, 7, 9, 10, 15, 16, 18, 19, 28, 29, 34], \
-            [(19, 9, u'<3-digit-integer>,<3-digit-integer>.<1-digit-integer>')]), \
-            (u'This&that.', [4, 5], []), \
+            [(19, 3, u'<3-digit-integer>'), (23, 3, u'<3-digit-integer>'), (27, 1, u'<1-digit-integer>')]), \
+            (u'This&that.', [4, 5, 9], []), \
             (u'H. Amber Wilcox-O\'Hearn', [2, 3, 8, 9, 15, 16], []), \
-            (u"They're his, not my brother's", [7, 8, 11, 12, 13, 16, 17, 19, 20], []), \
+            (u"They're his, not my brother's.", [7, 8, 11, 12, 13, 16, 17, 19, 20, 29], []), \
             (u"3m/s", [2, 3], [(0, 2, u'<1-digit-integer>m')])]
         expected_text_output = 'a line - or - three or <3-digit-integer>,<3-digit-integer>.<1-digit-integer> lines .\nthis & that .\nh. amber wilcox - o\'hearn\nthey\'re his , not my brother\'s .\n<1-digit-integer>m / s\n'
         out_file_obj = StringIO.StringIO()
@@ -187,7 +187,8 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
 
     def test_dollar_percent_and_strings_of_consecutive_numbers(self):
         text_to_segment_tokenise = u"$1.50, 30%"
-        expected_list_of_tuple_output = [(u"$1.50, 30%", [1, 5, 6, 7, 9], [(1, 4, u'<1-digit-integer>.<2-digit-integer>'), (7, 2, u'<2-digit-integer>')])]
+        expected_list_of_tuple_output = [(u"$1.50, 30%", [1, 5, 6, 7, 9], \
+             [(1, 1, u'<1-digit-integer>'), (3, 2, u'<2-digit-integer>'), (7, 2, u'<2-digit-integer>')])]
         expected_text_output = '$ <1-digit-integer>.<2-digit-integer> , <2-digit-integer> %\n'
         out_file_obj = StringIO.StringIO()
         seg_tok = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(self.training_text_file, out_file_obj)
@@ -227,7 +228,9 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
 
     def test_multiple_spaces_space_at_beginning_of_line(self):
         text_to_segment_tokenise = u'Extra  spaces     here \n and here'
-        expected_list_of_tuple_output = [(u'Extra spaces here and here', [5, 6, 12, 13, 17, 18, 21, 22], [])]
+        expected_list_of_tuple_output = [ \
+            (u'Extra spaces here', [5, 6, 12, 13], []), \
+            (u'and here', [3, 4], [])]
         expected_text_output = 'extra spaces here\nand here\n'
         out_file_obj = StringIO.StringIO()
         seg_tok = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(self.training_text_file, out_file_obj)
