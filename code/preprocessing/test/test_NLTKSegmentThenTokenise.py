@@ -48,7 +48,7 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
            ('The term "anarchism" derives from the Greek \xe1\xbc\x84\xce\xbd\xce\xb1\xcf\x81\xcf\x87\xce\xbf\xcf\x82, "anarchos", meaning "without rulers", from the prefix \xe1\xbc\x80\xce\xbd- ("an-", "without") + \xe1\xbc\x80\xcf\x81\xcf\x87\xce\xae ("arch\xc3\xaa", "sovereignty, realm, magistracy") + -\xce\xb9\xcf\x83\xce\xbc\xcf\x8c\xcf\x82 ("-ismos", from the suffix -\xce\xb9\xce\xb6\xce\xb5\xce\xb9\xce\xbd, "-izein" "-izing").'.decode('utf-8'), \
            [3, 4, 8, 9, 10, 19, 20, 21, 28, 29, 33, 34, 37, 38, 43, 44, 51, 52, 53, 54, 62, 63, 64, 65, 72, 73, 74, 81, 82, 88, 89, 90, 91, 95, 96, 99, 100, 106, 107, 109, 110, 111, 112, 113, 115, 116, 117, 118, 119, 120, 127, 128, 129, 130, 131, 132, 136, 137, 138, 139, 144, 145, 146, 147, 148, 159, 160, 161, 166, 167, 168, 178, 179, 180, 181, 182, 183, 184, 189, 190, 191, 192, 193, 198, 199, 200, 201, 205, 206, 209, 210, 216, 217, 218, 223, 224, 225, 226, 227, 232, 233, 234, 235, 236, 241, 242, 243], \
            []), \
-           ('Here\xc2\xa0are\xc2\xa0some'.decode('utf-8'), [4, 5, 8, 9], []), \
+           (u'Here are some', [4, 5, 8, 9], []), \
            (u'NBSPs!', [5], [])]
         expected_text_output = 'the term " anarchism " derives from the greek \xe1\xbc\x84\xce\xbd\xce\xb1\xcf\x81\xcf\x87\xce\xbf\xcf\x82 , " anarchos " , meaning " without rulers " , from the prefix \xe1\xbc\x80\xce\xbd - ( " an - " , " without " ) + \xe1\xbc\x80\xcf\x81\xcf\x87\xce\xae ( " arch\xc3\xaa " , " sovereignty , realm , magistracy " ) + - \xce\xb9\xcf\x83\xce\xbc\xcf\x8c\xcf\x82 ( " - ismos " , from the suffix - \xce\xb9\xce\xb6\xce\xb5\xce\xb9\xce\xbd , " - izein " " - izing " ) .\nhere are some\nnbsps !\n'
         out_file_obj = StringIO.StringIO()

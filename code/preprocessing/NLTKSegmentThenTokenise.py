@@ -222,8 +222,47 @@ class NLTKSegmenterPlusTokeniser():
         boundaries.sort()
         return boundaries, special_tokens
 
-    def tokenise(self, sentence_and_token_information):
-        return u''
+    def write_tokenised_text(self, current_index, sentence_and_token_information, out_file_obj):
+        text, boundaries, substitutions = sentence_and_token_information
+        
+        if len(boundaries) == 0:
+            if len(substitutions) == 0:
+                out_file_obj.write(text[current_index:])
+                out_file_obj.write(u'\n')
+            else:
+                start, length, chars = substitutions[0]
+                out_file_obj.write(text[current_index:start])
+                out_file_obj.write(chars)
+                self.write_tokenised_text(start+length, (text, boundaries, substitutions[1:]), out_file_obj)
+
+        else: # boundaries is not empty
+            if len(substitutions) == 0:
+                text_index = current_index
+                for boundary in boundaries:
+                    out_file_obj.write(text[text_index:boundary])
+                    if boundary > 0 and text[boundary-1] != u' ' and \
+                      text[boundary] != u' ':
+                        out_file_obj.write(u' ')
+                    text_index = boundary
+                out_file_obj.write(text[text_index:])
+                out_file_obj.write(u'\n')
+            else:
+                start, length, chars = substitutions[0]
+                if boundaries[0] < start:
+                    out_file_obj.write(text[current_index:boundaries[0]])
+                    if boundaries[0] > 0 and text[boundaries[0]-1] != u' ' and \
+                      text[boundaries[0]] != u' ':
+                        out_file_obj.write(u' ')
+                    self.write_tokenised_text(boundaries[0], (text, boundaries[1:], substitutions), out_file_obj)
+                else:
+                    out_file_obj.write(text[current_index:start])
+                    out_file_obj.write(chars)
+                    if boundaries[0] == start:
+                        self.write_tokenised_text(start+length, (text, boundaries[1:], substitutions[1:]), out_file_obj)
+                    else:
+                        self.write_tokenised_text(start+length, (text, boundaries, substitutions[1:]), out_file_obj)
+                    
+                    
 
     def segmented_and_tokenised(self, text=None, file_output=False):
         assert text is None or isinstance(text, unicode), text
@@ -235,7 +274,9 @@ class NLTKSegmenterPlusTokeniser():
                 sentence_and_token_information = (sentence,) + self.lists_of_internal_token_boundaries_and_special_tokens(sentence)
                 yield sentence_and_token_information
                 if file_output:
-                    self.unicode_outfile_obj.write(self.tokenise(sentence_and_token_information)) # include \n here
+                    lowered_text = sentence_and_token_information[0].lower()
+                    lowered_sentence_and_token_information = (lowered_text, sentence_and_token_information[1], sentence_and_token_information[2])
+                    self.write_tokenised_text(0, lowered_sentence_and_token_information, self.unicode_outfile_obj)
         
 
 
