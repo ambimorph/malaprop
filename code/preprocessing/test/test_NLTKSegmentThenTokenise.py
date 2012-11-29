@@ -166,7 +166,7 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
             (u'This&that.', [4, 5, 9], []), \
             (u'H. Amber Wilcox-O\'Hearn', [2, 3, 8, 9, 15, 16], []), \
             (u"They're his, not my brother's.", [7, 8, 11, 12, 13, 16, 17, 19, 20, 29], []), \
-            (u"3m/s", [2, 3], [(0, 2, u'<1-digit-integer>m')])]
+            (u"3m/s", [2, 3], [(0, 1, u'<1-digit-integer>')])]
         expected_text_output = 'a line - or - three or <3-digit-integer>,<3-digit-integer>.<1-digit-integer> lines .\nthis & that .\nh. amber wilcox - o\'hearn\nthey\'re his , not my brother\'s .\n<1-digit-integer>m / s\n'
         out_file_obj = StringIO.StringIO()
         seg_tok = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(self.training_text_file, out_file_obj)

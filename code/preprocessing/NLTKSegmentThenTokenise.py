@@ -172,18 +172,15 @@ class NLTKSegmenterPlusTokeniser():
 
         boundaries_set = set([])
         special_tokens = []
-        last_index = 0
         digit_length = 0
         number_punct = False
         if unicodedata.category(line[0]) == 'Nd':
             digit_length = 1
         elif unicodedata.category(line[0])[0] in 'PS' and line[0] != '.':
             boundaries_set.add(1)
-            last_index = 1
         for i in [x+1 for x in range(len(line)-1)]:
             if unicodedata.category(line[i]) == 'Nd':
                 # We're in a digit string.
-                last_index = i+1
                 digit_length += 1
             else:
                 if digit_length > 0:
@@ -191,16 +188,14 @@ class NLTKSegmenterPlusTokeniser():
                     # this ends the digit string. 
                     if (line[i] == '.' or line[i] == ',') and i < len(line)-1 and unicodedata.category(line[i+1]) =='Nd':
                         number_punct = True
-                    special_tokens.append( (last_index - digit_length, digit_length,  u'<' + unicode(str(digit_length)) + u'-digit-integer>') )
+                    special_tokens.append( (i - digit_length, digit_length,  u'<' + unicode(str(digit_length)) + u'-digit-integer>') )
                     digit_length = 0
-                    last_index = i
                 if unicodedata.category(line[i])[0] in 'PSZ' and line[i] != '.' and not number_punct:
                     if (line[i] == '\'' or line[i] == u'\xb4') and unicodedata.category(line[i-1])[0] == 'L' \
                         and i < len(line)-1 and unicodedata.category(line[i+1])[0] == 'L':
                         pass
                     else:
                         boundaries_set.update([i, i+1])
-                        last_index = i+1
                 number_punct = False
         # Mark a boundary before sentence-final period if not an abbrevation
         i = len(line) - 1
