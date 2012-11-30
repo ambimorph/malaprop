@@ -197,6 +197,9 @@ class NLTKSegmenterPlusTokeniser():
                     else:
                         boundaries_set.update([i, i+1])
                 number_punct = False
+        if digit_length != 0:
+            special_tokens.append( (len(line) - digit_length, digit_length,  u'<' + unicode(str(digit_length)) + u'-digit-integer>') )
+            
         # Mark a boundary before sentence-final period if not an abbrevation
         i = len(line) - 1
         while unicodedata.category(line[i])[0] not in 'LN' and i >= 0:
@@ -222,15 +225,20 @@ class NLTKSegmenterPlusTokeniser():
         boundaries.sort()
         return boundaries, special_tokens
 
-    def tokenised_text(self, current_index, sentence_and_token_information):
+    def tokenised_textxxx(self, current_index, sentence_and_token_information):
         text, boundaries, substitutions = sentence_and_token_information
         
         if len(boundaries) == 0:
             if len(substitutions) == 0:
                 return text[current_index:]
             else:
-                start, length, chars = substitutions[0]
-                return text[current_index:start] + chars + self.tokenised_text(start+length, (text, boundaries, substitutions[1:]))
+                result = u' '
+                for sub in substitutions:
+                    start, length, chars = sub
+                    result += text[current_index:start] + chars
+                    current_index = start + length
+                return result + text[current_index:]
+#                    return text[current_index:start] + chars + self.tokenised_text(start+length, (text, boundaries, substitutions[1:]))
 
         else: # boundaries is not empty
             if len(substitutions) == 0:
@@ -244,19 +252,91 @@ class NLTKSegmenterPlusTokeniser():
             else:
                 start, length, chars = substitutions[0]
                 result = u''
-                if boundaries[0] < start:
-                    result += text[current_index:boundaries[0]]
+                i = 0
+                while boundaries[i] < start:
+                    result += text[current_index:boundaries[i]]
                     result += u' '
-                    return result + self.tokenised_text(boundaries[0], (text, boundaries[1:], substitutions))
-                else:
+                    current_index = boundaries[i]
+                    i += 1
+                result += text[current_index:start]
+                result += u' '
+                result += chars
+                current_index = start + length
+                j = 1
+                while len(substitutions) > j and substitutions[j][0] < boundaries:
+                    start, length, chars = substitutions[j]
                     result += text[current_index:start]
-                    result += u' '
                     result += chars
-                    if boundaries[0] == start:
-                        return result + self.tokenised_text(start+length, (text, boundaries[1:], substitutions[1:]))
-                    else:
-                        return result + self.tokenised_text(start+length, (text, boundaries, substitutions[1:]))
+                    current_index = start + length
+                    j += 1
+                if boundaries[i] == start:
+                    return result + self.tokenised_text(start+length, (text, boundaries[i+1:], substitutions[j+1:]))
+                else:
+                    return result + self.tokenised_text(start+length, (text, boundaries, substitutions[i+1:]))
                     
+
+#                if boundaries[0] < start:
+#                    result += text[current_index:boundaries[0]]
+#                    result += u' '
+#                    return result + self.tokenised_text(boundaries[0], (text, boundaries[1:], substitutions))
+#                else:
+#                    result += text[current_index:start]
+#                    result += u' '
+#                    result += chars
+#                    if boundaries[0] == start:
+#                        return result + self.tokenised_text(start+length, (text, boundaries[1:], substitutions[1:]))
+#                    else:
+#                        return result + self.tokenised_text(start+length, (text, boundaries, substitutions[1:]))
+                    
+    def tokenised_text(self, sentence_and_token_information):
+        text, boundaries, substitutions = sentence_and_token_information
+        current_index = 0
+        result = u''
+        if len(boundaries) == 0: next_boundary = None
+        else: 
+            next_boundary_index = 0
+            next_boundary = boundaries[0]
+        if len(substitutions) == 0: next_sub = None
+        else: 
+            next_sub_index = 0
+            next_sub, sub_length, sub_text = substitutions[0]
+
+        while next_boundary is not None or next_sub is not None:
+            while next_boundary is not None and (next_sub is None or next_boundary < next_sub):
+                result += text[current_index:next_boundary] + u' '
+                current_index = next_boundary
+                next_boundary_index += 1
+                if len(boundaries) < next_boundary_index + 1:
+                    next_boundary = None
+                else:
+                    next_boundary = boundaries[next_boundary_index]
+                if next_boundary is None and next_sub is None:
+                    result += text[current_index:]
+               
+            if next_boundary is not None and next_sub is not None and next_boundary == next_sub:
+                result += text[current_index:next_boundary] + u' ' + sub_text
+                current_index = next_sub + sub_length
+                next_boundary_index += 1
+                if len(boundaries) < next_boundary_index + 1:
+                    next_boundary = None
+                else:
+                    next_boundary = boundaries[next_boundary_index]
+                next_sub_index += 1
+                if len(substitutions) < next_sub_index + 1:
+                    next_sub = None
+                else:
+                    next_sub, sub_length, sub_text = substitutions[next_sub_index]
+                
+            while next_sub is not None and (next_boundary is None or next_sub < next_boundary):
+                result += text[current_index:next_sub] + sub_text
+                current_index = next_sub + sub_length
+                next_sub_index += 1
+                if len(substitutions) < next_sub_index + 1:
+                    next_sub = None
+                else:
+                    next_sub, sub_length, sub_text = substitutions[next_sub_index]
+        return result
+           
                     
 
     def segmented_and_tokenised(self, text=None, file_output=False):
@@ -271,7 +351,7 @@ class NLTKSegmenterPlusTokeniser():
                 if file_output:
                     lowered_text = sentence_and_token_information[0].lower()
                     lowered_sentence_and_token_information = (lowered_text, sentence_and_token_information[1], sentence_and_token_information[2])
-                    self.unicode_outfile_obj.write(u' '.join(self.tokenised_text(0, lowered_sentence_and_token_information).split()) + u'\n')
+                    self.unicode_outfile_obj.write(u' '.join(self.tokenised_text(lowered_sentence_and_token_information).split()) + u'\n')
         
 
 

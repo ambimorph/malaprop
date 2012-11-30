@@ -26,7 +26,7 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
                         print expected_list_of_tuple_output[i][j]
                     else:
                         print "Did not match"
-                        print "Expected xxx", expected_list_of_tuple_output[i][j], "xxx\nbut got  xxx", list_output[i][j], "xxx"
+                        print "Expected ", expected_list_of_tuple_output[i][j], "\nbut got  ", list_output[i][j]
             raise exp
 
         assert isinstance(out_file_obj.getvalue(), str), (type(out_file_obj.getvalue()), repr(out_file_obj.getvalue()))
@@ -171,6 +171,17 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
         seg_tok = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(self.training_text_file, out_file_obj)
         tuple_generator = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
         self.run_assertions(tuple_generator, expected_list_of_tuple_output, out_file_obj, expected_text_output)
+
+    def test_multiple_substitutions_at_the_end(self):
+        text_to_segment_tokenise = u'What about 100,000'
+        expected_list_of_tuple_output = [(u'What about 100,000', [4, 5, 10, 11], [(11, 3, u'<3-digit-integer>'), (15, 3, u'<3-digit-integer>')])]
+        expected_text_output = 'what about <3-digit-integer>,<3-digit-integer>\n'
+        out_file_obj = StringIO.StringIO()
+        seg_tok = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(self.training_text_file, out_file_obj)
+        tuple_generator = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
+        self.run_assertions(tuple_generator, expected_list_of_tuple_output, out_file_obj, expected_text_output)
+        
+
 
     def test_sentence_final_punctuation(self):
         text_to_segment_tokenise = u'Finally.\nFinally?\nFinally!'
