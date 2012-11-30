@@ -36,7 +36,7 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
             x = out_file_obj.getvalue()
             for i in range(len(x)):
                 if i >= len(expected_text_output) or x[i] != expected_text_output[i]: break
-            print 'Matching prefix of output and expected output: ', repr(x[:i])
+            print '\nMatching prefix of output and expected output: ', repr(x[:i])
             print '\noutput differs starting here: ', repr(x[i:])
             print '\nexpected: ', repr(expected_text_output[i:])
             raise exp
@@ -53,7 +53,6 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
         expected_text_output = 'the term " anarchism " derives from the greek \xe1\xbc\x84\xce\xbd\xce\xb1\xcf\x81\xcf\x87\xce\xbf\xcf\x82 , " anarchos " , meaning " without rulers " , from the prefix \xe1\xbc\x80\xce\xbd - ( " an - " , " without " ) + \xe1\xbc\x80\xcf\x81\xcf\x87\xce\xae ( " arch\xc3\xaa " , " sovereignty , realm , magistracy " ) + - \xce\xb9\xcf\x83\xce\xbc\xcf\x8c\xcf\x82 ( " - ismos " , from the suffix - \xce\xb9\xce\xb6\xce\xb5\xce\xb9\xce\xbd , " - izein " " - izing " ) .\nhere are some\nnbsps !\n'
         out_file_obj = StringIO.StringIO()
         seg_tok = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(self.training_text_file, out_file_obj)
-        seg_tok.segment_and_tokenise(text_to_segment_tokenise)
         tuple_generator = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
         self.run_assertions(tuple_generator, expected_list_of_tuple_output, out_file_obj, expected_text_output)
 
@@ -85,7 +84,7 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
             (u'The Byzantine Empire then retained a precarious grip on the east of the country until the coming of the Arabs in the eighth century.', \
             [3, 4, 13, 14, 20, 21, 25, 26, 34, 35, 36, 37, 47, 48, 52, 53, 55, 56, 59, 60, 64, 65, 67, 68, 71, 72, 79, 80, 85, 86, 89, 90, 96, 97, 99, 100, 103, 104, 109, 110, 112, 113, 116, 117, 123, 124, 131], \
             [])]
-        expected_text_output = 'another libertarian tradition is that of unschooling and the free school in which child - led activity replaces pedagogic approaches .\nexperiments in germany led to a. s. neill founding what became summerhill school in <4-digit-integer> .\nsummerhill is often cited as an example of anarchism in practice .\nhowever , although summerhill and other free schools are radically libertarian , they differ in principle from those of ferrer by not advocating an overtly - political class struggle - approach .\nthe academy of motion picture arts and sciences itself was conceived by metro - goldwyn - mayer studio boss louis b. mayer .\nthe <1-digit-integer>st academy awards ceremony was held on thursday , may <2-digit-integer> , <4-digit-integer> , at the hotel roosevelt in hollywood to honor outstanding film achievements of <4-digit-integer> and <4-digit-integer> .\nwhen the western roman empire collapsed , berbers became independent again in many areas , while the vandals took control over other parts , where they remained until expelled by the generals of the byzantine emperor , justinian i .\nthe byzantine empire then retained a precarious grip on the east of the country until the coming of the arabs in the eighth century .\n'
+        expected_text_output = 'another libertarian tradition is that of unschooling and the free school in which child - led activity replaces pedagogic approaches .\nexperiments in germany led to a. s. neill founding what became summerhill school in <4-digit-integer> .\nsummerhill is often cited as an example of anarchism in practice .\nhowever , although summerhill and other free schools are radically libertarian , they differ in principle from those of ferrer by not advocating an overtly - political class struggle - approach .\nthe academy of motion picture arts and sciences itself was conceived by metro - goldwyn - mayer studio boss louis b. mayer .\nthe <1-digit-integer>st academy awards ceremony was held on thursday , may <2-digit-integer> , <4-digit-integer> , at the hotel roosevelt in hollywood to honor outstanding film achievements of <4-digit-integer> and <4-digit-integer> .\nwhen the western roman empire collapsed , berbers became independent again in many areas , while the vandals took control over other parts , where they remained until expelled by the generals of the byzantine emperor , justinian i.\nthe byzantine empire then retained a precarious grip on the east of the country until the coming of the arabs in the eighth century .\n'
             
         out_file_obj = StringIO.StringIO()
         seg_tok = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(self.training_text_file, out_file_obj)
