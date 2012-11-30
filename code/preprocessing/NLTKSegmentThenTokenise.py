@@ -4,13 +4,6 @@
 import nltk
 import re, sys, codecs, unicodedata, string
 
-# TODO: 
-# Refactor to output either:
-# 1: List of tuples, where the tuples correspond to the segmentation decisions of PunktSentenceTokenizer (+ hack): 
-# first item: sentence with whitespace lossily collapsed into a single space,
-# second item: list of token segmentation points, including at whitespace.
-# 2: Plain text output of segmentation points applied to sentences, as well as lowercasing and number transforms, if desired.
-
 class NLTKSegmenterPlusTokeniser():
 
     def __init__(self, infile_obj, outfile_obj):
@@ -24,15 +17,6 @@ class NLTKSegmenterPlusTokeniser():
         trainer.MIN_COLLOC_FREQ = 10
         trainer.train(self.text)
         self.sbd = nltk.tokenize.punkt.PunktSentenceTokenizer(trainer.get_params())
-
-        self._ellipses_and_whitespace_regexps = [
-                (re.compile(r'(\.\.+)', re.U), r' \1 '),
-                (re.compile(r'^(\s)+', re.U), r''),
-                (re.compile(r'(\s)+$', re.U), r''),
-                (re.compile(r'\n', re.U), r'<NEWLINE>'),
-                (re.compile(r'(\s)+', re.U), r' '),
-                (re.compile(r'(\s)*<NEWLINE>(\s)*', re.U), r'\n'),
-            ]
 
     def is_an_initial(self, word):
         if len(word) == 2 and unicodedata.category(word[0])[0] == 'L' and word[1] == u'.':
@@ -78,96 +62,12 @@ class NLTKSegmenterPlusTokeniser():
         reattached_lines.append(u' '.join(current_line))
         return reattached_lines
                 
-
-
-    def split_sentence_final_period_when_not_abbreviation(self, segmenter, sent_text):
-        i = len(sent_text) - 1
-        while unicodedata.category(sent_text[i])[0] not in 'LN':
-            i -= 1
-            if i == -1:
-                return sent_text
-        if i == len(sent_text) - 1 or sent_text[i+1] != '.':
-            return sent_text
-        period_index = i+1
-        # See if preceding token is an abbreviation.
-        while unicodedata.category(sent_text[i]) != 'Zs' and i >= 0:
-            i -= 1
-        token_index = i+1
-        abbreviations = segmenter._params.abbrev_types
-        if sent_text[token_index:period_index].lower() not in abbreviations:
-            return sent_text[0:period_index] + ' ' + sent_text[period_index:]
-        return sent_text
-
-    def space_separate_non_period_punctuation_and_regularize_digit_strings(self, line):
-        # if any chars are unicode punctuation and not periods, pad them with space,
-        # except at the beginning and end of the line, unless it is a
-        # contraction or an inter-numeric comma.
-        # replace strings of digits and commas with '<n-digit-integer>'
-        # I've traded some readability for doing it in one pass.
-
-        new_line = u''
-        last_index = 0
-        digit_length = 0
-        number_punct = False
-        if unicodedata.category(line[0]) == 'Nd':
-            digit_length = 1
-        elif unicodedata.category(line[0])[0] in 'PS' and line[0] != '.':
-            new_line +=  line[0] + u' '
-            last_index = 1
-        for i in [x+1 for x in range(len(line)-1)]:
-            if unicodedata.category(line[i]) == 'Nd':
-                # We're in a digit string.
-                if digit_length == 0:
-                    new_line += line[last_index:i]
-                last_index = i+1
-                digit_length += 1
-            else:
-                if digit_length > 0:
-                    # Either there is a period or comma in the digit string or
-                    # this ends the digit string. 
-                    if (line[i] == '.' or line[i] == ',') and i < len(line)-1 and unicodedata.category(line[i+1]) =='Nd':
-                        number_punct = True
-                    new_line += u'<' + unicode(str(digit_length)) + u'-digit-integer>'
-                    digit_length = 0
-                    last_index = i
-                if unicodedata.category(line[i])[0] in 'PS' and line[i] != '.' and not number_punct:
-                    if (line[i] == '\'' or line[i] == u'\xb4') and unicodedata.category(line[i-1])[0] == 'L' \
-                        and i < len(line)-1 and unicodedata.category(line[i+1])[0] == 'L':
-                        pass
-                    else:
-                        new_line += line[last_index:i] + u' ' + line[i] + u' '
-                        last_index = i+1
-                number_punct = False
-        new_line  += line[last_index:]
-        return new_line
-
-    def clean_up_ellipses_and_whitespace_and_make_all_lowercase(self, line):
-
-        line = line.lower()
-        for (regexp, repl) in self._ellipses_and_whitespace_regexps:
-            line = regexp.sub(repl, line)
-        return line
-
-    def segment_and_tokenise(self, text=None):
-        assert text is None or isinstance(text, unicode), text
-
-        if text == None: text = self.text
-        for line in (t for t in text.split('\n')):
-            sentences = self.sbd.sentences_from_text(line, realign_boundaries=True)
-            sentences = self.apply_ugly_hack_to_reattach_wrong_splits_in_certain_cases_with_initials(sentences)
-            for sentence in sentences:
-                sentence = self.split_sentence_final_period_when_not_abbreviation(self.sbd, sentence)
-                sentence = self.space_separate_non_period_punctuation_and_regularize_digit_strings(sentence)
-                sentence = self.clean_up_ellipses_and_whitespace_and_make_all_lowercase(sentence)
-                self.unicode_outfile_obj.write(sentence)
-                self.unicode_outfile_obj.write('\n')
-
-
     def lists_of_internal_token_boundaries_and_special_tokens(self, line):
-        # if any chars are unicode punctuation and not periods, pad them with space,
-        # except at the beginning and end of the line, unless it is a
+        # If any chars are unicode punctuation and not periods, put boundary marks around them
+        # except at the beginning and end of the line, and unless it is a
         # contraction or an inter-numeric comma.
-        # replace strings of digits and commas with '<n-digit-integer>'
+        # Also put boundaries around ellipses.
+        # Strings of digits are listed in the substitutions list with '<n-digit-integer>'
         # I've traded some readability for doing it in one pass.
 
         boundaries_set = set([])
@@ -215,80 +115,20 @@ class NLTKSegmenterPlusTokeniser():
                 if line[token_index:period_index].lower() not in abbreviations and \
                         not (token_index + 1 == period_index and unicodedata.category(line[token_index]) == 'Lu'):
                     boundaries_set.add(period_index)
+
         # Find ellipses
         ellipses_index = line.find(u'...')
         while ellipses_index != -1:
             boundaries_set.add(ellipses_index)
             ellipses_index = line.find(u'...', ellipses_index+1)
+
         boundaries_set.discard(len(line))
         boundaries = list(boundaries_set)
         boundaries.sort()
         return boundaries, special_tokens
 
-    def tokenised_textxxx(self, current_index, sentence_and_token_information):
-        text, boundaries, substitutions = sentence_and_token_information
-        
-        if len(boundaries) == 0:
-            if len(substitutions) == 0:
-                return text[current_index:]
-            else:
-                result = u' '
-                for sub in substitutions:
-                    start, length, chars = sub
-                    result += text[current_index:start] + chars
-                    current_index = start + length
-                return result + text[current_index:]
-#                    return text[current_index:start] + chars + self.tokenised_text(start+length, (text, boundaries, substitutions[1:]))
-
-        else: # boundaries is not empty
-            if len(substitutions) == 0:
-                text_index = current_index
-                result = u''
-                for boundary in boundaries:
-                    result += text[text_index:boundary]
-                    result += u' '
-                    text_index = boundary
-                return result + text[text_index:]
-            else:
-                start, length, chars = substitutions[0]
-                result = u''
-                i = 0
-                while boundaries[i] < start:
-                    result += text[current_index:boundaries[i]]
-                    result += u' '
-                    current_index = boundaries[i]
-                    i += 1
-                result += text[current_index:start]
-                result += u' '
-                result += chars
-                current_index = start + length
-                j = 1
-                while len(substitutions) > j and substitutions[j][0] < boundaries:
-                    start, length, chars = substitutions[j]
-                    result += text[current_index:start]
-                    result += chars
-                    current_index = start + length
-                    j += 1
-                if boundaries[i] == start:
-                    return result + self.tokenised_text(start+length, (text, boundaries[i+1:], substitutions[j+1:]))
-                else:
-                    return result + self.tokenised_text(start+length, (text, boundaries, substitutions[i+1:]))
-                    
-
-#                if boundaries[0] < start:
-#                    result += text[current_index:boundaries[0]]
-#                    result += u' '
-#                    return result + self.tokenised_text(boundaries[0], (text, boundaries[1:], substitutions))
-#                else:
-#                    result += text[current_index:start]
-#                    result += u' '
-#                    result += chars
-#                    if boundaries[0] == start:
-#                        return result + self.tokenised_text(start+length, (text, boundaries[1:], substitutions[1:]))
-#                    else:
-#                        return result + self.tokenised_text(start+length, (text, boundaries, substitutions[1:]))
-                    
     def tokenised_text(self, sentence_and_token_information):
+
         text, boundaries, substitutions = sentence_and_token_information
         current_index = 0
         result = u''
