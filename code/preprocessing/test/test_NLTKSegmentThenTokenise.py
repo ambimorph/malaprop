@@ -10,8 +10,11 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
     def setUpClass(self):
         self.training_text_file = open('test_data/segmenter_training', 'r')
 
-    def run_assertions(self, tuple_generator, expected_list_of_tuple_output, out_file_obj, expected_text_output):
+    def run_assertions(self, text_to_segment_tokenise, expected_list_of_tuple_output, expected_text_output):
         
+        out_file_obj = StringIO.StringIO()
+        seg_tok = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(self.training_text_file, out_file_obj)
+        tuple_generator = seg_tok.segmented_and_tokenised(text_to_segment_tokenise)
         list_output = [x for x in tuple_generator]
 
         try:
@@ -51,10 +54,7 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
            (u'Here are some', [4, 5, 8, 9], []), \
            (u'NBSPs!', [5], [])]
         expected_text_output = 'the term " anarchism " derives from the greek \xe1\xbc\x84\xce\xbd\xce\xb1\xcf\x81\xcf\x87\xce\xbf\xcf\x82 , " anarchos " , meaning " without rulers " , from the prefix \xe1\xbc\x80\xce\xbd - ( " an - " , " without " ) + \xe1\xbc\x80\xcf\x81\xcf\x87\xce\xae ( " arch\xc3\xaa " , " sovereignty , realm , magistracy " ) + - \xce\xb9\xcf\x83\xce\xbc\xcf\x8c\xcf\x82 ( " - ismos " , from the suffix - \xce\xb9\xce\xb6\xce\xb5\xce\xb9\xce\xbd , " - izein " " - izing " ) .\nhere are some\nnbsps !\n'
-        out_file_obj = StringIO.StringIO()
-        seg_tok = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(self.training_text_file, out_file_obj)
-        tuple_generator = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
-        self.run_assertions(tuple_generator, expected_list_of_tuple_output, out_file_obj, expected_text_output)
+        self.run_assertions(text_to_segment_tokenise, expected_list_of_tuple_output, expected_text_output)
 
     def test_sentence_segmentation(self):
 
@@ -86,10 +86,7 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
             [])]
         expected_text_output = 'another libertarian tradition is that of unschooling and the free school in which child - led activity replaces pedagogic approaches .\nexperiments in germany led to a. s. neill founding what became summerhill school in <4-digit-integer> .\nsummerhill is often cited as an example of anarchism in practice .\nhowever , although summerhill and other free schools are radically libertarian , they differ in principle from those of ferrer by not advocating an overtly - political class struggle - approach .\nthe academy of motion picture arts and sciences itself was conceived by metro - goldwyn - mayer studio boss louis b. mayer .\nthe <1-digit-integer>st academy awards ceremony was held on thursday , may <2-digit-integer> , <4-digit-integer> , at the hotel roosevelt in hollywood to honor outstanding film achievements of <4-digit-integer> and <4-digit-integer> .\nwhen the western roman empire collapsed , berbers became independent again in many areas , while the vandals took control over other parts , where they remained until expelled by the generals of the byzantine emperor , justinian i.\nthe byzantine empire then retained a precarious grip on the east of the country until the coming of the arabs in the eighth century .\n'
             
-        out_file_obj = StringIO.StringIO()
-        seg_tok = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(self.training_text_file, out_file_obj)
-        tuple_generator = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
-        self.run_assertions(tuple_generator, expected_list_of_tuple_output, out_file_obj, expected_text_output)
+        self.run_assertions(text_to_segment_tokenise, expected_list_of_tuple_output, expected_text_output)
 
 
     def test_quotations_and_multiple_punctuation(self):
@@ -109,10 +106,8 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
             [3, 4, 10, 11, 16, 17, 19, 20, 30, 31, 40, 41, 43, 44, 52, 53, 54, 57, 58, 64, 65, 73, 74, 76, 77, 85, 86, 87, 90, 91, 95, 96, 102, 103, 105, 106, 109, 110, 118, 119, 130, 131, 135, 136, 143, 144, 149, 150, 151, 156, 157, 161, 162, 163, 166, 167, 172, 173, 179, 180, 187, 188, 195, 196, 199, 200, 205, 206, 207, 210, 211, 215, 216, 219, 220, 224, 225, 230, 231, 233, 234, 242, 243, 244, 246, 247, 253, 254, 257, 258, 266, 267, 270, 271, 276, 277, 287, 288, 289, 297, 298, 302, 303, 306, 307, 313, 314, 317, 318, 319, 327, 328, 330, 331, 334, 335, 347, 348, 350, 351, 353, 354, 359, 360, 365, 366, 373, 374, 376, 377, 380, 381, 388, 389], \
             [])]
         expected_text_output = 'accordingly , " libertarian socialism " is sometimes used as a synonym for socialist anarchism , to distinguish it from " individualist libertarianism " ( individualist anarchism ) .\non the other hand , some use " libertarianism " to refer to individualistic free - market philosophy only , referring to free - market anarchism as " libertarian anarchism . "\n'+"citizens can oppose a decision ( ' besluit ' ) made by a public body ( ' bestuursorgaan ' ) within the administration\nthe treaty could be considered unpopular in scotland : sir george lockhart of carnwath , the only member of the scottish negotiating team against union , noted that ` the whole nation appears against the union ' and even sir john clerk of penicuik , an ardent pro - unionist and union negotiator , observed that the treaty was ` contrary to the inclinations of at least three - fourths of the kingdom ' .\n"
-        out_file_obj = StringIO.StringIO()
-        seg_tok = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(self.training_text_file, out_file_obj)
-        tuple_generator = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
-        self.run_assertions(tuple_generator, expected_list_of_tuple_output, out_file_obj, expected_text_output)
+
+        self.run_assertions(text_to_segment_tokenise, expected_list_of_tuple_output, expected_text_output)
 
     def test_ints_with_or_without_following_punctuation(self):
         text_to_segment_tokenise = u'Hidehiko Shimizu (born 4 November 1954) is a former Japanese football player. He has played for Nissan Motors.'
@@ -124,37 +119,26 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
             [2, 3, 6, 7, 13, 14, 17, 18, 24, 25, 31], \
             [])]
         expected_text_output = 'hidehiko shimizu ( born <1-digit-integer> november <4-digit-integer> ) is a former japanese football player .\nhe has played for nissan motors .\n'
-        out_file_obj = StringIO.StringIO()
-        seg_tok = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(self.training_text_file, out_file_obj)
-        tuple_generator = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
-        self.run_assertions(tuple_generator, expected_list_of_tuple_output, out_file_obj, expected_text_output)
+
+        self.run_assertions(text_to_segment_tokenise, expected_list_of_tuple_output, expected_text_output)
 
     def test_end_of_document(self):
         text_to_segment_tokenise = u'---END.OF.DOCUMENT---'
         expected_list_of_tuple_output = [(u'---END.OF.DOCUMENT---', [1, 2, 3, 18, 19, 20], [])]
         expected_text_output = '- - - end.of.document - - -\n'
-        out_file_obj = StringIO.StringIO()
-        seg_tok = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(self.training_text_file, out_file_obj)
-        tuple_generator = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
-        self.run_assertions(tuple_generator, expected_list_of_tuple_output, out_file_obj, expected_text_output)
+        self.run_assertions(text_to_segment_tokenise, expected_list_of_tuple_output, expected_text_output)
 
     def test_elipses(self):
         text_to_segment_tokenise = u"Elipses here... and there..."
         expected_list_of_tuple_output = [(u"Elipses here... and there...", [7, 8, 12, 15, 16, 19, 20, 25], [])]
         expected_text_output = 'elipses here ... and there ...\n'
-        out_file_obj = StringIO.StringIO()
-        seg_tok = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(self.training_text_file, out_file_obj)
-        tuple_generator = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
-        self.run_assertions(tuple_generator, expected_list_of_tuple_output, out_file_obj, expected_text_output)
+        self.run_assertions(text_to_segment_tokenise, expected_list_of_tuple_output, expected_text_output)
 
     def test_single_quotes(self):
         text_to_segment_tokenise = u"this 'could' be"
         expected_list_of_tuple_output = [(u"this 'could' be", [4, 5, 6, 11, 12, 13], [])]
         expected_text_output = 'this \' could \' be\n'
-        out_file_obj = StringIO.StringIO()
-        seg_tok = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(self.training_text_file, out_file_obj)
-        tuple_generator = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
-        self.run_assertions(tuple_generator, expected_list_of_tuple_output, out_file_obj, expected_text_output)
+        self.run_assertions(text_to_segment_tokenise, expected_list_of_tuple_output, expected_text_output)
 
     def test_mid_word(self):
         text_to_segment_tokenise = u'a line-or-three or 100,000.1 lines.  This&that.\nH. Amber Wilcox-O\'Hearn\n'+"They're his, not my brother's.\n3m/s"
@@ -167,21 +151,13 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
             (u"They're his, not my brother's.", [7, 8, 11, 12, 13, 16, 17, 19, 20, 29], []), \
             (u"3m/s", [2, 3], [(0, 1, u'<1-digit-integer>')])]
         expected_text_output = 'a line - or - three or <3-digit-integer>,<3-digit-integer>.<1-digit-integer> lines .\nthis & that .\nh. amber wilcox - o\'hearn\nthey\'re his , not my brother\'s .\n<1-digit-integer>m / s\n'
-        out_file_obj = StringIO.StringIO()
-        seg_tok = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(self.training_text_file, out_file_obj)
-        tuple_generator = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
-        self.run_assertions(tuple_generator, expected_list_of_tuple_output, out_file_obj, expected_text_output)
+        self.run_assertions(text_to_segment_tokenise, expected_list_of_tuple_output, expected_text_output)
 
     def test_multiple_substitutions_at_the_end(self):
         text_to_segment_tokenise = u'What about 100,000'
         expected_list_of_tuple_output = [(u'What about 100,000', [4, 5, 10, 11], [(11, 3, u'<3-digit-integer>'), (15, 3, u'<3-digit-integer>')])]
         expected_text_output = 'what about <3-digit-integer>,<3-digit-integer>\n'
-        out_file_obj = StringIO.StringIO()
-        seg_tok = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(self.training_text_file, out_file_obj)
-        tuple_generator = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
-        self.run_assertions(tuple_generator, expected_list_of_tuple_output, out_file_obj, expected_text_output)
-        
-
+        self.run_assertions(text_to_segment_tokenise, expected_list_of_tuple_output, expected_text_output)
 
     def test_sentence_final_punctuation(self):
         text_to_segment_tokenise = u'Finally.\nFinally?\nFinally!'
@@ -190,29 +166,20 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
             (u'Finally?', [7], []),
             (u'Finally!', [7], [])]
         expected_text_output = 'finally .\nfinally ?\nfinally !\n'
-        out_file_obj = StringIO.StringIO()
-        seg_tok = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(self.training_text_file, out_file_obj)
-        tuple_generator = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
-        self.run_assertions(tuple_generator, expected_list_of_tuple_output, out_file_obj, expected_text_output)
+        self.run_assertions(text_to_segment_tokenise, expected_list_of_tuple_output, expected_text_output)
 
     def test_dollar_percent_and_strings_of_consecutive_numbers(self):
         text_to_segment_tokenise = u"$1.50, 30%"
         expected_list_of_tuple_output = [(u"$1.50, 30%", [1, 5, 6, 7, 9], \
              [(1, 1, u'<1-digit-integer>'), (3, 2, u'<2-digit-integer>'), (7, 2, u'<2-digit-integer>')])]
         expected_text_output = '$ <1-digit-integer>.<2-digit-integer> , <2-digit-integer> %\n'
-        out_file_obj = StringIO.StringIO()
-        seg_tok = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(self.training_text_file, out_file_obj)
-        tuple_generator = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
-        self.run_assertions(tuple_generator, expected_list_of_tuple_output, out_file_obj, expected_text_output)
+        self.run_assertions(text_to_segment_tokenise, expected_list_of_tuple_output, expected_text_output)
 
     def test_line_starts_with_punct_or_number(self):
         text_to_segment_tokenise = u'"This 34.\n'
         expected_list_of_tuple_output = [(u'"This 34.', [1, 5, 6, 8], [(6, 2, u'<2-digit-integer>')])]
         expected_text_output = '" this <2-digit-integer> .\n'
-        out_file_obj = StringIO.StringIO()
-        seg_tok = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(self.training_text_file, out_file_obj)
-        tuple_generator = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
-        self.run_assertions(tuple_generator, expected_list_of_tuple_output, out_file_obj, expected_text_output)
+        self.run_assertions(text_to_segment_tokenise, expected_list_of_tuple_output, expected_text_output)
 
     def test_abbreviations(self):
         # This is, of course, incorrectly segmented, but correctly characterises the behaviour of the segmenter.
@@ -222,19 +189,13 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
             [3, 4, 11, 12, 15, 16, 19, 20, 24, 25, 27, 28, 31, 32, 36, 37, 38, 41, 42, 45, 46, 50, 51, 57, 58], \
             [])]
         expected_text_output = 'mr. shimizu was not born in the u.s. " you are just joking . "\n'
-        out_file_obj = StringIO.StringIO()
-        seg_tok = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(self.training_text_file, out_file_obj)
-        tuple_generator = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
-        self.run_assertions(tuple_generator, expected_list_of_tuple_output, out_file_obj, expected_text_output)
+        self.run_assertions(text_to_segment_tokenise, expected_list_of_tuple_output, expected_text_output)
 
     def test_initials(self):
         text_to_segment_tokenise = u'Neither was J. S. Bach.'
         expected_list_of_tuple_output = [(u'Neither was J. S. Bach.', [7, 8, 11, 12, 14, 15, 17, 18, 22], [])]
         expected_text_output = 'neither was j. s. bach .\n'
-        out_file_obj = StringIO.StringIO()
-        seg_tok = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(self.training_text_file, out_file_obj)
-        tuple_generator = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
-        self.run_assertions(tuple_generator, expected_list_of_tuple_output, out_file_obj, expected_text_output)
+        self.run_assertions(text_to_segment_tokenise, expected_list_of_tuple_output, expected_text_output)
 
     def test_multiple_spaces_space_at_beginning_of_line(self):
         text_to_segment_tokenise = u'Extra  spaces     here \n and here'
@@ -242,19 +203,13 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
             (u'Extra spaces here', [5, 6, 12, 13], []), \
             (u'and here', [3, 4], [])]
         expected_text_output = 'extra spaces here\nand here\n'
-        out_file_obj = StringIO.StringIO()
-        seg_tok = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(self.training_text_file, out_file_obj)
-        tuple_generator = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
-        self.run_assertions(tuple_generator, expected_list_of_tuple_output, out_file_obj, expected_text_output)
+        self.run_assertions(text_to_segment_tokenise, expected_list_of_tuple_output, expected_text_output)
         
     def test_suffixes(self):
         text_to_segment_tokenise = u'Don\'t keep this together: -suffix'
         expected_list_of_tuple_output = [(u'Don\'t keep this together: -suffix', [5, 6, 10, 11, 15, 16, 24, 25, 26, 27], [])]
         expected_text_output = 'don\'t keep this together : - suffix\n'
-        out_file_obj = StringIO.StringIO()
-        seg_tok = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(self.training_text_file, out_file_obj)
-        tuple_generator = seg_tok.segmented_and_tokenised(text_to_segment_tokenise, file_output=True)
-        self.run_assertions(tuple_generator, expected_list_of_tuple_output, out_file_obj, expected_text_output)
+        self.run_assertions(text_to_segment_tokenise, expected_list_of_tuple_output, expected_text_output)
 
 
 if __name__ == '__main__':

@@ -179,7 +179,7 @@ class NLTKSegmenterPlusTokeniser():
            
                     
 
-    def segmented_and_tokenised(self, text=None, file_output=False):
+    def segmented_and_tokenised(self, text=None, file_output=True):
         assert text is None or isinstance(text, unicode), text
         if text == None: text = self.text
         for line in (t for t in text.split('\n')):
@@ -198,4 +198,5 @@ class NLTKSegmenterPlusTokeniser():
 if __name__ == '__main__':
 
     st = NLTKSegmenterPlusTokeniser(sys.stdin, sys.stdout)
-    st.segment_and_tokenise()
+    for sti in st.segmented_and_tokenised():
+        pass
