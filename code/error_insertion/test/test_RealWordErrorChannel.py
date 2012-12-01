@@ -16,11 +16,15 @@ class RealWordErrorChannelTest(unittest.TestCase):
         self.real_word_error_channel = RealWordErrorChannel.RealWordErrorChannel(text_to_corrupt, vocab_file, corrupted, p, None)
 
     def test_real_words(self):
-        test_word = u'xxxx'
+        test_word = u'with'
+        assert self.real_word_error_channel.is_real_word(test_word), test_word
+        test_word = u'end.of.document'
         assert self.real_word_error_channel.is_real_word(test_word), test_word
         test_word = u'xxxx'
-        assert self.real_word_error_channel.is_real_word(test_word), test_word
-        test_word = u'xxxx'
+        assert not self.real_word_error_channel.is_real_word(test_word), test_word
+        test_word = u'-'
+        assert not self.real_word_error_channel.is_real_word(test_word), test_word
+        test_word = u'.'
         assert not self.real_word_error_channel.is_real_word(test_word), test_word
 
     def test_symbols(self):

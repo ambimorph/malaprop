@@ -2,10 +2,12 @@
 # RealWordErrorChannel.py
 
 import NLTKSegmentThenTokenise
+import codecs, unicodedata
 
 class RealWordErrorChannel():
 
     def __init__(self, segmenter_training_text_infile_obj, vocabfile_obj, outfile_obj, p, random_seed):
+        self.unicode_vocabfile_obj = codecs.getreader('utf-8')(vocabfile_obj)
         self.real_words, self.symbols = self.get_real_words_and_symbols()
         # Pass infile through NLTKSegmentThenTokenise to train
         self.p = p
@@ -21,6 +23,21 @@ class RealWordErrorChannel():
         # add item to real_words and symbols to symbols
         real_words = set([])
         symbols = set([])
+        for line in self.unicode_vocabfile_obj.readlines():
+            word = line.strip()
+            contains_letters = False
+            real_word = True
+            for char in word:
+                if unicodedata.category(char)[0] == 'L':
+                    contains_letters = True
+                elif char != u'.' and char != u"'":
+                    real_word = False
+                    break
+            if not contains_letters: real_word = False
+            if real_word:
+                real_words.add(word)
+                symbols.update(set(word))
+
         symbols = list(symbols)
         return real_words, symbols
         
