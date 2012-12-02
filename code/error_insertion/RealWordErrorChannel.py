@@ -128,10 +128,42 @@ class RealWordErrorChannel():
 
     def pass_sentence_through_channel(self, (original, boundaries, substitutions), random_number_generator=None):
         # Use boundaries to find tokens
-        # If there are no substitutions within the token, pass it through the channel first,
-        # else just write it out.
+        # If there are no substitutions within the token, lowercase it and pass it through the channel.
+        # If it is replaced, recase it if necessary
+        # else just put original token.
+        # (u'Experiments in Germany led to A. S. Neill founding what became Summerhill School in 1921.', \
+        #   [11, 12, 14, 15, 22, 23, 26, 27, 29, 30, 32, 33, 35, 36, 41, 42, 50, 51, 55, 56, 62, 63, 73, 74, 80, 81, 83, 84, 88], \
+        #   [(84, 4, u'<4-digit-integer>')])
         if random_number_generator == None: random_number_generator = self.random_number_generator
         assert type(random_number_generator) is random.Random, random_number_generator
+        result = u''
+        substitution_indices = [sub[0] for sub in substitutions]
+        tokens_containing_subs = []
+        for sub_index in substitution_indices:
+            if boundaries[0] > sub_index:
+                tokens_containing_subs.append(0)
+            else:
+                tokens_containing_subs.append(max([x for x in boundaries if x <= sub_index]))
+        last_boundary = 0
+        for next_boundary in boundaries + [len(original)]:
+            current_token = original[last_boundary:next_boundary]
+            current_token_is_title = current_token.istitle()
+            current_token_is_upper = current_token.isupper()
+            if last_boundary in tokens_containing_subs:
+                result += current_token
+            else:
+                passed_token = self.pass_token_through_channel(current_token, random_number_generator=random_number_generator)
+                if passed_token == current_token:
+                    result += passed_token
+                elif current_token_is_title:
+                    result += passed_token.title()
+                elif current_token_is_upper:
+                    result += passed_token.upper()
+                else:
+                    result += passed_token
+            last_boundary = next_boundary
+            
+        return result
 
     def pass_file_through_channel(self, text=None, random_number_generator=None):
         assert text is None or isinstance(text, unicode), text

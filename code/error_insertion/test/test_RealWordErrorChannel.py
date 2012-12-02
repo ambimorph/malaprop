@@ -12,9 +12,9 @@ class RealWordErrorChannelTest(unittest.TestCase):
     def setUpClass(self):
         text_to_corrupt = open('test_data/text_to_corrupt', 'rb')
         vocab_file = open('test_data/1K_test_vocab', 'rb')
-        corrupted = open('/tmp/test_error_corpus', 'wb')
+        self.corrupted = StringIO.StringIO()
         p = .3
-        self.real_word_error_channel = RealWordErrorChannel.RealWordErrorChannel(text_to_corrupt, vocab_file, corrupted, p, None)
+        self.real_word_error_channel = RealWordErrorChannel.RealWordErrorChannel(text_to_corrupt, vocab_file, self.corrupted, p, None)
 
     def test_real_words(self):
         for test_word in [u'with', u'end.of.document', u'don\'t']:
@@ -140,25 +140,64 @@ class RealWordErrorChannelTest(unittest.TestCase):
 
     def test_pass_sentence_through_channel(self):
         r = random.Random(999)
-        sentence_and_token_information = \
+        sentences = [ \
             (u'Experiments in Germany led to A. S. Neill founding what became Summerhill School in 1921.', \
             [11, 12, 14, 15, 22, 23, 26, 27, 29, 30, 32, 33, 35, 36, 41, 42, 50, 51, 55, 56, 62, 63, 73, 74, 80, 81, 83, 84, 88], \
-            [(84, 4, u'<4-digit-integer>')])
-        out_file_obj = StringIO.StringIO()
-        self.real_word_error_channel.pass_sentence_through_channel(sentence_and_token_information, random_number_generator=r)
-        expected_text_output = u'xxxxxxxxxxxx'
-        assert isinstance(out_file_obj.getvalue(), str), (type(out_file_obj.getvalue()), repr(out_file_obj.getvalue()))
-        try:
-            assert out_file_obj.getvalue() == expected_text_output
-        except AssertionError, exp:
-            i = 0
-            x = out_file_obj.getvalue()
-            for i in range(len(x)):
-                if i >= len(expected_text_output) or x[i] != expected_text_output[i]: break
-            print '\nMatching prefix of output and expected output: ', repr(x[:i])
-            print '\noutput differs starting here: ', repr(x[i:])
-            print '\nexpected: ', repr(expected_text_output[i:])
-            raise exp
+            [(84, 4, u'<4-digit-integer>')]), \
+            (u'Overt symptoms gradually begin after the age of six months, become established by age two or three years, and tend to continue through adulthood, although often in more muted form.', \
+            [5, 6, 14, 15, 24, 25, 30, 31, 36, 37, 40, 41, 44, 45, 47, 48, 51, 52, 58, 59, 60, 66, 67, 78, 79, 81, 82, 85, 86, 89, 90, 92, 93, 98, 99, 104, 105, 106, 109, 110, 114, 115, 117, 118, 126, 127, 134, 135, 144, 145, 146, 154, 155, 160, 161, 163, 164, 168, 169, 174, 175, 179], [])]
+        expected_results = [[\
+                (13, u'Experiments in Germany led to A. S. Neill founding what became Summerhill School i 1921.'), \
+                (19, u'Experiments i Germany led to A. S. Neill founding what became Summerhill School in 1921.'), \
+                (21, u'Experiments i Germany led to A. S. Neill founding what became Summerhill School in 1921.'), \
+                (27, u'Experiments in Germany led to A. S. Neill founding what became Summerhill School i 1921.'), \
+                (32, u'Experiments a Germany led to A. S. Neill founding what became Summerhill School in 1921.'), \
+                (40, u'Experiments i Germany led to A. S. Neill founding what became Summerhill School in 1921.'), \
+                (41, u'Experiments in Germany led t A. S. Neill founding what became Summerhill School i 1921.'), \
+                (46, u'Experiments in Germany led t A. S. Neill founding what became Summerhill School in 1921.'), \
+                (48, u'Experiments i Germany led to A. S. Neill founding what became Summerhill School in 1921.') ], \
+               [(0, u'Overt symptoms gradually begin after the age off six months, become established by age two or three years, and tend to continue through adulthood, although often in more muted form.'), \
+                (2, u'Overt symptoms gradually begin after the age of six months, become established by age two on three years, and tend to continue through adulthood, although often in more muted form.'), \
+                (3, u'Overt symptoms gradually begin after the age of six months, become established by age two or three years, and tend to continue through adulthood, although often in more muted for.'), \
+                (4, u'Overt symptoms gradually begin after the age of six months, become established by age two or three years, hand tend to continue through adulthood, although often in more muted form.'), \
+                (8, u'Overt symptoms gradually begin after the age of six months, become established by age two or three years, and tend t continue through adulthood, although often in more muted form.'), \
+                (9, u'Overt symptoms gradually begin after the age of six months, become established by age two or three years, and tend t continue through adulthood, although often win more muted form.'), \
+                (11, u'Overt symptoms gradually begin after the age of six months, become established by age two or three years, and tend low continue through adulthood, although often in more muted form.'), \
+                (13, u'Overt symptoms gradually begin after the age of six months, become established by age two or three year, and tend t continue through adulthood, although often in more muted form.'), \
+                (15, u'Overt symptoms gradually begin after the age of six months, become established by age two or three years, and tend to continue through adulthood, although often in more muted from.'), \
+                (21, u'Overt symptoms gradually begin after the age of six months, become established by age two or three years, and tend to continue through adulthood, although often i more muted form.'), \
+                (24, u'Overt symptoms gradually begin after the age of six months, become established by age to or three years, and tend to continue through adulthood, although often in more muted form.'), \
+                (28, u'Overt symptoms gradually begin after the age of six months, become established b age two or three years, and tend to continue through adulthood, although often in more muted form.'), \
+                (30, u'Overt symptoms gradually begin after the age of six months, become established b age two or three years, and tend to continue through adulthood, although often in more muted form.'), \
+                (31, u'Overt symptoms gradually begin after the age of six months, become established by age two or three years, an tend to continue through adulthood, although often in more muted form.'), \
+                (32, u'Overt symptoms gradually begin after the age of six months, become established by age two or three years, and tend to continue through adulthood, although often in more muted from.'), \
+                (33, u'Overt symptoms gradually begin after the age of six months, become established by age two or three years, and tend t continue through adulthood, although often in more muted form.'), \
+                (36, u'Overt symptoms gradually begin after the age of six months, become established by age two or three years, and tend t continue through adulthood, although often in more muted form.'), \
+                (37, u'Overt symptoms gradually begin after the age of six months, become established by age to or three years, and tend to continue through adulthood, although often in more muted form.'), \
+                (40, u'Overt symptoms gradually begin after the age of six months, become established by age two or three years, and tend to continue through adulthood, although often i more muted form.'), \
+                (46, u'Overt symptoms gradually begin after the age of six months, become established by age two or three years, and tend to continue through adulthood, although often i more muted form.')]]
+                                
+        for i in range(len(sentences)):
+            sentence_and_token_information = sentences[i]
+            expected = expected_results[i]
+            results = []
+            for i in range(50):
+                result = self.real_word_error_channel.pass_sentence_through_channel(sentence_and_token_information, random_number_generator=r)
+                if result != sentence_and_token_information[0]:
+                    results.append((i, result))
+#            for res in results: print res
+
+            try:
+                assert results == expected
+            except AssertionError, exp:
+                print sentence_and_token_information[0]
+                for res in results: print res
+                for i in range(len(results)):
+                    if results[i] == expected[i]:
+                        print '\nMatched: ', results[i]
+                    else:
+                        print '\nDid not match: \nGot: ', results[i], '\nExpected: ', expected[i]
+                raise exp
 
     def test_pass_file_through_channel(self):
         r = random.Random(999)
