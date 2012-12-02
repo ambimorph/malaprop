@@ -49,29 +49,27 @@ class RealWordErrorChannel():
     def is_real_word(self, token):
         return token in self.real_words
 
-    def create_error_with_probability_p(self, left_char, right_char, p=None, random_number_generator=None):
+    def create_error_with_probability_p(self, left_char, right_char, p=None):
         assert not (left_char == u'' and right_char == u'')
         if p == None: p = self.p
-        if random_number_generator == None: random_number_generator = self.random_number_generator
-        assert type(random_number_generator) is random.Random, random_number_generator
 
-        if random_number_generator.random() < p: # create an error
+        if self.random_number_generator.random() < p: # create an error
             # 0 = Insertion, 1 = Deletion, 2 = Substitution, 3 = Transposition
 
             if left_char == u'': # No transposition
-                error_type = random_number_generator.randrange(3)
+                error_type = self.random_number_generator.randrange(3)
             elif right_char == u'': # Insertion only
                 error_type = 0
             else:
-                error_type = random_number_generator.randrange(4)
+                error_type = self.random_number_generator.randrange(4)
             
             if error_type == 0: # print "insertion!"
-                symbol_to_insert = random_number_generator.choice(self.symbols)
+                symbol_to_insert = self.random_number_generator.choice(self.symbols)
                 return left_char + symbol_to_insert + right_char
             elif error_type == 1: # print "deletion!"
                 return left_char
             elif error_type == 2: # print "substitution!"
-                symbol_to_sub = random_number_generator.choice(self.symbols)
+                symbol_to_sub = self.random_number_generator.choice(self.symbols)
                 return left_char + symbol_to_sub
             else: # print "transposition!"
                 return right_char + left_char
@@ -79,12 +77,10 @@ class RealWordErrorChannel():
         else: # print "no error added!"
             return left_char + right_char
 
-    def pass_token_through_channel(self, token, random_number_generator=None):
+    def pass_token_through_channel(self, token):
         # If token is a real word, pass each pair of chars through insert_error, else return original
         # if result is a real word, return it (possibly re-uppering), else return original
         # Update real_word_errors, real_word_tokens_passed_though, mean_errors_per_word, max_errors_per_word
-        if random_number_generator == None: random_number_generator = self.random_number_generator
-        assert type(random_number_generator) is random.Random, random_number_generator
         assert len(token) > 0, token
         if not self.is_real_word(token):
             return token
@@ -94,7 +90,7 @@ class RealWordErrorChannel():
         left_char = u''
         right_char = remaining_chars.pop(0)
         while len(remaining_chars) > 0:
-            temp = self.create_error_with_probability_p(left_char, right_char, random_number_generator=random_number_generator)
+            temp = self.create_error_with_probability_p(left_char, right_char)
             if temp != left_char + right_char: number_of_errors_so_far += 1
             if len(temp) == 1:
                 left_char = temp
@@ -108,13 +104,13 @@ class RealWordErrorChannel():
                 left_char = temp[1]
                 right_char = temp[2]
 
-        temp = self.create_error_with_probability_p(left_char, right_char, random_number_generator=random_number_generator)
+        temp = self.create_error_with_probability_p(left_char, right_char)
         if temp != left_char + right_char: number_of_errors_so_far += 1
         while len(temp) == 2:
             result += temp[0]
             left_char = temp[1]
             right_char = u''
-            temp = self.create_error_with_probability_p(left_char, right_char, random_number_generator=random_number_generator)
+            temp = self.create_error_with_probability_p(left_char, right_char)
             if temp != left_char + right_char: number_of_errors_so_far += 1
 
         result += temp
@@ -127,13 +123,11 @@ class RealWordErrorChannel():
             return result
         return token
 
-    def pass_sentence_through_channel(self, (original, boundaries, substitutions), random_number_generator=None):
+    def pass_sentence_through_channel(self, (original, boundaries, substitutions)):
         # Use boundaries to find tokens
         # If there are no substitutions within the token, lowercase it and pass it through the channel.
         # If it is replaced, recase it if necessary
         # else just put original token.
-        if random_number_generator == None: random_number_generator = self.random_number_generator
-        assert type(random_number_generator) is random.Random, random_number_generator
         result = u''
         substitution_indices = [sub[0] for sub in substitutions]
         tokens_containing_subs = []
@@ -150,7 +144,7 @@ class RealWordErrorChannel():
             if last_boundary in tokens_containing_subs:
                 result += current_token
             else:
-                passed_token = self.pass_token_through_channel(current_token, random_number_generator=random_number_generator)
+                passed_token = self.pass_token_through_channel(current_token)
                 if passed_token == current_token:
                     result += passed_token
                 elif current_token_is_title:
@@ -163,15 +157,13 @@ class RealWordErrorChannel():
             
         return result
 
-    def pass_file_through_channel(self, text=None, random_number_generator=None):
+    def pass_file_through_channel(self, text=None):
         assert text is None or isinstance(text, unicode), text
         if text == None: text = self.text 
-        if random_number_generator == None: random_number_generator = self.random_number_generator
-        assert type(random_number_generator) is random.Random, random_number_generator
 
         sentence_info_generator = self.segmenter_tokeniser.segmented_and_tokenised(text, file_output=False)
         for sentence in sentence_info_generator:
-            possibly_erroneous_sentence = self.pass_sentence_through_channel(sentence, random_number_generator=random_number_generator)
+            possibly_erroneous_sentence = self.pass_sentence_through_channel(sentence)
             self.unicode_outfile_obj.write(possibly_erroneous_sentence + u'\n')
 
         if self.real_word_tokens_passed_though == 0: 

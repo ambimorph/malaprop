@@ -14,7 +14,8 @@ class RealWordErrorChannelTest(unittest.TestCase):
         vocab_file = open('test_data/1K_test_vocab', 'rb')
         self.corrupted = StringIO.StringIO()
         p = .3
-        self.real_word_error_channel = RealWordErrorChannel.RealWordErrorChannel(text_to_corrupt, vocab_file, self.corrupted, p, None)
+        r = random.Random(999)
+        self.real_word_error_channel = RealWordErrorChannel.RealWordErrorChannel(text_to_corrupt, vocab_file, self.corrupted, p, r)
 
     def test_real_words(self):
         for test_word in [u'with', u'end.of.document', u'don\'t']:
@@ -29,34 +30,34 @@ class RealWordErrorChannelTest(unittest.TestCase):
             assert test_symbol not in self.real_word_error_channel.symbols, test_symbol
 
     def test_create_error_with_probability_p(self):
-        r = random.Random(999)
+        self.real_word_error_channel.random_number_generator = random.Random(999)
 
-        result = self.real_word_error_channel.create_error_with_probability_p(u'', u'a', 1, random_number_generator=r)
+        result = self.real_word_error_channel.create_error_with_probability_p(u'', u'a', 1)
         expected_result = u'va'
         assert result == expected_result, u'Expected ' + expected_result + ', but got ' + result
 
-        result = self.real_word_error_channel.create_error_with_probability_p(u'', u'a', .1, random_number_generator=r)
+        result = self.real_word_error_channel.create_error_with_probability_p(u'', u'a', .1)
         expected_result = u'a'
         assert result == expected_result, u'Expected ' + expected_result + ', but got ' + result
 
-        result = self.real_word_error_channel.create_error_with_probability_p(u's', u'a', 1, random_number_generator=r)
+        result = self.real_word_error_channel.create_error_with_probability_p(u's', u'a', 1)
         expected_result = u'sta'
         assert result == expected_result, u'Expected ' + expected_result + ', but got ' + result
 
-        result = self.real_word_error_channel.create_error_with_probability_p(u's', u'', 1, random_number_generator=r)
+        result = self.real_word_error_channel.create_error_with_probability_p(u's', u'', 1)
         expected_result = u'st'
         assert result == expected_result, u'Expected ' + expected_result + ', but got ' + result
 
     def test_pass_token_through_channel(self):
 
-        r = random.Random(999)
+        self.real_word_error_channel.random_number_generator = random.Random(999)
         self.real_word_error_channel.reset_stats()
 
         test_tokens = [u'an', u'and', u'the', u'there', u'late', u'"']
         results = []
         for token in test_tokens:
             for i in range(500):
-                result = self.real_word_error_channel.pass_token_through_channel(token, random_number_generator=r)
+                result = self.real_word_error_channel.pass_token_through_channel(token)
                 if result != token:
                     results.append(token + ' ' + str(i) + ' ' + result + ' ' + str(self.real_word_error_channel.real_word_errors) + ' ' + \
                          str(self.real_word_error_channel.real_word_tokens_passed_though) + ' ' + \
@@ -139,7 +140,7 @@ class RealWordErrorChannelTest(unittest.TestCase):
 
 
     def test_pass_sentence_through_channel(self):
-        r = random.Random(999)
+        self.real_word_error_channel.random_number_generator = random.Random(999)
         sentences = [ \
             (u'Experiments in Germany led to A. S. Neill founding what became Summerhill School in 1921.', \
             [11, 12, 14, 15, 22, 23, 26, 27, 29, 30, 32, 33, 35, 36, 41, 42, 50, 51, 55, 56, 62, 63, 73, 74, 80, 81, 83, 84, 88], \
@@ -182,7 +183,7 @@ class RealWordErrorChannelTest(unittest.TestCase):
             expected = expected_results[i]
             results = []
             for i in range(50):
-                result = self.real_word_error_channel.pass_sentence_through_channel(sentence_and_token_information, random_number_generator=r)
+                result = self.real_word_error_channel.pass_sentence_through_channel(sentence_and_token_information)
                 if result != sentence_and_token_information[0]:
                     results.append((i, result))
 
@@ -199,7 +200,7 @@ class RealWordErrorChannelTest(unittest.TestCase):
                 raise exp
 
     def test_pass_file_through_channel(self):
-        r = random.Random(999)
+        self.real_word_error_channel.random_number_generator = random.Random(999)
         self.real_word_error_channel.reset_stats()
         text_to_create_errors_in = u'Autism.\nAutism is a disorder of neural development characterized by impaired social interaction and communication, and by restricted and repetitive behavior. These signs all begin before a child is three years old. Autism affects information processing in the brain by altering how nerve cells and their synapses connect and organize; how this occurs is not well understood. The two other autism spectrum disorders (ASD) are Asperger syndrome, which lacks delays in cognitive development and language, and PDD-NOS, diagnosed when full criteria for the other two disorders are not met.\nAutism has a strong genetic basis, although the genetics of autism are complex and it is unclear whether ASD is explained more by rare mutations, or by rare combinations of common genetic variants. In rare cases, autism is strongly associated with agents that cause birth defects. Controversies surround other proposed environmental causes, such as heavy metals, pesticides or childhood vaccines; the vaccine hypotheses are biologically implausible and lack convincing scientific evidence. The prevalence of autism is about 1–2 per 1,000 people; the prevalence of ASD is about 6 per 1,000, with about four times as many males as females. The number of people diagnosed with autism has increased dramatically since the 1980s, partly due to changes in diagnostic practice; the question of whether actual prevalence has increased is unresolved.\nParents usually notice signs in the first two years of their child\'s life. The signs usually develop gradually, but some autistic children first develop more normally and then regress. Although early behavioral or cognitive intervention can help autistic children gain self-care, social, and communication skills, there is no known cure. Not many children with autism live independently after reaching adulthood, though some become successful. An autistic culture has developed, with some individuals seeking a cure and others believing autism should be tolerated as a difference and not treated as a disorder.'
 
@@ -209,7 +210,7 @@ class RealWordErrorChannelTest(unittest.TestCase):
         expected_mean_errors_per_word = 1.66666666667
         expected_max_errors_per_word = 3
 
-        error_rate, mean_errors_per_word, max_errors_per_word = self.real_word_error_channel.pass_file_through_channel(text=text_to_create_errors_in, random_number_generator=r)
+        error_rate, mean_errors_per_word, max_errors_per_word = self.real_word_error_channel.pass_file_through_channel(text=text_to_create_errors_in)
         
         print error_rate, mean_errors_per_word, max_errors_per_word
         print self.real_word_error_channel.real_word_tokens_passed_though
