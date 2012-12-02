@@ -50,11 +50,7 @@ class RealWordErrorChannelTest(unittest.TestCase):
     def test_pass_token_through_channel(self):
 
         r = random.Random(999)
-        self.real_word_error_channel.real_word_errors = 0.0
-        self.real_word_error_channel.real_word_tokens_passed_though = 0.0
-        self.real_word_error_channel.mean_errors_per_word = 0.0
-        self.real_word_error_channel.max_errors_per_word = 0.0
-#        self.real_word_error_channel.reset_stats()
+        self.real_word_error_channel.reset_stats()
 
         test_tokens = [u'an', u'and', u'the', u'there', u'late', u'"']
         results = []
