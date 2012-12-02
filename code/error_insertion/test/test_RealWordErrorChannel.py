@@ -50,10 +50,11 @@ class RealWordErrorChannelTest(unittest.TestCase):
     def test_pass_token_through_channel(self):
 
         r = random.Random(999)
-        self.real_word_error_channel.real_word_errors = 0
-        self.real_word_error_channel.real_word_tokens_passed_though = 0
-        self.real_word_error_channel.mean_errors_per_word = 0
-        self.real_word_error_channel.max_errors_per_word = 0
+        self.real_word_error_channel.real_word_errors = 0.0
+        self.real_word_error_channel.real_word_tokens_passed_though = 0.0
+        self.real_word_error_channel.mean_errors_per_word = 0.0
+        self.real_word_error_channel.max_errors_per_word = 0.0
+#        self.real_word_error_channel.reset_stats()
 
         test_tokens = [u'an', u'and', u'the', u'there', u'late', u'"']
         results = []
@@ -65,79 +66,78 @@ class RealWordErrorChannelTest(unittest.TestCase):
                          str(self.real_word_error_channel.real_word_tokens_passed_though) + ' ' + \
                          str(self.real_word_error_channel.mean_errors_per_word) + ' ' + str(self.real_word_error_channel.max_errors_per_word))
 
-        assert results == [ \
-                'an 18 man 1 19 1 1', \
-                'an 30 any 2 31 1 1', \
-                'an 92 up 3 93 1 3', \
-                'an 157 ran 4 158 1 3', \
-                'an 215 ran 5 216 1 3', \
-                'an 217 a 6 218 1 3', \
-                'an 219 a 7 220 1 3', \
-                'an 220 and 8 221 1 3', \
-                'an 251 can 9 252 1 3', \
-                'an 252 a 10 253 1 3', \
-                'an 260 in 11 261 1 3', \
-                'an 299 a 12 300 1 3', \
-                'an 327 a 13 328 1 3', \
-                'an 329 a 14 330 1 3', \
-                'an 330 a 15 331 1 3', \
-                'an 365 a 16 366 1 3', \
-                'an 378 a 17 379 1 3', \
-                'an 391 a 18 392 1 3', \
-                'an 393 a 19 394 1 3', \
-                'an 401 in 20 402 1 3', \
-                'an 409 a 21 410 1 3', \
-                'an 423 a 22 424 1 3', \
-                'an 440 a 23 441 1 3', \
-                'an 448 on 24 449 1 3', \
-                'an 473 and 25 474 1 3', \
-                'an 498 a 26 499 1 3', \
-                'and 42 an 27 543 1 3', \
-                'and 100 an 28 601 1 3', \
-                'and 125 an 29 626 1 3', \
-                'and 126 an 30 627 1 3', \
-                'and 191 an 31 692 1 3', \
-                'and 200 an 32 701 1 3', \
-                'and 244 had 33 745 1 3', \
-                'and 289 an 34 790 1 3', \
-                'and 297 an 35 798 1 3', \
-                'and 302 an 36 803 1 3', \
-                'and 319 an 37 820 1 3', \
-                'and 331 an 38 832 1 3', \
-                'and 362 an 39 863 1 3', \
-                'and 365 an 40 866 1 3', \
-                'and 456 an 41 957 1 3', \
-                'and 463 an 42 964 1 3', \
-                'and 480 a 43 981 1 3', \
-                'the 47 to 44 1048 1 3', \
-                'the 105 t 45 1106 1 3', \
-                'the 123 then 46 1124 1 3', \
-                'the 275 t 47 1276 1 3', \
-                'the 430 get 48 1431 1 3', \
-                'the 497 she 49 1498 1 3', \
-                'there 112 three 50 1613 1 3', \
-                'there 128 three 51 1629 1 3', \
-                'there 133 three 52 1634 1 3', \
-                'there 166 three 53 1667 1 3', \
-                'there 176 three 54 1677 1 3', \
-                'there 223 three 55 1724 1 3', \
-                'there 245 three 56 1746 1 3', \
-                'there 258 three 57 1759 1 3', \
-                'there 272 three 58 1773 1 3', \
-                'there 274 three 59 1775 1 3', \
-                'there 283 where 60 1784 1 3', \
-                'there 305 three 61 1806 1 3', \
-                'there 309 three 62 1810 1 3', \
-                'there 319 three 63 1820 1 3', \
-                'there 325 them 64 1826 1 3', \
-                'there 343 three 65 1844 1 3', \
-                'there 352 three 66 1853 1 3', \
-                'there 355 the 67 1856 1 3', \
-                'there 495 then 68 1996 1 3', \
-                'late 142 date 69 2143 1 3', \
-                'late 247 lake 70 2248 1 3', \
-                'late 386 later 71 2387 1 3', \
-            ]
+        assert results ==  [ \
+            u'an 18 man 1.0 19.0 1.0 1', \
+                u'an 30 any 2.0 31.0 1.0 1', \
+                u'an 92 up 3.0 93.0 1.66666666667 3', \
+                u'an 157 ran 4.0 158.0 1.5 3', \
+                u'an 215 ran 5.0 216.0 1.4 3', \
+                u'an 217 a 6.0 218.0 1.5 3', \
+                u'an 219 a 7.0 220.0 1.42857142857 3', \
+                u'an 220 and 8.0 221.0 1.375 3', \
+                u'an 251 can 9.0 252.0 1.33333333333 3', \
+                u'an 252 a 10.0 253.0 1.3 3', \
+                u'an 260 in 11.0 261.0 1.27272727273 3', \
+                u'an 299 a 12.0 300.0 1.25 3', \
+                u'an 327 a 13.0 328.0 1.23076923077 3', \
+                u'an 329 a 14.0 330.0 1.21428571429 3', \
+                u'an 330 a 15.0 331.0 1.2 3', \
+                u'an 365 a 16.0 366.0 1.1875 3', \
+                u'an 378 a 17.0 379.0 1.17647058824 3', \
+                u'an 391 a 18.0 392.0 1.16666666667 3', \
+                u'an 393 a 19.0 394.0 1.15789473684 3', \
+                u'an 401 in 20.0 402.0 1.15 3', \
+                u'an 409 a 21.0 410.0 1.14285714286 3', \
+                u'an 423 a 22.0 424.0 1.13636363636 3', \
+                u'an 440 a 23.0 441.0 1.13043478261 3', \
+                u'an 448 on 24.0 449.0 1.125 3', \
+                u'an 473 and 25.0 474.0 1.12 3', \
+                u'an 498 a 26.0 499.0 1.11538461538 3', \
+                u'and 42 an 27.0 543.0 1.11111111111 3', \
+                u'and 100 an 28.0 601.0 1.10714285714 3', \
+                u'and 125 an 29.0 626.0 1.10344827586 3', \
+                u'and 126 an 30.0 627.0 1.13333333333 3', \
+                u'and 191 an 31.0 692.0 1.12903225806 3', \
+                u'and 200 an 32.0 701.0 1.125 3', \
+                u'and 244 had 33.0 745.0 1.15151515152 3', \
+                u'and 289 an 34.0 790.0 1.14705882353 3', \
+                u'and 297 an 35.0 798.0 1.14285714286 3', \
+                u'and 302 an 36.0 803.0 1.13888888889 3', \
+                u'and 319 an 37.0 820.0 1.13513513514 3', \
+                u'and 331 an 38.0 832.0 1.15789473684 3', \
+                u'and 362 an 39.0 863.0 1.15384615385 3', \
+                u'and 365 an 40.0 866.0 1.15 3', \
+                u'and 456 an 41.0 957.0 1.14634146341 3', \
+                u'and 463 an 42.0 964.0 1.14285714286 3', \
+                u'and 480 a 43.0 981.0 1.16279069767 3', \
+                u'the 47 to 44.0 1048.0 1.18181818182 3', \
+                u'the 105 t 45.0 1106.0 1.2 3', \
+                u'the 123 then 46.0 1124.0 1.19565217391 3', \
+                u'the 275 t 47.0 1276.0 1.21276595745 3', \
+                u'the 430 get 48.0 1431.0 1.25 3', \
+                u'the 497 she 49.0 1498.0 1.24489795918 3', \
+                u'there 112 three 50.0 1613.0 1.24 3', \
+                u'there 128 three 51.0 1629.0 1.23529411765 3', \
+                u'there 133 three 52.0 1634.0 1.23076923077 3', \
+                u'there 166 three 53.0 1667.0 1.22641509434 3', \
+                u'there 176 three 54.0 1677.0 1.24074074074 3', \
+                u'there 223 three 55.0 1724.0 1.23636363636 3', \
+                u'there 245 three 56.0 1746.0 1.23214285714 3', \
+                u'there 258 three 57.0 1759.0 1.22807017544 3', \
+                u'there 272 three 58.0 1773.0 1.22413793103 3', \
+                u'there 274 three 59.0 1775.0 1.22033898305 3', \
+                u'there 283 where 60.0 1784.0 1.21666666667 3', \
+                u'there 305 three 61.0 1806.0 1.2131147541 3', \
+                u'there 309 three 62.0 1810.0 1.20967741935 3', \
+                u'there 319 three 63.0 1820.0 1.22222222222 3', \
+                u'there 325 them 64.0 1826.0 1.234375 3', \
+                u'there 343 three 65.0 1844.0 1.23076923077 3', \
+                u'there 352 three 66.0 1853.0 1.22727272727 3', \
+                u'there 355 the 67.0 1856.0 1.23880597015 3', \
+                u'there 495 then 68.0 1996.0 1.25 3', \
+                u'late 142 date 69.0 2143.0 1.24637681159 3', \
+                u'late 247 lake 70.0 2248.0 1.24285714286 3', \
+                u'late 386 later 71.0 2387.0 1.23943661972 3'], results
             
 
 
