@@ -122,6 +122,7 @@ class NLTKSegmenterPlusTokeniser():
             boundaries_set.add(ellipses_index)
             ellipses_index = line.find(u'...', ellipses_index+1)
 
+        boundaries_set.discard(0)
         boundaries_set.discard(len(line))
         boundaries = list(boundaries_set)
         boundaries.sort()
