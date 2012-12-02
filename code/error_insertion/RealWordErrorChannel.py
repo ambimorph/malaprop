@@ -2,7 +2,7 @@
 # RealWordErrorChannel.py
 
 import NLTKSegmentThenTokenise
-import codecs, unicodedata
+import codecs, unicodedata, random
 
 class RealWordErrorChannel():
 
@@ -12,10 +12,14 @@ class RealWordErrorChannel():
         # Pass infile through NLTKSegmentThenTokenise to train
         self.p = p
         self.random_number_generator = random_number_generator
-        self.real_word_errors = 0
-        self.real_word_tokens_passed_though = 0
-        self.mean_errors_per_word = 0
-        self.max_errors_per_word = 0
+        self.reset_stats()
+
+    def reset_stats(self):
+        self.real_word_errors = 0.0
+        self.real_word_tokens_passed_though = 0.0
+        self.mean_errors_per_word = 0.0
+        self.max_errors_per_word = 0.0
+        
     
     def get_real_words_and_symbols(self):
         # Unicode-Read the vocab file 
@@ -45,9 +49,10 @@ class RealWordErrorChannel():
         return token in self.real_words
 
     def create_error_with_probability_p(self, left_char, right_char, p=None, random_number_generator=None):
-        assert left_char != u'' or right_char != u''
+        assert not (left_char == u'' and right_char == u'')
         if p == None: p = self.p
         if random_number_generator == None: random_number_generator = self.random_number_generator
+        assert type(random_number_generator) is random.Random, random_number_generator
 
         if random_number_generator.random() < p: # create an error
             # 0 = Insertion, 1 = Deletion, 2 = Substitution, 3 = Transposition
@@ -59,40 +64,80 @@ class RealWordErrorChannel():
             else:
                 error_type = random_number_generator.randrange(4)
             
-            if error_type == 0: # "insertion!"
-                return left_char + random_number_generator.choice(self.symbols) + right_char, True
-            elif error_type == 1: # "deletion!"
-                return left_char, True
-            elif error_type == 2: # "substitution!"
-                return left_char + random_number_generator.choice(self.symbols), True
-            else: # "transposition!"
-                return right_char + left_char, True
+            if error_type == 0: # print "insertion!"
+                symbol_to_insert = random_number_generator.choice(self.symbols)
+                return left_char + symbol_to_insert + right_char
+            elif error_type == 1: # print "deletion!"
+                return left_char
+            elif error_type == 2: # print "substitution!"
+                symbol_to_sub = random_number_generator.choice(self.symbols)
+                return left_char + symbol_to_sub
+            else: # print "transposition!"
+                return right_char + left_char
             
-        else:
-            return left_char + right_char, False
+        else: # print "no error added!"
+            return left_char + right_char
 
     def pass_token_through_channel(self, token, random_number_generator=None):
         # If token is a real word, pass each pair of chars through insert_error, else return original
         # if result is a real word, return it (possibly re-uppering), else return original
         # Update real_word_errors, real_word_tokens_passed_though, mean_errors_per_word, max_errors_per_word
         if random_number_generator == None: random_number_generator = self.random_number_generator
+        assert type(random_number_generator) is random.Random, random_number_generator
+        assert len(token) > 0, token
+        if not self.is_real_word(token):
+            return token
         result = u''
-        end_of_buffer_position = 1
+        number_of_errors_so_far = 0
+        remaining_chars = list(token) + [u'']
+        left_char = u''
+        right_char = remaining_chars.pop(0)
+        while len(remaining_chars) > 0:
+            temp = self.create_error_with_probability_p(left_char, right_char, random_number_generator=random_number_generator)
+            if temp != left_char + right_char: number_of_errors_so_far += 1
+            if len(temp) == 1:
+                left_char = temp
+                right_char = remaining_chars.pop(0)
+            elif len(temp) == 2:
+                result += temp[0]
+                left_char = temp[1]
+                right_char = remaining_chars.pop(0)
+            elif len(temp) == 3:
+                result += temp[0]
+                left_char = temp[1]
+                right_char = temp[2]
 
-        left = 0
-        
-        return result
+        temp = self.create_error_with_probability_p(left_char, right_char, random_number_generator=random_number_generator)
+        if temp != left_char + right_char: number_of_errors_so_far += 1
+        while len(temp) == 2:
+            result += temp[0]
+            left_char = temp[1]
+            right_char = u''
+            temp = self.create_error_with_probability_p(left_char, right_char, random_number_generator=random_number_generator)
+            if temp != left_char + right_char: number_of_errors_so_far += 1
+
+        result += temp
+        self.real_word_tokens_passed_though += 1
+        if self.is_real_word(result):
+            if result != token: 
+                self.mean_errors_per_word = (self.mean_errors_per_word * self.real_word_errors + number_of_errors_so_far) / (self.real_word_errors + 1)
+                self.max_errors_per_word = max(self.max_errors_per_word, number_of_errors_so_far)
+                self.real_word_errors += 1
+            return result
+        return token
 
     def pass_sentence_through_channel(self, (original, boundaries, substitutions), random_number_generator=None):
         # Use boundaries to find tokens
         # If there are no substitutions within the token, pass it through the channel first,
         # else just write it out.
         if random_number_generator == None: random_number_generator = self.random_number_generator
+        assert type(random_number_generator) is random.Random, random_number_generator
 
     def pass_file_through_channel(self, text=None, random_number_generator=None):
         assert text is None or isinstance(text, unicode), text
         if text == None: text = self.text # change this to say unicode-read training text
         if random_number_generator == None: random_number_generator = self.random_number_generator
+        assert type(random_number_generator) is random.Random, random_number_generator
         # Put through Segmenter_tokeniser
         # For sentence in segmenter_tokeniser output,
         # pass sentence through channel.

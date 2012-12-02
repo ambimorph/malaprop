@@ -31,45 +31,115 @@ class RealWordErrorChannelTest(unittest.TestCase):
     def test_create_error_with_probability_p(self):
         r = random.Random(999)
 
-        result, error_was_created = self.real_word_error_channel.create_error_with_probability_p(u'', u'a', 1, random_number_generator=r)
+        result = self.real_word_error_channel.create_error_with_probability_p(u'', u'a', 1, random_number_generator=r)
         expected_result = u'va'
         assert result == expected_result, u'Expected ' + expected_result + ', but got ' + result
-        assert error_was_created == True, u'Expected True, got ' + str(error_was_created)
 
-        result, error_was_created = self.real_word_error_channel.create_error_with_probability_p(u'', u'a', .1, random_number_generator=r)
+        result = self.real_word_error_channel.create_error_with_probability_p(u'', u'a', .1, random_number_generator=r)
         expected_result = u'a'
         assert result == expected_result, u'Expected ' + expected_result + ', but got ' + result
-        assert error_was_created == False, u'Expected False, got ' + str(error_was_created)
 
-        result, error_was_created = self.real_word_error_channel.create_error_with_probability_p(u's', u'a', 1, random_number_generator=r)
+        result = self.real_word_error_channel.create_error_with_probability_p(u's', u'a', 1, random_number_generator=r)
         expected_result = u'sta'
         assert result == expected_result, u'Expected ' + expected_result + ', but got ' + result
-        assert error_was_created == True, u'Expected True, got ' + str(error_was_created)
 
-        result, error_was_created = self.real_word_error_channel.create_error_with_probability_p(u's', u'', 1, random_number_generator=r)
+        result = self.real_word_error_channel.create_error_with_probability_p(u's', u'', 1, random_number_generator=r)
         expected_result = u'st'
         assert result == expected_result, u'Expected ' + expected_result + ', but got ' + result
-        assert error_was_created == True, u'Expected True, got ' + str(error_was_created)
 
     def test_pass_token_through_channel(self):
 
         r = random.Random(999)
+        self.real_word_error_channel.real_word_errors = 0
+        self.real_word_error_channel.real_word_tokens_passed_though = 0
+        self.real_word_error_channel.mean_errors_per_word = 0
+        self.real_word_error_channel.max_errors_per_word = 0
 
-        test_cases = [ \
-            (u'a', u'xxx', 100, 100, 100, 100), \
-            (u'and', u'xxx', 100, 100, 100, 100), \
-            (u'"', u'"', 100, 100, 100, 100), \
-                ]
+        test_tokens = [u'an', u'and', u'the', u'there', u'late', u'"']
+        results = []
+        for token in test_tokens:
+            for i in range(500):
+                result = self.real_word_error_channel.pass_token_through_channel(token, random_number_generator=r)
+                if result != token:
+                    results.append(token + ' ' + str(i) + ' ' + result + ' ' + str(self.real_word_error_channel.real_word_errors) + ' ' + \
+                         str(self.real_word_error_channel.real_word_tokens_passed_though) + ' ' + \
+                         str(self.real_word_error_channel.mean_errors_per_word) + ' ' + str(self.real_word_error_channel.max_errors_per_word))
 
-        for test_case in test_cases:
+        assert results == [ \
+                'an 18 man 1 19 1 1', \
+                'an 30 any 2 31 1 1', \
+                'an 92 up 3 93 1 3', \
+                'an 157 ran 4 158 1 3', \
+                'an 215 ran 5 216 1 3', \
+                'an 217 a 6 218 1 3', \
+                'an 219 a 7 220 1 3', \
+                'an 220 and 8 221 1 3', \
+                'an 251 can 9 252 1 3', \
+                'an 252 a 10 253 1 3', \
+                'an 260 in 11 261 1 3', \
+                'an 299 a 12 300 1 3', \
+                'an 327 a 13 328 1 3', \
+                'an 329 a 14 330 1 3', \
+                'an 330 a 15 331 1 3', \
+                'an 365 a 16 366 1 3', \
+                'an 378 a 17 379 1 3', \
+                'an 391 a 18 392 1 3', \
+                'an 393 a 19 394 1 3', \
+                'an 401 in 20 402 1 3', \
+                'an 409 a 21 410 1 3', \
+                'an 423 a 22 424 1 3', \
+                'an 440 a 23 441 1 3', \
+                'an 448 on 24 449 1 3', \
+                'an 473 and 25 474 1 3', \
+                'an 498 a 26 499 1 3', \
+                'and 42 an 27 543 1 3', \
+                'and 100 an 28 601 1 3', \
+                'and 125 an 29 626 1 3', \
+                'and 126 an 30 627 1 3', \
+                'and 191 an 31 692 1 3', \
+                'and 200 an 32 701 1 3', \
+                'and 244 had 33 745 1 3', \
+                'and 289 an 34 790 1 3', \
+                'and 297 an 35 798 1 3', \
+                'and 302 an 36 803 1 3', \
+                'and 319 an 37 820 1 3', \
+                'and 331 an 38 832 1 3', \
+                'and 362 an 39 863 1 3', \
+                'and 365 an 40 866 1 3', \
+                'and 456 an 41 957 1 3', \
+                'and 463 an 42 964 1 3', \
+                'and 480 a 43 981 1 3', \
+                'the 47 to 44 1048 1 3', \
+                'the 105 t 45 1106 1 3', \
+                'the 123 then 46 1124 1 3', \
+                'the 275 t 47 1276 1 3', \
+                'the 430 get 48 1431 1 3', \
+                'the 497 she 49 1498 1 3', \
+                'there 112 three 50 1613 1 3', \
+                'there 128 three 51 1629 1 3', \
+                'there 133 three 52 1634 1 3', \
+                'there 166 three 53 1667 1 3', \
+                'there 176 three 54 1677 1 3', \
+                'there 223 three 55 1724 1 3', \
+                'there 245 three 56 1746 1 3', \
+                'there 258 three 57 1759 1 3', \
+                'there 272 three 58 1773 1 3', \
+                'there 274 three 59 1775 1 3', \
+                'there 283 where 60 1784 1 3', \
+                'there 305 three 61 1806 1 3', \
+                'there 309 three 62 1810 1 3', \
+                'there 319 three 63 1820 1 3', \
+                'there 325 them 64 1826 1 3', \
+                'there 343 three 65 1844 1 3', \
+                'there 352 three 66 1853 1 3', \
+                'there 355 the 67 1856 1 3', \
+                'there 495 then 68 1996 1 3', \
+                'late 142 date 69 2143 1 3', \
+                'late 247 lake 70 2248 1 3', \
+                'late 386 later 71 2387 1 3', \
+            ]
+            
 
-            result = self.real_word_error_channel.pass_token_through_channel(test_case[0], random_number_generator=r)
-            expected_result = test_case[1]
-            assert result == expected_result, u'Expected ' + expected_result + ', but got ' + result
-            assert self.real_word_error_channel.real_word_errors == test_case[2]
-            assert self.real_word_error_channel.real_word_tokens_passed_though == test_case[3]
-            assert self.real_word_error_channel.mean_errors_per_word == test_case[4]
-            assert self.real_word_error_channel.max_errors_per_word == test_case[5]
 
 
     def test_pass_sentence_through_channel(self):
