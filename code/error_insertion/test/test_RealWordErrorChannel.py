@@ -185,7 +185,6 @@ class RealWordErrorChannelTest(unittest.TestCase):
                 result = self.real_word_error_channel.pass_sentence_through_channel(sentence_and_token_information, random_number_generator=r)
                 if result != sentence_and_token_information[0]:
                     results.append((i, result))
-#            for res in results: print res
 
             try:
                 assert results == expected
@@ -201,28 +200,36 @@ class RealWordErrorChannelTest(unittest.TestCase):
 
     def test_pass_file_through_channel(self):
         r = random.Random(999)
-        text_to_create_errors_in = u'Another libertarian tradition is that of unschooling and the free school in which child-led activity replaces pedagogic approaches. Experiments in Germany led to A. S. Neill founding what became Summerhill School in 1921. Summerhill is often cited as an example of anarchism in practice. However, although Summerhill and other free schools are radically libertarian, they differ in principle from those of Ferrer by not advocating an overtly-political class struggle-approach.\nThe Academy of Motion Picture Arts and Sciences itself was conceived by Metro-Goldwyn-Mayer studio boss Louis B. Mayer.  The 1st Academy Awards ceremony was held on Thursday, May 16, 1929, at the Hotel Roosevelt in Hollywood to honor outstanding film achievements of 1927 and 1928.\nWhen the Western Roman Empire collapsed, Berbers became independent again in many areas, while the Vandals took control over other parts, where they remained until expelled by the generals of the Byzantine Emperor, Justinian I. The Byzantine Empire then retained a precarious grip on the east of the country until the coming of the Arabs in the eighth century.'
-        expected_text_output = u'xxx'
-        expected_error_rate = .6
-        expected_mean_errors_per_word = 1000
-        expected_max_errors_per_word = 1000
+        self.real_word_error_channel.reset_stats()
+        text_to_create_errors_in = u'Autism.\nAutism is a disorder of neural development characterized by impaired social interaction and communication, and by restricted and repetitive behavior. These signs all begin before a child is three years old. Autism affects information processing in the brain by altering how nerve cells and their synapses connect and organize; how this occurs is not well understood. The two other autism spectrum disorders (ASD) are Asperger syndrome, which lacks delays in cognitive development and language, and PDD-NOS, diagnosed when full criteria for the other two disorders are not met.\nAutism has a strong genetic basis, although the genetics of autism are complex and it is unclear whether ASD is explained more by rare mutations, or by rare combinations of common genetic variants. In rare cases, autism is strongly associated with agents that cause birth defects. Controversies surround other proposed environmental causes, such as heavy metals, pesticides or childhood vaccines; the vaccine hypotheses are biologically implausible and lack convincing scientific evidence. The prevalence of autism is about 1–2 per 1,000 people; the prevalence of ASD is about 6 per 1,000, with about four times as many males as females. The number of people diagnosed with autism has increased dramatically since the 1980s, partly due to changes in diagnostic practice; the question of whether actual prevalence has increased is unresolved.\nParents usually notice signs in the first two years of their child\'s life. The signs usually develop gradually, but some autistic children first develop more normally and then regress. Although early behavioral or cognitive intervention can help autistic children gain self-care, social, and communication skills, there is no known cure. Not many children with autism live independently after reaching adulthood, though some become successful. An autistic culture has developed, with some individuals seeking a cure and others believing autism should be tolerated as a difference and not treated as a disorder.'
+
+        expected_text_output = u"Autism.\nAutism is at disorder of neural development characterized by impaired social interaction and communication, and by restricted and repetitive behavior.\nThese signs all begin before a child is three years old.\nAutism affects information processing in the brain by altering how nerve cells and their synapses connect and organize; how this occurs is not well understood.\nThe two other autism spectrum disorders (ASD) are Asperger syndrome, which lacks delays in cognitive development and language, and PDD-NOS, diagnosed when full criteria for the other two disorders are not met.\nAutism has a strong genetic basis, although the genetics of autism are complex and up is unclear whether ASD is explained more by rare mutations, or by rare combinations of common genetic variants.\nIn rare cases, autism is strongly associated with agents that cause birth defects.\nControversies surround other proposed environmental causes, such as heavy metals, pesticides or childhood vaccines; the vaccine hypotheses are biologically implausible and lack convincing scientific evidence.\nThe prevalence of autism is about 1\u20132 per 1,000 people; the prevalence of ASD is about 6 per 1,000, with about four times as many males as females.\nThe number of people diagnosed with autism has increased dramatically since the 1980s, partly due to changes in diagnostic practice; the question of whether actual prevalence has increased is unresolved.\nParents usually notice signs in the first two years of their child's life.\nThe signs usually develop gradually, but some autistic children first develop more normally and then regress.\nAlthough early behavioral or cognitive intervention can help autistic children gain self-care, social, and communication skills, there is no known cure.\nNot many children with autism live independently after reaching adulthood, though some become successful.\nAn autistic culture has developed, with some individuals seeking a cure and others believing autism should be tolerated as i difference and not treated as a disorder.\n"
+
+        expected_error_rate = 0.0180722891566
+        expected_mean_errors_per_word = 1.66666666667
+        expected_max_errors_per_word = 3
 
         error_rate, mean_errors_per_word, max_errors_per_word = self.real_word_error_channel.pass_file_through_channel(text=text_to_create_errors_in, random_number_generator=r)
-        assert error_rate == expected_error_rate, "Expected error_rate " + str(expected_error_rate) + ", but got " + str(error_rate)
-        assert mean_errors_per_word == expected_mean_errors_per_word, "Expected mean_errors_per_word " + str(expected_mean_errors_per_word) + ", but got " + str(mean_errors_per_word)
-        assert max_errors_per_word == expected_max_errors_per_word, "Expected max_errors_per_word-rate " + str(expected_max_errors_per_word) + ", but got " + str(max_errors_per_word)
         
-        assert isinstance(out_file_obj.getvalue(), str), (type(out_file_obj.getvalue()), repr(out_file_obj.getvalue()))
+        print error_rate, mean_errors_per_word, max_errors_per_word
+        print self.real_word_error_channel.real_word_tokens_passed_though
+
+        assert isinstance(self.corrupted.getvalue(), unicode), (type(self.corrupted.getvalue()), repr(self.corrupted.getvalue()))
         try:
-            assert out_file_obj.getvalue() == expected_text_output
+            assert self.corrupted.getvalue() == expected_text_output
         except AssertionError, exp:
-            x = out_file_obj.getvalue()
+            x = self.corrupted.getvalue()
             for i in range(len(x)):
                 if i >= len(expected_text_output) or x[i] != expected_text_output[i]: break
             print '\nMatching prefix of output and expected output: ', repr(x[:i])
             print '\noutput differs starting here: ', repr(x[i:])
             print '\nexpected: ', repr(expected_text_output[i:])
             raise exp
+
+        tolerance = 0.000001
+        assert abs(error_rate - expected_error_rate) < tolerance, "Expected error_rate " + str(expected_error_rate) + ", but got " + str(error_rate)
+        assert abs(mean_errors_per_word - expected_mean_errors_per_word) < tolerance, "Expected mean_errors_per_word " + str(expected_mean_errors_per_word) + ", but got " + str(mean_errors_per_word)
+        assert abs(max_errors_per_word - expected_max_errors_per_word) < tolerance, "Expected max_errors_per_word-rate " + str(expected_max_errors_per_word) + ", but got " + str(max_errors_per_word)
         
 if __name__ == '__main__':
     unittest.main()

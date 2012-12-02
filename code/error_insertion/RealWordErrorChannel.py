@@ -2,14 +2,15 @@
 # RealWordErrorChannel.py
 
 import NLTKSegmentThenTokenise
-import codecs, unicodedata, random
+import codecs, unicodedata, random, sys
 
 class RealWordErrorChannel():
 
     def __init__(self, segmenter_training_text_infile_obj, vocabfile_obj, outfile_obj, p, random_number_generator):
         self.unicode_vocabfile_obj = codecs.getreader('utf-8')(vocabfile_obj)
+        self.unicode_outfile_obj = codecs.getreader('utf-8')(outfile_obj)
         self.real_words, self.symbols = self.get_real_words_and_symbols()
-        # Pass infile through NLTKSegmentThenTokenise to train
+        self.segmenter_tokeniser = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(segmenter_training_text_infile_obj, outfile_obj)
         self.p = p
         self.random_number_generator = random_number_generator
         self.reset_stats()
@@ -131,9 +132,6 @@ class RealWordErrorChannel():
         # If there are no substitutions within the token, lowercase it and pass it through the channel.
         # If it is replaced, recase it if necessary
         # else just put original token.
-        # (u'Experiments in Germany led to A. S. Neill founding what became Summerhill School in 1921.', \
-        #   [11, 12, 14, 15, 22, 23, 26, 27, 29, 30, 32, 33, 35, 36, 41, 42, 50, 51, 55, 56, 62, 63, 73, 74, 80, 81, 83, 84, 88], \
-        #   [(84, 4, u'<4-digit-integer>')])
         if random_number_generator == None: random_number_generator = self.random_number_generator
         assert type(random_number_generator) is random.Random, random_number_generator
         result = u''
@@ -167,18 +165,21 @@ class RealWordErrorChannel():
 
     def pass_file_through_channel(self, text=None, random_number_generator=None):
         assert text is None or isinstance(text, unicode), text
-        if text == None: text = self.text # change this to say unicode-read training text
+        if text == None: text = self.text 
         if random_number_generator == None: random_number_generator = self.random_number_generator
         assert type(random_number_generator) is random.Random, random_number_generator
-        # Put through Segmenter_tokeniser
-        # For sentence in segmenter_tokeniser output,
-        # pass sentence through channel.
-        # Write result to unicode_outfile
-        # return statistics
+
+        sentence_info_generator = self.segmenter_tokeniser.segmented_and_tokenised(text, file_output=False)
+        for sentence in sentence_info_generator:
+            possibly_erroneous_sentence = self.pass_sentence_through_channel(sentence, random_number_generator=random_number_generator)
+            self.unicode_outfile_obj.write(possibly_erroneous_sentence + u'\n')
+
         if self.real_word_tokens_passed_though == 0: 
             return ( -1, self.mean_errors_per_word, self.max_errors_per_word )
         return ( self.real_word_errors * 1.0 / self.real_word_tokens_passed_though, self.mean_errors_per_word, self.max_errors_per_word )
 
 if __name__ == '__main__':
 
+    vocab_file_name, p, seed = sys.argv[1:]
     rwec = RealWordErrorChannel(sys.stdin, sys.stdout)
+    rwec.pass_file_through_channel()
