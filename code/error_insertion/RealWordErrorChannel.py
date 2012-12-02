@@ -49,11 +49,10 @@ class RealWordErrorChannel():
     def is_real_word(self, token):
         return token in self.real_words
 
-    def create_error_with_probability_p(self, left_char, right_char, p=None):
+    def create_error_with_probability_p(self, left_char, right_char):
         assert not (left_char == u'' and right_char == u'')
-        if p == None: p = self.p
 
-        if self.random_number_generator.random() < p: # create an error
+        if self.random_number_generator.random() < self.p: # create an error
             # 0 = Insertion, 1 = Deletion, 2 = Substitution, 3 = Transposition
 
             if left_char == u'': # No transposition

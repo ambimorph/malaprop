@@ -31,22 +31,22 @@ class RealWordErrorChannelTest(unittest.TestCase):
 
     def test_create_error_with_probability_p(self):
         self.real_word_error_channel.random_number_generator = random.Random(999)
+        self.real_word_error_channel.p = .7
 
-        result = self.real_word_error_channel.create_error_with_probability_p(u'', u'a', 1)
-        expected_result = u'va'
-        assert result == expected_result, u'Expected ' + expected_result + ', but got ' + result
+        test_cases = [(u'', u'a', u'a'), (u'', u'a', u'n'), (u's', u'a', u'sta'), (u's', u'a', u'as'), (u's', u'', u's'), (u's', u'', u'sz')]
 
-        result = self.real_word_error_channel.create_error_with_probability_p(u'', u'a', .1)
-        expected_result = u'a'
-        assert result == expected_result, u'Expected ' + expected_result + ', but got ' + result
+        for t in test_cases:
 
-        result = self.real_word_error_channel.create_error_with_probability_p(u's', u'a', 1)
-        expected_result = u'sta'
-        assert result == expected_result, u'Expected ' + expected_result + ', but got ' + result
+            try:
+                result = self.real_word_error_channel.create_error_with_probability_p(t[0], t[1])
+                assert result == t[2]
+ 
+            except AssertionError, exp:
+                print  u'Expected ' + t[2] + ', but got ' + result
+                self.real_word_error_channel.p = .3
+                raise exp
 
-        result = self.real_word_error_channel.create_error_with_probability_p(u's', u'', 1)
-        expected_result = u'st'
-        assert result == expected_result, u'Expected ' + expected_result + ', but got ' + result
+        self.real_word_error_channel.p = .3
 
     def test_pass_token_through_channel(self):
 
