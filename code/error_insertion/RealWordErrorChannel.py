@@ -17,9 +17,12 @@ class RealWordErrorChannel():
 
     def reset_stats(self):
         self.real_word_errors = 0.0
-        self.real_word_tokens_passed_though = 0.0
+        self.real_word_tokens_passed_through = 0.0
         self.mean_errors_per_word = 0.0
         self.max_errors_per_word = 0.0
+
+    def get_stats(self):
+        return self.real_word_errors, self.real_word_tokens_passed_through, self.mean_errors_per_word, self.max_errors_per_word
         
     
     def get_real_words_and_symbols(self):
@@ -79,7 +82,7 @@ class RealWordErrorChannel():
     def pass_token_through_channel(self, token):
         # If token is a real word, pass each pair of chars through insert_error, else return original
         # if result is a real word, return it (possibly re-uppering), else return original
-        # Update real_word_errors, real_word_tokens_passed_though, mean_errors_per_word, max_errors_per_word
+        # Update real_word_errors, real_word_tokens_passed_through, mean_errors_per_word, max_errors_per_word
         assert len(token) > 0, token
         if not self.is_real_word(token):
             return token
@@ -113,7 +116,7 @@ class RealWordErrorChannel():
             if temp != left_char + right_char: number_of_errors_so_far += 1
 
         result += temp
-        self.real_word_tokens_passed_though += 1
+        self.real_word_tokens_passed_through += 1
         if self.is_real_word(result):
             if result != token: 
                 self.mean_errors_per_word = (self.mean_errors_per_word * self.real_word_errors + number_of_errors_so_far) / (self.real_word_errors + 1)
@@ -165,12 +168,8 @@ class RealWordErrorChannel():
             possibly_erroneous_sentence = self.pass_sentence_through_channel(sentence)
             self.unicode_outfile_obj.write(possibly_erroneous_sentence + u'\n')
 
-        if self.real_word_tokens_passed_though == 0: 
-            return ( -1, self.mean_errors_per_word, self.max_errors_per_word )
-        return ( self.real_word_errors * 1.0 / self.real_word_tokens_passed_though, self.mean_errors_per_word, self.max_errors_per_word )
-
 if __name__ == '__main__':
 
     vocab_file_name, p, seed = sys.argv[1:]
-    rwec = RealWordErrorChannel(sys.stdin, sys.stdout)
+    rwec = RealWordErrorChannel(sys.stdin, vocab_file_name, sys.stdout, p, random.Random(seed))
     rwec.pass_file_through_channel()

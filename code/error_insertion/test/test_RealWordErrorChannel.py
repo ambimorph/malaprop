@@ -60,7 +60,7 @@ class RealWordErrorChannelTest(unittest.TestCase):
                 result = self.real_word_error_channel.pass_token_through_channel(token)
                 if result != token:
                     results.append(token + ' ' + str(i) + ' ' + result + ' ' + str(self.real_word_error_channel.real_word_errors) + ' ' + \
-                         str(self.real_word_error_channel.real_word_tokens_passed_though) + ' ' + \
+                         str(self.real_word_error_channel.real_word_tokens_passed_through) + ' ' + \
                          str(self.real_word_error_channel.mean_errors_per_word) + ' ' + str(self.real_word_error_channel.max_errors_per_word))
 
         assert results ==  [ \
@@ -206,14 +206,14 @@ class RealWordErrorChannelTest(unittest.TestCase):
 
         expected_text_output = u"Autism.\nAutism is at disorder of neural development characterized by impaired social interaction and communication, and by restricted and repetitive behavior.\nThese signs all begin before a child is three years old.\nAutism affects information processing in the brain by altering how nerve cells and their synapses connect and organize; how this occurs is not well understood.\nThe two other autism spectrum disorders (ASD) are Asperger syndrome, which lacks delays in cognitive development and language, and PDD-NOS, diagnosed when full criteria for the other two disorders are not met.\nAutism has a strong genetic basis, although the genetics of autism are complex and up is unclear whether ASD is explained more by rare mutations, or by rare combinations of common genetic variants.\nIn rare cases, autism is strongly associated with agents that cause birth defects.\nControversies surround other proposed environmental causes, such as heavy metals, pesticides or childhood vaccines; the vaccine hypotheses are biologically implausible and lack convincing scientific evidence.\nThe prevalence of autism is about 1\u20132 per 1,000 people; the prevalence of ASD is about 6 per 1,000, with about four times as many males as females.\nThe number of people diagnosed with autism has increased dramatically since the 1980s, partly due to changes in diagnostic practice; the question of whether actual prevalence has increased is unresolved.\nParents usually notice signs in the first two years of their child's life.\nThe signs usually develop gradually, but some autistic children first develop more normally and then regress.\nAlthough early behavioral or cognitive intervention can help autistic children gain self-care, social, and communication skills, there is no known cure.\nNot many children with autism live independently after reaching adulthood, though some become successful.\nAn autistic culture has developed, with some individuals seeking a cure and others believing autism should be tolerated as i difference and not treated as a disorder.\n"
 
-        expected_error_rate = 0.0180722891566
-        expected_mean_errors_per_word = 1.66666666667
-        expected_max_errors_per_word = 3
 
-        error_rate, mean_errors_per_word, max_errors_per_word = self.real_word_error_channel.pass_file_through_channel(text=text_to_create_errors_in)
+        self.real_word_error_channel.pass_file_through_channel(text=text_to_create_errors_in)
         
-        print error_rate, mean_errors_per_word, max_errors_per_word
-        print self.real_word_error_channel.real_word_tokens_passed_though
+        print self.real_word_error_channel.real_word_errors,
+        print self.real_word_error_channel.real_word_tokens_passed_through, 
+        print self.real_word_error_channel.mean_errors_per_word,
+        print self.real_word_error_channel.max_errors_per_word
+        
 
         assert isinstance(self.corrupted.getvalue(), unicode), (type(self.corrupted.getvalue()), repr(self.corrupted.getvalue()))
         try:
@@ -227,10 +227,23 @@ class RealWordErrorChannelTest(unittest.TestCase):
             print '\nexpected: ', repr(expected_text_output[i:])
             raise exp
 
+        expected_real_word_errors = 3
+        expected_real_word_tokens_passed_through = 166
+        expected_mean_errors_per_word = 1.66666666667
+        expected_max_errors_per_word = 3
+
+        real_word_errors, real_word_tokens_passed_through, mean_errors_per_word, max_errors_per_word \
+            = self.real_word_error_channel.get_stats()
+
         tolerance = 0.000001
-        assert abs(error_rate - expected_error_rate) < tolerance, "Expected error_rate " + str(expected_error_rate) + ", but got " + str(error_rate)
-        assert abs(mean_errors_per_word - expected_mean_errors_per_word) < tolerance, "Expected mean_errors_per_word " + str(expected_mean_errors_per_word) + ", but got " + str(mean_errors_per_word)
-        assert abs(max_errors_per_word - expected_max_errors_per_word) < tolerance, "Expected max_errors_per_word-rate " + str(expected_max_errors_per_word) + ", but got " + str(max_errors_per_word)
+        assert abs(expected_real_word_errors - real_word_errors) < tolerance, \
+            "Expected real word errors " + str(expected_real_word_errors) + ", but got " + str(real_word_errors)
+        assert abs(expected_real_word_tokens_passed_through - real_word_tokens_passed_through) < tolerance, \
+            "Expected real_word_tokens_passed_through " + str(expected_real_word_tokens_passed_through) + ", but got " + str(real_word_tokens_passed_through)
+        assert abs(mean_errors_per_word - expected_mean_errors_per_word) < tolerance, \
+            "Expected mean_errors_per_word " + str(expected_mean_errors_per_word) + ", but got " + str(mean_errors_per_word)
+        assert abs(max_errors_per_word - expected_max_errors_per_word) < tolerance, "\
+            Expected max_errors_per_word-rate " + str(expected_max_errors_per_word) + ", but got " + str(max_errors_per_word)
         
 if __name__ == '__main__':
     unittest.main()
