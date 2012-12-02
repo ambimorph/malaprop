@@ -8,7 +8,7 @@ class RealWordErrorChannel():
 
     def __init__(self, segmenter_training_text_infile_obj, vocabfile_obj, outfile_obj, p, random_number_generator):
         self.unicode_vocabfile_obj = codecs.getreader('utf-8')(vocabfile_obj)
-        self.unicode_outfile_obj = codecs.getreader('utf-8')(outfile_obj)
+        self.unicode_outfile_obj = codecs.getwriter('utf-8')(outfile_obj)
         self.real_words, self.symbols = self.get_real_words_and_symbols()
         self.segmenter_tokeniser = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(segmenter_training_text_infile_obj, outfile_obj)
         self.p = p
@@ -161,7 +161,7 @@ class RealWordErrorChannel():
 
     def pass_file_through_channel(self, text=None):
         assert text is None or isinstance(text, unicode), text
-        if text == None: text = self.text 
+        if text == None: text = self.segmenter_tokeniser.text 
 
         sentence_info_generator = self.segmenter_tokeniser.segmented_and_tokenised(text, file_output=False)
         for sentence in sentence_info_generator:
@@ -171,5 +171,6 @@ class RealWordErrorChannel():
 if __name__ == '__main__':
 
     vocab_file_name, p, seed = sys.argv[1:]
-    rwec = RealWordErrorChannel(sys.stdin, vocab_file_name, sys.stdout, p, random.Random(seed))
+    rwec = RealWordErrorChannel(sys.stdin, open(vocab_file_name, 'rb'), sys.stdout, float(p), random.Random(int(seed)))
     rwec.pass_file_through_channel()
+    sys.stdout.write( repr(rwec.get_stats()) )
