@@ -134,7 +134,7 @@ class RealWordErrorChannel():
         substitution_indices = [sub[0] for sub in substitutions]
         tokens_containing_subs = []
         for sub_index in substitution_indices:
-            if len(boundaries) > 0 or boundaries[0] > sub_index:
+            if len(boundaries) == 0 or boundaries[0] > sub_index:
                 tokens_containing_subs.append(0)
             else:
                 tokens_containing_subs.append(max([x for x in boundaries if x <= sub_index]))
