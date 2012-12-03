@@ -133,7 +133,7 @@ def create_error_sets(target, source, env):
     for i in range(len(vocabulary_sizes)):
         size = vocabulary_sizes[i]
         vocabulary_file_name = language_model_directory + str(size) + 'K.vocab'
-        rwec = RealWordErrorChannel.RealWordErrorChannel(open_with_unicode_bzip2(source[0], 'rb'), open_with_unicode(vocabulary_file_name, 'rb'), open_with_unicode_bzip2(target[i], 'wb'), error_rate, random.Random(7))
+        rwec = RealWordErrorChannel.RealWordErrorChannel(open_with_unicode_bzip2(source[0], 'r'), open_with_unicode(vocabulary_file_name, 'r'), open_with_unicode_bzip2(target[i], 'w'), error_rate, random.Random(7))
         rwec.pass_file_through_channel()
         print rwec.get_stats()
 
