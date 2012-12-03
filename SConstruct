@@ -128,20 +128,45 @@ def create_trigram_models(target, source, env):
 
     return None
 
+def split_development_files_into_chunks(development_file_name):
+
+    # We take the development set and split it into files of 100000 lines each so that the nltk segmenter can make counts without choking.
+
+    lines_per_chunk = 100000
+    if not os.path.isdir(development_chunk_path):
+        development_file_obj = open_with_unicode_bzip2(development_file_name, 'r')
+        os.mkdir(development_chunk_path)
+        current_line_number = 0
+        current_file_number = 0
+        while current_file_number < num_chunks:
+            current_filename = development_chunk_path + 'development_set_chunk_%03d' % current_file_number + '.bz2'
+            current_file_obj = open_with_unicode_bzip2(current_filename, 'w')
+            current_file_obj.write(development_file_obj.readline())
+            current_line_number += 1
+            while current_line_number % lines_per_chunk > 0:
+                current_file_obj.write(development_file_obj.readline())
+                current_line_number += 1
+            current_file_number += 1
+
+    return
 def create_error_sets(target, source, env):
 
-    for i in range(len(vocabulary_sizes)):
-        size = vocabulary_sizes[i]
-        vocabulary_file_name = language_model_directory + str(size) + 'K.vocab'
-        rwec = RealWordErrorChannel.RealWordErrorChannel(bz2.BZ2File(source[0].path, 'r'), open(vocabulary_file_name, 'r'), bz2.BZ2File(target[i].path, 'w'), error_rate, random.Random(7))
-        rwec.pass_file_through_channel()
-        print rwec.get_stats()
+    split_development_files_into_chunks(source[0].path)
+
+    for development_file_name in os.listdir(development_chunk_path):
+        for i in range(len(vocabulary_sizes)):
+            size = vocabulary_sizes[i]
+            vocabulary_file_name = language_model_directory + str(size) + 'K.vocab'
+            rwec = RealWordErrorChannel.RealWordErrorChannel(bz2.BZ2File(development_file_name, 'r'), open(vocabulary_file_name, 'r'), bz2.BZ2File(target[i].path, 'w'), error_rate, random.Random(7))
+            rwec.pass_file_through_channel()
+            print rwec.get_stats()
 
     return None
 
 data_directory = 'data/'
 corpus_directory = data_directory + 'corpora/WestburyLab.wikicorp.201004/'
 chunk_path = corpus_directory + 'training_set_chunks/'
+development_chunk_path = corpus_directory + 'development_set_chunks/'
 language_model_directory = data_directory + 'language_models/WestburyLab.wikicorp.201004/'
 error_set_directory = data_directory + 'error_sets/WestburyLab.wikicorp.201004/'
 num_chunks = 167
