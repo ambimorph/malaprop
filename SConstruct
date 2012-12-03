@@ -138,7 +138,7 @@ def split_development_files_into_chunks(development_file_name):
         os.mkdir(development_chunk_path)
         current_line_number = 0
         current_file_number = 0
-        while current_file_number < num_chunks:
+        while current_file_number < num_development_chunks:
             current_filename = development_chunk_path + 'development_set_chunk_%03d' % current_file_number + '.bz2'
             current_file_obj = open_with_unicode_bzip2(current_filename, 'w')
             current_file_obj.write(development_file_obj.readline())
@@ -147,8 +147,8 @@ def split_development_files_into_chunks(development_file_name):
                 current_file_obj.write(development_file_obj.readline())
                 current_line_number += 1
             current_file_number += 1
-
     return
+
 def create_error_sets(target, source, env):
 
     split_development_files_into_chunks(source[0].path)
@@ -171,6 +171,7 @@ chunk_path = corpus_directory + 'training_set_chunks/'
 development_chunk_path = corpus_directory + 'development_set_chunks/'
 language_model_directory = data_directory + 'language_models/WestburyLab.wikicorp.201004/'
 error_set_directory = data_directory + 'error_sets/WestburyLab.wikicorp.201004/'
+num_development_chunks = 55
 num_chunks = 167
 vocabulary_sizes = [50, 100]
 error_rate = .05
