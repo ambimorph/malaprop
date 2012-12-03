@@ -3,6 +3,11 @@
 
 import codecs, bz2, gzip, random, subprocess, os
 
+# Ugly hack to avoid problem caused by ugly hack.
+# See http://scons.tigris.org/issues/show_bug.cgi?id=2781
+import sys
+del sys.modules['pickle']
+
 from code.preprocessing import WikipediaArticleRandomiser
 from code.language_modelling import vocabulary_cutter
 from code.error_insertion import RealWordErrorChannel
