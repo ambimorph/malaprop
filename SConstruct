@@ -5,6 +5,7 @@ import codecs, bz2, gzip, random, subprocess, os
 
 from code.preprocessing import WikipediaArticleRandomiser
 from code.language_modelling import vocabulary_cutter
+from code.error_insertion import RealWordErrorChannel
 
 # Make these into one unicode open function with compression options.
 
@@ -124,6 +125,13 @@ def create_trigram_models(target, source, env):
 
 def create_error_sets(target, source, env):
 
+    for i in range(len(vocabulary_sizes)):
+        size = vocabulary_sizes[i]
+        vocabulary_file_name = language_model_directory + str(size) + 'K.vocab'
+        rwec = RealWordErrorChannel(source[0], open(vocabulary_file_name, 'rb'), target[i], error_rate, random.Random(7))
+        rwec.pass_file_through_channel()
+        print rwec.get_stats()
+
     return None
 
 data_directory = 'data/'
@@ -133,7 +141,7 @@ language_model_directory = data_directory + 'language_models/WestburyLab.wikicor
 error_set_directory = data_directory + 'error_sets/WestburyLab.wikicorp.201004/'
 num_chunks = 167
 vocabulary_sizes = [50, 100]
-error_rate = 200
+error_rate = .05
 
 learning_sets_builder = Builder(action = randomise_wikipedia_articles)
 vocabulary_files_builder = Builder(action = create_vocabularies)
@@ -148,4 +156,4 @@ env.vocabulary_files([language_model_directory + str(size) + 'K.vocab' for size 
 
 env.trigram_models([language_model_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes], [corpus_directory + 'training_set.bz2'] + [language_model_directory + str(size) + 'K.vocab' for size in vocabulary_sizes])
 
-env.error_sets([error_set_directory + 'errors_every_200_words_' + str(size) + 'K_vocabulary.bz2' for size in vocabulary_sizes], [corpus_directory + 'development_set.bz2'] + [language_model_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes])
+env.error_sets([error_set_directory + 'errors_at_' + str(error_rate) + '_' + str(size) + 'K_vocabulary.bz2' for size in vocabulary_sizes], [corpus_directory + 'development_set.bz2'] + [language_model_directory + str(size) + 'K.vocab' for size in vocabulary_sizes])
