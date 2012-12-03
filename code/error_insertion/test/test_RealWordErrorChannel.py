@@ -2,7 +2,8 @@
 # 2012 L. Amber Wilcox-O'Hearn
 # test_RealWordErrorChannel.py
 
-import NLTKSegmentThenTokenise, RealWordErrorChannel
+from code.preprocessing import NLTKSegmentThenTokenise
+from code.error_insertion import RealWordErrorChannel
 import unittest, random, StringIO
 
 
@@ -10,8 +11,8 @@ class RealWordErrorChannelTest(unittest.TestCase):
     
     @classmethod
     def setUpClass(self):
-        text_to_corrupt = open('test_data/text_to_corrupt', 'rb')
-        vocab_file = open('test_data/1K_test_vocab', 'rb')
+        text_to_corrupt = open('code/error_insertion/test/test_data/text_to_corrupt', 'rb')
+        vocab_file = open('code/error_insertion/test/test_data/1K_test_vocab', 'rb')
         self.corrupted = StringIO.StringIO()
         p = .3
         r = random.Random(999)

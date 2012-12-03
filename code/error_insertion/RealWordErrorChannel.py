@@ -1,7 +1,7 @@
 # 2012 L. Amber Wilcox-O'Hearn
 # RealWordErrorChannel.py
 
-import NLTKSegmentThenTokenise
+from code.preprocessing import NLTKSegmentThenTokenise
 import codecs, unicodedata, random, sys
 
 class RealWordErrorChannel():
