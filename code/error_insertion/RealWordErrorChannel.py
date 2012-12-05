@@ -33,18 +33,8 @@ class RealWordErrorChannel():
         symbols = set([])
         for line in self.unicode_vocabfile_obj.readlines():
             word = line.strip()
-            contains_letters = False
-            real_word = True
-            for char in word:
-                if unicodedata.category(char)[0] == 'L':
-                    contains_letters = True
-                elif char != u'.' and char != u"'":
-                    real_word = False
-                    break
-            if not contains_letters: real_word = False
-            if real_word:
-                real_words.add(word)
-                symbols.update(set(word))
+            real_words.add(word)
+            symbols.update(set(word))
 
         symbols = list(symbols)
         return real_words, symbols

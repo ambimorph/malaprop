@@ -10,6 +10,9 @@ class RealWordVocabExtractor():
         self.unicode_outfile_obj = codecs.getwriter('utf-8')(outfile_obj)
 
     def extract_real_words(self):
+        # My current definition of real word is that it
+        # contains letters, and if there are symbols in it,
+        # they have to be either apostrophes or periods.
         for line in self.unicode_vocabfile_obj.readlines():
             word = line.strip()
             
@@ -29,5 +32,6 @@ class RealWordVocabExtractor():
 
 if __name__ == '__main__':
 
+    import sys
     rwve = RealWordVocabExtractor(sys.stdin, sys.stdout)
     rwve.extract_real_words()

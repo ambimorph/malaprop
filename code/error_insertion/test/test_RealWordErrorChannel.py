@@ -12,7 +12,7 @@ class RealWordErrorChannelTest(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         text_to_corrupt = open('code/error_insertion/test/test_data/text_to_corrupt', 'rb')
-        vocab_file = open('code/error_insertion/test/test_data/1K_test_vocab', 'rb')
+        vocab_file = open('code/error_insertion/test/test_data/1K_test_real_word_vocab', 'rb')
         self.corrupted = StringIO.StringIO()
         p = .3
         r = random.Random(999)
