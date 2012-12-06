@@ -161,12 +161,13 @@ class RealWordErrorChannel():
         for sentence in sentence_info_generator:
             possibly_erroneous_sentence, corrections = self.pass_sentence_through_channel(sentence)
             self.unicode_outfile_obj.write(possibly_erroneous_sentence + u'\n')
-            self.unicode_corrections_file_obj.write(str(i) + ' ' + repr(corrections) + '\n')
+            if corrections != []:
+                self.unicode_corrections_file_obj.write(str(i) + ' ' + repr(corrections) + '\n')
             i += 1
         self.unicode_corrections_file_obj.write(repr(self.get_stats()))
 
 if __name__ == '__main__':
 
     vocab_file_name, corrections_file_name, p, seed = sys.argv[1:]
-    rwec = RealWordErrorChannel(sys.stdin, open(vocab_file_name, 'rb'), sys.stdout, open(corrections_file_name, 'rb'), float(p), random.Random(int(seed)))
+    rwec = RealWordErrorChannel(sys.stdin, open(vocab_file_name, 'rb'), sys.stdout, open(corrections_file_name, 'wb'), float(p), random.Random(int(seed)))
     rwec.pass_file_through_channel()
