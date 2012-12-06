@@ -6,9 +6,10 @@ import codecs, unicodedata, random, sys
 
 class RealWordErrorChannel():
 
-    def __init__(self, segmenter_training_text_infile_obj, vocabfile_obj, outfile_obj, p, random_number_generator):
+    def __init__(self, segmenter_training_text_infile_obj, vocabfile_obj, outfile_obj, corrections_file_obj, p, random_number_generator):
         self.unicode_vocabfile_obj = codecs.getreader('utf-8')(vocabfile_obj)
         self.unicode_outfile_obj = codecs.getwriter('utf-8')(outfile_obj)
+        self.unicode_corrections_file_obj = codecs.getwriter('utf-8')(corrections_file_obj)
         self.real_words, self.symbols = self.get_real_words_and_symbols()
         self.segmenter_tokeniser = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(segmenter_training_text_infile_obj, outfile_obj)
         self.p = p
@@ -121,6 +122,7 @@ class RealWordErrorChannel():
         # If it is replaced, recase it if necessary
         # else just put original token.
         result = u''
+        corrections = []
         substitution_indices = [sub[0] for sub in substitutions]
         tokens_containing_subs = []
         for sub_index in substitution_indices:
@@ -139,28 +141,32 @@ class RealWordErrorChannel():
                 passed_token = self.pass_token_through_channel(current_token)
                 if passed_token == current_token:
                     result += passed_token
-                elif current_token_is_title:
-                    result += passed_token.title()
-                elif current_token_is_upper:
-                    result += passed_token.upper()
                 else:
+                    if current_token_is_title:
+                        passed_token = passed_token.title()
+                    elif current_token_is_upper:
+                        passed_token = passed_token.upper()
                     result += passed_token
+                    corrections.append((last_boundary, passed_token, current_token))
             last_boundary = next_boundary
             
-        return result
+        return result, corrections
 
     def pass_file_through_channel(self, text=None):
         assert text is None or isinstance(text, unicode), text
         if text == None: text = self.segmenter_tokeniser.text 
 
         sentence_info_generator = self.segmenter_tokeniser.segmented_and_tokenised(text, file_output=False)
+        i = 0
         for sentence in sentence_info_generator:
-            possibly_erroneous_sentence = self.pass_sentence_through_channel(sentence)
+            possibly_erroneous_sentence, corrections = self.pass_sentence_through_channel(sentence)
             self.unicode_outfile_obj.write(possibly_erroneous_sentence + u'\n')
+            self.unicode_corrections_file_obj.write(str(i) + ' ' + repr(corrections) + '\n')
+            i += 1
+        self.unicode_corrections_file_obj.write(repr(self.get_stats()))
 
 if __name__ == '__main__':
 
-    vocab_file_name, p, seed = sys.argv[1:]
-    rwec = RealWordErrorChannel(sys.stdin, open(vocab_file_name, 'rb'), sys.stdout, float(p), random.Random(int(seed)))
+    vocab_file_name, corrections_file_name, p, seed = sys.argv[1:]
+    rwec = RealWordErrorChannel(sys.stdin, open(vocab_file_name, 'rb'), sys.stdout, open(corrections_file_name, 'rb'), float(p), random.Random(int(seed)))
     rwec.pass_file_through_channel()
-    sys.stdout.write( repr(rwec.get_stats()) )

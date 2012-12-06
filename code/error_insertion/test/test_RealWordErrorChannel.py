@@ -13,10 +13,11 @@ class RealWordErrorChannelTest(unittest.TestCase):
     def setUpClass(self):
         text_to_corrupt = open('code/error_insertion/test/test_data/text_to_corrupt', 'rb')
         vocab_file = open('code/error_insertion/test/test_data/1K_test_real_word_vocab', 'rb')
-        self.corrupted = StringIO.StringIO()
+        self.corrupted_file = StringIO.StringIO()
+        self.corrections_file = StringIO.StringIO()
         p = .3
         r = random.Random(999)
-        self.real_word_error_channel = RealWordErrorChannel.RealWordErrorChannel(text_to_corrupt, vocab_file, self.corrupted, p, r)
+        self.real_word_error_channel = RealWordErrorChannel.RealWordErrorChannel(text_to_corrupt, vocab_file, self.corrupted_file, self.corrections_file, p, r)
 
     def test_real_words(self):
         for test_word in [u'with', u'end.of.document', u'don\'t']:
@@ -149,47 +150,77 @@ class RealWordErrorChannelTest(unittest.TestCase):
             (u'Overt symptoms gradually begin after the age of six months, become established by age two or three years, and tend to continue through adulthood, although often in more muted form.', \
             [5, 6, 14, 15, 24, 25, 30, 31, 36, 37, 40, 41, 44, 45, 47, 48, 51, 52, 58, 59, 60, 66, 67, 78, 79, 81, 82, 85, 86, 89, 90, 92, 93, 98, 99, 104, 105, 106, 109, 110, 114, 115, 117, 118, 126, 127, 134, 135, 144, 145, 146, 154, 155, 160, 161, 163, 164, 168, 169, 174, 175, 179], [])]
         expected_results = [[\
-                (13, u'Experiments in Germany led to A. S. Neill founding what became Summerhill School i 1921.'), \
-                (19, u'Experiments i Germany led to A. S. Neill founding what became Summerhill School in 1921.'), \
-                (21, u'Experiments i Germany led to A. S. Neill founding what became Summerhill School in 1921.'), \
-                (27, u'Experiments in Germany led to A. S. Neill founding what became Summerhill School i 1921.'), \
-                (32, u'Experiments a Germany led to A. S. Neill founding what became Summerhill School in 1921.'), \
-                (40, u'Experiments i Germany led to A. S. Neill founding what became Summerhill School in 1921.'), \
-                (41, u'Experiments in Germany led t A. S. Neill founding what became Summerhill School i 1921.'), \
-                (46, u'Experiments in Germany led t A. S. Neill founding what became Summerhill School in 1921.'), \
-                (48, u'Experiments i Germany led to A. S. Neill founding what became Summerhill School in 1921.') ], \
-               [(0, u'Overt symptoms gradually begin after the age off six months, become established by age two or three years, and tend to continue through adulthood, although often in more muted form.'), \
-                (2, u'Overt symptoms gradually begin after the age of six months, become established by age two on three years, and tend to continue through adulthood, although often in more muted form.'), \
-                (3, u'Overt symptoms gradually begin after the age of six months, become established by age two or three years, and tend to continue through adulthood, although often in more muted for.'), \
-                (4, u'Overt symptoms gradually begin after the age of six months, become established by age two or three years, hand tend to continue through adulthood, although often in more muted form.'), \
-                (8, u'Overt symptoms gradually begin after the age of six months, become established by age two or three years, and tend t continue through adulthood, although often in more muted form.'), \
-                (9, u'Overt symptoms gradually begin after the age of six months, become established by age two or three years, and tend t continue through adulthood, although often win more muted form.'), \
-                (11, u'Overt symptoms gradually begin after the age of six months, become established by age two or three years, and tend low continue through adulthood, although often in more muted form.'), \
-                (13, u'Overt symptoms gradually begin after the age of six months, become established by age two or three year, and tend t continue through adulthood, although often in more muted form.'), \
-                (15, u'Overt symptoms gradually begin after the age of six months, become established by age two or three years, and tend to continue through adulthood, although often in more muted from.'), \
-                (21, u'Overt symptoms gradually begin after the age of six months, become established by age two or three years, and tend to continue through adulthood, although often i more muted form.'), \
-                (24, u'Overt symptoms gradually begin after the age of six months, become established by age to or three years, and tend to continue through adulthood, although often in more muted form.'), \
-                (28, u'Overt symptoms gradually begin after the age of six months, become established b age two or three years, and tend to continue through adulthood, although often in more muted form.'), \
-                (30, u'Overt symptoms gradually begin after the age of six months, become established b age two or three years, and tend to continue through adulthood, although often in more muted form.'), \
-                (31, u'Overt symptoms gradually begin after the age of six months, become established by age two or three years, an tend to continue through adulthood, although often in more muted form.'), \
-                (32, u'Overt symptoms gradually begin after the age of six months, become established by age two or three years, and tend to continue through adulthood, although often in more muted from.'), \
-                (33, u'Overt symptoms gradually begin after the age of six months, become established by age two or three years, and tend t continue through adulthood, although often in more muted form.'), \
-                (36, u'Overt symptoms gradually begin after the age of six months, become established by age two or three years, and tend t continue through adulthood, although often in more muted form.'), \
-                (37, u'Overt symptoms gradually begin after the age of six months, become established by age to or three years, and tend to continue through adulthood, although often in more muted form.'), \
-                (40, u'Overt symptoms gradually begin after the age of six months, become established by age two or three years, and tend to continue through adulthood, although often i more muted form.'), \
-                (46, u'Overt symptoms gradually begin after the age of six months, become established by age two or three years, and tend to continue through adulthood, although often i more muted form.')]]
+                (13, u'Experiments in Germany led to A. S. Neill founding what became Summerhill School i 1921.', \
+                     [(81, u'i', u'in')]), \
+                (19, u'Experiments i Germany led to A. S. Neill founding what became Summerhill School in 1921.', \
+                     [(12, u'i', u'in')]), \
+                (21, u'Experiments i Germany led to A. S. Neill founding what became Summerhill School in 1921.', \
+                     [(12, u'i', u'in')]), \
+                (27, u'Experiments in Germany led to A. S. Neill founding what became Summerhill School i 1921.', \
+                     [(81, u'i', u'in')]), \
+                (32, u'Experiments a Germany led to A. S. Neill founding what became Summerhill School in 1921.', \
+                     [(12, u'a', u'in')]), \
+                (40, u'Experiments i Germany led to A. S. Neill founding what became Summerhill School in 1921.', \
+                     [(12, u'i', u'in')]), \
+                (41, u'Experiments in Germany led t A. S. Neill founding what became Summerhill School i 1921.', \
+                     [(27, u't', u'to'), (81, u'i', u'in')]), \
+                (46, u'Experiments in Germany led t A. S. Neill founding what became Summerhill School in 1921.', \
+                     [(27, u't', u'to')]), \
+                (48, u'Experiments i Germany led to A. S. Neill founding what became Summerhill School in 1921.', \
+                     [(12, u'i', u'in')]) ], \
+               [(0, u'Overt symptoms gradually begin after the age off six months, become established by age two or three years, and tend to continue through adulthood, although often in more muted form.', \
+                     [(45, u'off', u'of')]), \
+                (2, u'Overt symptoms gradually begin after the age of six months, become established by age two on three years, and tend to continue through adulthood, although often in more muted form.', \
+                     [(90, u'on', u'or')]), \
+                (3, u'Overt symptoms gradually begin after the age of six months, become established by age two or three years, and tend to continue through adulthood, although often in more muted for.', \
+                     [(175, u'for', u'form')]), \
+                (4, u'Overt symptoms gradually begin after the age of six months, become established by age two or three years, hand tend to continue through adulthood, although often in more muted form.', \
+                     [(106, u'hand', u'and')]), \
+                (8, u'Overt symptoms gradually begin after the age of six months, become established by age two or three years, and tend t continue through adulthood, although often in more muted form.', \
+                     [(115, u't', u'to')]), \
+                (9, u'Overt symptoms gradually begin after the age of six months, become established by age two or three years, and tend t continue through adulthood, although often win more muted form.', \
+                     [(115, u't', u'to'), (161, u'win', u'in')]), \
+                (11, u'Overt symptoms gradually begin after the age of six months, become established by age two or three years, and tend low continue through adulthood, although often in more muted form.', \
+                     [(115, u'low', u'to')]), \
+                (13, u'Overt symptoms gradually begin after the age of six months, become established by age two or three year, and tend t continue through adulthood, although often in more muted form.', \
+                     [(99, u'year', u'years'), (115, u't', u'to')]), \
+                (15, u'Overt symptoms gradually begin after the age of six months, become established by age two or three years, and tend to continue through adulthood, although often in more muted from.', \
+                     [(175, u'from', u'form')]), \
+                (21, u'Overt symptoms gradually begin after the age of six months, become established by age two or three years, and tend to continue through adulthood, although often i more muted form.', \
+                     [(161, u'i', u'in')]), \
+                (24, u'Overt symptoms gradually begin after the age of six months, become established by age to or three years, and tend to continue through adulthood, although often in more muted form.', \
+                     [(86, u'to', u'two')]), \
+                (28, u'Overt symptoms gradually begin after the age of six months, become established b age two or three years, and tend to continue through adulthood, although often in more muted form.', \
+                     [(79, u'b', u'by')]), \
+                (30, u'Overt symptoms gradually begin after the age of six months, become established b age two or three years, and tend to continue through adulthood, although often in more muted form.', \
+                     [(79, u'b', u'by')]), \
+                (31, u'Overt symptoms gradually begin after the age of six months, become established by age two or three years, an tend to continue through adulthood, although often in more muted form.', \
+                     [(106, u'an', u'and')]), \
+                (32, u'Overt symptoms gradually begin after the age of six months, become established by age two or three years, and tend to continue through adulthood, although often in more muted from.', \
+                     [(175, u'from', u'form')]), \
+                (33, u'Overt symptoms gradually begin after the age of six months, become established by age two or three years, and tend t continue through adulthood, although often in more muted form.', \
+                     [(115, u't', u'to')]), \
+                (36, u'Overt symptoms gradually begin after the age of six months, become established by age two or three years, and tend t continue through adulthood, although often in more muted form.', \
+                     [(115, u't', u'to')]), \
+                (37, u'Overt symptoms gradually begin after the age of six months, become established by age to or three years, and tend to continue through adulthood, although often in more muted form.', \
+                     [(86, u'to', u'two')]), \
+                (40, u'Overt symptoms gradually begin after the age of six months, become established by age two or three years, and tend to continue through adulthood, although often i more muted form.', \
+                     [(161, u'i', u'in')]), \
+                (46, u'Overt symptoms gradually begin after the age of six months, become established by age two or three years, and tend to continue through adulthood, although often i more muted form.', \
+                     [(161, u'i', u'in')])]]
                                 
         for i in range(len(sentences)):
             sentence_and_token_information = sentences[i]
             expected = expected_results[i]
             results = []
             for i in range(50):
-                result = self.real_word_error_channel.pass_sentence_through_channel(sentence_and_token_information)
+                result, corrections = self.real_word_error_channel.pass_sentence_through_channel(sentence_and_token_information)
                 if result != sentence_and_token_information[0]:
-                    results.append((i, result))
+                    results.append((i, result, corrections))
 
             try:
-                assert results == expected
+                assert len(results) == len(expected), str(len(results)) + ' ' + str(len(expected))
+                assert repr(results) == repr(expected), '\n' + repr(results) + '\n\n\n' + repr(expected)
             except AssertionError, exp:
                 print sentence_and_token_information[0]
                 for res in results: print res
@@ -207,20 +238,22 @@ class RealWordErrorChannelTest(unittest.TestCase):
 
         expected_text_output = "Autism.\nAutism is at disorder of neural development characterized by impaired social interaction and communication, and by restricted and repetitive behavior.\nThese signs all begin before a child is three years old.\nAutism affects information processing in the brain by altering how nerve cells and their synapses connect and organize; how this occurs is not well understood.\nThe two other autism spectrum disorders (ASD) are Asperger syndrome, which lacks delays in cognitive development and language, and PDD-NOS, diagnosed when full criteria for the other two disorders are not met.\nAutism has a strong genetic basis, although the genetics of autism are complex and up is unclear whether ASD is explained more by rare mutations, or by rare combinations of common genetic variants.\nIn rare cases, autism is strongly associated with agents that cause birth defects.\nControversies surround other proposed environmental causes, such as heavy metals, pesticides or childhood vaccines; the vaccine hypotheses are biologically implausible and lack convincing scientific evidence.\nThe prevalence of autism is about 1\xe2\x80\x932 per 1,000 people; the prevalence of ASD is about 6 per 1,000, with about four times as many males as females.\nThe number of people diagnosed with autism has increased dramatically since the 1980s, partly due to changes in diagnostic practice; the question of whether actual prevalence has increased is unresolved.\nParents usually notice signs in the first two years of their child's life.\nThe signs usually develop gradually, but some autistic children first develop more normally and then regress.\nAlthough early behavioral or cognitive intervention can help autistic children gain self-care, social, and communication skills, there is no known cure.\nNot many children with autism live independently after reaching adulthood, though some become successful.\nAn autistic culture has developed, with some individuals seeking a cure and others believing autism should be tolerated as i difference and not treated as a disorder.\n"
 
+        expected_corrections_output = "0 []\n1 [(10, u'at', u'a')]\n2 []\n3 []\n4 []\n5 [(83, u'up', u'it')]\n6 []\n7 []\n8 []\n9 []\n10 []\n11 []\n12 []\n13 []\n14 [(123, u'i', u'a')]\n(3.0, 166.0, 1.6666666666666667, 3)"
 
         self.real_word_error_channel.pass_file_through_channel(text=text_to_create_errors_in)
         
-        assert isinstance(self.corrupted.getvalue(), str), (type(self.corrupted.getvalue()), repr(self.corrupted.getvalue()))
-        try:
-            assert self.corrupted.getvalue() == expected_text_output
-        except AssertionError, exp:
-            x = self.corrupted.getvalue()
-            for i in range(len(x)):
-                if i >= len(expected_text_output) or x[i] != expected_text_output[i]: break
-            print '\nMatching prefix of output and expected output: ', repr(x[:i])
-            print '\noutput differs starting here: ', repr(x[i:])
-            print '\nexpected: ', repr(expected_text_output[i:])
-            raise exp
+        for got, expected in [(self.corrupted_file.getvalue(), expected_text_output), (self.corrections_file.getvalue(), expected_corrections_output)]:
+            assert isinstance(got, str), (type(got), repr(got))
+            try:
+                assert got == expected
+            except AssertionError, exp:
+                x = got
+                for i in range(len(x)):
+                    if i >= len(expected) or x[i] != expected[i]: break
+                print '\nMatching prefix of output and expected output: ', repr(x[:i])
+                print '\noutput differs starting here: ', repr(x[i:])
+                print '\nexpected: ', repr(expected[i:])
+                raise exp
 
         expected_real_word_errors = 3
         expected_real_word_tokens_passed_through = 166
