@@ -14,9 +14,9 @@ class RealWordVocabExtractorTest(unittest.TestCase):
         real_word_vocab_extractor = RealWordVocabExtractor.RealWordVocabExtractor(vocab_file_obj, outfile_obj)
         real_word_vocab_extractor.extract_real_words()
         vocabulary = outfile_obj.getvalue()
-        for test_word in [u'with', u'end.of.document', u'don\'t']:
+        for test_word in [u'with', u'end', u'don\'t']:
             assert vocabulary.find(u'\n' + test_word + u'\n') != -1, test_word
-        for test_word in [u'xxxx', u'-', u'.', u'<3-digit-integer>']:
+        for test_word in [u'xxxx', u'-', u'.', u'<3-digit-integer>', u'end.of.document']:
             assert vocabulary.find(u'\n' + test_word + u'\n') == -1, test_word
 
         
