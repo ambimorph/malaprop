@@ -159,8 +159,10 @@ def create_error_sets(target, source, env):
             size = vocabulary_sizes[i]
             vocabulary_file_name = language_model_directory + str(size) + 'K.vocab'
             error_set_file_name = error_set_directory + 'errors_at_' + str(error_rate) + '_' + str(size) + 'K_vocabulary' + '_' + development_file_name
+            corrections_file_name = error_set_directory + 'corrections_' + str(error_rate) + '_' + str(size) + 'K_vocabulary' + '_' + development_file_name
             rwec = RealWordErrorChannel.RealWordErrorChannel(bz2.BZ2File(development_chunk_path + development_file_name, 'r'), \
-                      open(vocabulary_file_name, 'r'), bz2.BZ2File(error_set_file_name, 'w'), error_rate, random.Random(7))
+                      open(vocabulary_file_name, 'r'), bz2.BZ2File(error_set_file_name, 'w'), open(corrections_file_name, 'w'), \
+                      error_rate, random.Random(7))
             rwec.pass_file_through_channel()
             print development_file_name, rwec.get_stats()
 
@@ -190,4 +192,4 @@ env.vocabulary_files([language_model_directory + str(size) + 'K.vocab' for size 
 
 env.trigram_models([language_model_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes], [corpus_directory + 'training_set.bz2'] + [language_model_directory + str(size) + 'K.vocab' for size in vocabulary_sizes])
 
-env.error_sets([error_set_directory + 'errors_at_' + str(error_rate) + '_' + str(size) + 'K_vocabulary.bz2' for size in vocabulary_sizes], [corpus_directory + 'development_set.bz2'] + [language_model_directory + str(size) + 'K.vocab' for size in vocabulary_sizes])
+env.error_sets([error_set_directory + 'errors_at_' + str(error_rate) + '_' + str(size) + 'K_vocabulary_' + development_file_name + '.bz2' for size in vocabulary_sizes for development_file_name in os.listdir(development_chunk_path)] + [error_set_directory + 'corrections_' + str(error_rate) + '_' + str(size) + 'K_vocabulary_' + development_file_name + '.bz2' for size in vocabulary_sizes for development_file_name in os.listdir(development_chunk_path)], [corpus_directory + 'development_set.bz2'] + [language_model_directory + str(size) + 'K.vocab' for size in vocabulary_sizes])
