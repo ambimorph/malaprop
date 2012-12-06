@@ -1,14 +1,15 @@
 # Copyright 2011 L. Amber Wilcox-O'Hearn
 # test_vocabulary_cutter.py
 
-import vocabulary_cutter, unittest, StringIO
+import unittest, StringIO
+from code.language_modelling import vocabulary_cutter
 
 
 class VocabularyCutterTest(unittest.TestCase):
 
     def test_cut_vocabulary(self):
 
-        infile_obj = open('test/data/unigram_counts', 'r')
+        infile_obj = open('test_data/unigram_counts', 'r')
         outfile_obj = StringIO.StringIO()
 
         vc = vocabulary_cutter.VocabularyCutter(infile_obj, outfile_obj)

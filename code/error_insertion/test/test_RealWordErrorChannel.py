@@ -11,8 +11,8 @@ class RealWordErrorChannelTest(unittest.TestCase):
     
     @classmethod
     def setUpClass(self):
-        text_to_corrupt = open('code/error_insertion/test/test_data/text_to_corrupt', 'rb')
-        vocab_file = open('code/error_insertion/test/test_data/1K_test_real_word_vocab', 'rb')
+        text_to_corrupt = open('test_data/segmenter_training', 'rb')
+        vocab_file = open('test_data/1K_test_real_word_vocab', 'rb')
         self.corrupted_file = StringIO.StringIO()
         self.corrections_file = StringIO.StringIO()
         p = .3

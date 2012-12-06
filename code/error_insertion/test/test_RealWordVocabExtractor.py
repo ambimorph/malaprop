@@ -9,7 +9,7 @@ import unittest, StringIO
 class RealWordVocabExtractorTest(unittest.TestCase):
     
     def test_real_word_vocab_extactor(self):
-        vocab_file_obj = open('code/error_insertion/test/test_data/1K_test_vocab', 'rb')
+        vocab_file_obj = open('test_data/1K_test_vocab', 'rb')
         outfile_obj = StringIO.StringIO()
         real_word_vocab_extractor = RealWordVocabExtractor.RealWordVocabExtractor(vocab_file_obj, outfile_obj)
         real_word_vocab_extractor.extract_real_words()

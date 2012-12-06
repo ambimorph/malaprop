@@ -1,7 +1,8 @@
 # 2012 L. Amber Wilcox-O'Hearn
 # test_NLTKSegmentThenTokenise.py
 
-import NLTKSegmentThenTokenise, unittest, StringIO
+from code.preprocessing import NLTKSegmentThenTokenise
+import unittest, StringIO
 
 
 class SegmenterAndTokeniserTest(unittest.TestCase):

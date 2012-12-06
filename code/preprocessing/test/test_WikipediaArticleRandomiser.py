@@ -1,7 +1,8 @@
 # Copyright 2011 L. Amber Wilcox-O'Hearn
 # test_WikipediaArticleRandomiser.py
 
-import WikipediaArticleRandomiser, unittest, StringIO, random
+from code.preprocessing import WikipediaArticleRandomiser
+import unittest, StringIO, random
 
 
 class WikipediaArticleRandomiserTest(unittest.TestCase):
