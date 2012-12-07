@@ -122,9 +122,9 @@ def create_trigram_models(target, source, env):
         assert target[i].path == trigram_model_name, target[i].path
         srilm_make_big_lm = subprocess.call(['make-big-lm', '-debug', '2', '-kndiscount3', '-unk', '-read', temporary_counts_directory + 'merge-iter7-1.ngrams.gz', '-vocab', vocabulary_file_name, '-lm', trigram_model_name])
 
-# Important to do this, or lm will not change
     # Do these only when everything else has worked!
     # shutil.rmtree(chunk_path)  
+# Important to do this, or lm will not change
     # shutil.rmtree(temporary_counts_directory)
 
     return None
