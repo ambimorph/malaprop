@@ -71,10 +71,12 @@ class DamerauLevenshteinComputer():
         for line in self.unicode_vocabfile_obj.readlines():
             word = line.strip()
             for previous_word in previous_words:
-                if word < previous_word:
-                    self.unicode_outfile_obj.write(word + u' ' + previous_word + u' ' + unicode(self.dameraulevenshtein(word, previous_word)) + u'\n')
-                else:
-                    self.unicode_outfile_obj.write(previous_word + ' ' + word + ' ' + str(self.dameraulevenshtein(word, previous_word)) + u'\n')
+                distance = self.dameraulevenshtein(word, previous_word)
+                if not self.maximum_distance or distance <= self.maximum_distance:
+                    if word < previous_word:
+                        self.unicode_outfile_obj.write(word + u' ' + previous_word + u' ' + unicode(self.dameraulevenshtein(word, previous_word)) + u'\n')
+                    else:
+                        self.unicode_outfile_obj.write(previous_word + ' ' + word + ' ' + str(self.dameraulevenshtein(word, previous_word)) + u'\n')
             previous_words.append(word)
 
 

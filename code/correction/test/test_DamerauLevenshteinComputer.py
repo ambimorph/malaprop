@@ -36,7 +36,27 @@ class DamerauLevenshteinComputerTest(unittest.TestCase):
             print '\noutput differs starting here: ', repr(x[i:])
             print '\nexpected: ', repr(expected_output[i:])
             raise exp
-        
+
+    def test_compute_some_distances_from_vocab(self):
+        vocab_file_obj = StringIO.StringIO()
+        vocab_file_obj.write("this\nis\na\ntest\n")
+        vocab_file_obj.seek(0)
+        outfile_obj = StringIO.StringIO()
+        expected_output = 'is this 2\na is 2\ntest this 3\nis test 3\n'
+        dlc = DamerauLevenshteinComputer.DamerauLevenshteinComputer(vocab_file_obj, outfile_obj, 3)
+        dlc.compute_all_distances_from_vocab()
+
+        assert isinstance(outfile_obj.getvalue(), str), (type(outfile_obj.getvalue()), repr(outfile_obj.getvalue()))
+        try:
+            assert outfile_obj.getvalue() == expected_output
+        except AssertionError, exp:
+            x = outfile_obj.getvalue()
+            for i in range(len(x)):
+                if i >= len(expected_output) or x[i] != expected_output[i]: break
+            print '\nMatching prefix of output and expected output: ', repr(x[:i])
+            print '\noutput differs starting here: ', repr(x[i:])
+            print '\nexpected: ', repr(expected_output[i:])
+            raise exp       
 
         
 if __name__ == '__main__':
