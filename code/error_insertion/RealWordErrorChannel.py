@@ -62,7 +62,7 @@ class RealWordErrorChannel():
             elif error_type == 1: # print "deletion!"
                 return left_char
             elif error_type == 2: # print "substitution!"
-                symbol_to_sub = self.random_number_generator.choice(self.symbols)
+                symbol_to_sub = self.random_number_generator.choice(self.symbols[:self.symbols.index(right_char)] + self.symbols[self.symbols.index(right_char)+1:])
                 return left_char + symbol_to_sub
             else: # print "transposition!"
                 return right_char + left_char
@@ -85,7 +85,7 @@ class RealWordErrorChannel():
         while len(remaining_chars) > 0:
             temp = self.create_error_with_probability_p(left_char, right_char)
             if temp != left_char + right_char: number_of_errors_so_far += 1
-            if len(temp) == 1:
+            if len(temp) <= 1:
                 left_char = temp
                 right_char = remaining_chars.pop(0)
             elif len(temp) == 2:
@@ -97,14 +97,18 @@ class RealWordErrorChannel():
                 left_char = temp[1]
                 right_char = temp[2]
 
-        temp = self.create_error_with_probability_p(left_char, right_char)
-        if temp != left_char + right_char: number_of_errors_so_far += 1
-        while len(temp) == 2:
-            result += temp[0]
-            left_char = temp[1]
-            right_char = u''
+        # Now left_char is something, right_char is ''
+        if left_char != u'':
             temp = self.create_error_with_probability_p(left_char, right_char)
-            if temp != left_char + right_char: number_of_errors_so_far += 1
+            if temp != left_char + right_char:
+                number_of_errors_so_far += 1
+            # As long as we keep getting insertions
+            while len(temp) == 2:
+                result += temp[0]
+                left_char = temp[1]
+                right_char = u''
+                temp = self.create_error_with_probability_p(left_char, right_char)
+                if temp != left_char + right_char: number_of_errors_so_far += 1
 
         result += temp
         self.real_word_tokens_passed_through += 1
