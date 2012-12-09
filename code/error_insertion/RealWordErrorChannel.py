@@ -4,6 +4,29 @@
 from code.preprocessing import NLTKSegmentThenTokenise
 import codecs, unicodedata, random, sys
 
+class MidChannelToken():
+
+    def __init__(self, token):
+        # Results so far of passing prefix of the token through the channel:
+        self.chars_passed = u''
+        # Rest of the token not yet in the channel:
+        self.remaining_chars = list(token) + [u'']
+        # The channel has up to two chars in it for computing all
+        # possible transformations:
+        self.left_char = u''
+        self.right_char = self.remaining_chars.pop(0)
+        # The number of errors accumulated in this variation:
+        self.number_of_errors = 0
+        # Each error accumulated has a probability of happening which
+        # is accumulated here to later be multiplied by the absolute
+        # probability of error in the channel.
+        self.error_probability_factor = 0
+        # Similarly, the number of accumulated non-errors and
+        # corresponding probability factor:
+        self.number_of_non_errors = 0
+        self.non_error_probability_factor = 0
+
+
 class RealWordErrorChannel():
 
     def __init__(self, segmenter_training_text_infile_obj, vocabfile_obj, outfile_obj, corrections_file_obj, p, random_number_generator):
@@ -70,54 +93,92 @@ class RealWordErrorChannel():
         else: # print "no error added!"
             return left_char + right_char
 
+    def create_all_possible_errors_and_probs(self, left_char, right_char):
+        assert not (left_char == u'' and right_char == u'')
+
+        list_of_string_error_factor_pairs = []
+
+        if left_char == u'': # No transposition
+            number_of_error_types = 3
+        elif right_char == u'': # Insertion only
+            number_of_error_types = 1
+        else:
+            number_of_error_types = 4
+
+        for i in range(number_of_error_types):
+            if i == 0: # insertions
+                list_of_string_error_factor_pairs += [(left_char + s + right_char, 1.0/number_of_error_types*1.0/(len(self.symbols))) for s in self.symbols]
+            elif i == 1: # deletions
+                list_of_string_error_factor_pairs += [(left_char, 1.0/number_of_error_types)]
+            elif i == 2: # substitutions
+                list_of_string_error_factor_pairs += [(left_char + s, 1.0/number_of_error_types*1.0/(len(self.symbols)-1)) for s in self.symbols[:self.symbols.index(right_char)] + self.symbols[self.symbols.index(right_char)+1:]]
+            else: # transpositions
+                list_of_string_error_factor_pairs += [(right_char + left_char, 1.0/number_of_error_types)]
+
+        return list_of_string_error_factor_pairs
+
+    def push_token(self, mid_channel_token, with_probability_p=True):
+        '''
+        If with_probability_p, returns MidChannelToken with one of the
+        possible errors according to channel probability p, else
+        returns all possible MidChannelTokens that are continuations.
+        '''
+
+        if with_probability_p:
+            if len(mid_channel_token.remaining_chars) > 0:
+                temp = self.create_error_with_probability_p(mid_channel_token.left_char, mid_channel_token.right_char)
+                if temp != mid_channel_token.left_char + mid_channel_token.right_char:
+                    mid_channel_token.number_of_errors += 1
+                if len(temp) <= 1:
+                    mid_channel_token.left_char = temp
+                    mid_channel_token.right_char = mid_channel_token.remaining_chars.pop(0)
+                elif len(temp) == 2:
+                    mid_channel_token.chars_passed += temp[0]
+                    mid_channel_token.left_char = temp[1]
+                    mid_channel_token.right_char = mid_channel_token.remaining_chars.pop(0)
+                elif len(temp) == 3:
+                    mid_channel_token.chars_passed += temp[0]
+                    mid_channel_token.left_char = temp[1]
+                    mid_channel_token.right_char = temp[2]
+
+            else:
+                assert mid_channel_token.right_char == u''
+                if mid_channel_token.left_char != u'':
+                    temp = self.create_error_with_probability_p(mid_channel_token.left_char, mid_channel_token.right_char)
+                    if temp != mid_channel_token.left_char + mid_channel_token.right_char:
+                        mid_channel_token.number_of_errors += 1
+                    if len(temp) == 2:
+                        mid_channel_token.chars_passed += temp[0]
+                        mid_channel_token.left_char = temp[1]
+                    else:
+                        mid_channel_token.chars_passed += temp
+                        mid_channel_token.left_char = u''
+                    mid_channel_token.right_char = u''
+
+            return mid_channel_token
+                
+                
     def pass_token_through_channel(self, token):
-        # If token is a real word, pass each pair of chars through insert_error, else return original
-        # if result is a real word, return it (possibly re-uppering), else return original
-        # Update real_word_errors, real_word_tokens_passed_through, mean_errors_per_word, max_errors_per_word
+        # If token is a real word, pass each pair of chars through
+        # insert_error, else return original if result is a real word,
+        # return it (possibly re-uppering), else return original
+        # Update real_word_errors, real_word_tokens_passed_through,
+        # mean_errors_per_word, max_errors_per_word
         assert len(token) > 0, token
         if not self.is_real_word(token):
             return token
-        result = u''
-        number_of_errors_so_far = 0
-        remaining_chars = list(token) + [u'']
-        left_char = u''
-        right_char = remaining_chars.pop(0)
-        while len(remaining_chars) > 0:
-            temp = self.create_error_with_probability_p(left_char, right_char)
-            if temp != left_char + right_char: number_of_errors_so_far += 1
-            if len(temp) <= 1:
-                left_char = temp
-                right_char = remaining_chars.pop(0)
-            elif len(temp) == 2:
-                result += temp[0]
-                left_char = temp[1]
-                right_char = remaining_chars.pop(0)
-            elif len(temp) == 3:
-                result += temp[0]
-                left_char = temp[1]
-                right_char = temp[2]
 
-        # Now left_char is something, right_char is ''
-        if left_char != u'':
-            temp = self.create_error_with_probability_p(left_char, right_char)
-            if temp != left_char + right_char:
-                number_of_errors_so_far += 1
-            # As long as we keep getting insertions
-            while len(temp) == 2:
-                result += temp[0]
-                left_char = temp[1]
-                right_char = u''
-                temp = self.create_error_with_probability_p(left_char, right_char)
-                if temp != left_char + right_char: number_of_errors_so_far += 1
+        mid_channel_token = MidChannelToken(token)
+        while mid_channel_token.left_char + mid_channel_token.right_char != u'':
+            self.push_token(mid_channel_token)
 
-        result += temp
         self.real_word_tokens_passed_through += 1
-        if self.is_real_word(result):
-            if result != token: 
-                self.mean_errors_per_word = (self.mean_errors_per_word * self.real_word_errors + number_of_errors_so_far) / (self.real_word_errors + 1)
-                self.max_errors_per_word = max(self.max_errors_per_word, number_of_errors_so_far)
+        if self.is_real_word(mid_channel_token.chars_passed):
+            if mid_channel_token.chars_passed != token: 
+                self.mean_errors_per_word = (self.mean_errors_per_word * self.real_word_errors + mid_channel_token.number_of_errors) / (self.real_word_errors + 1)
+                self.max_errors_per_word = max(self.max_errors_per_word, mid_channel_token.number_of_errors)
                 self.real_word_errors += 1
-            return result
+            return mid_channel_token.chars_passed
         return token
 
     def pass_sentence_through_channel(self, (original, boundaries, substitutions)):
