@@ -10,7 +10,7 @@ class DamerauLevenshteinComputer():
             self.unicode_vocabfile_obj = codecs.getreader('utf-8')(vocabfile_obj)
         if outfile_obj is not None:
             self.unicode_outfile_obj = codecs.getwriter('utf-8')(outfile_obj)
-        self.maximum_distance = maximum_distance
+        self.maximum_distance = int(maximum_distance)
 
     #############################################################
     # The following function was created by Michael Homer,
@@ -72,16 +72,17 @@ class DamerauLevenshteinComputer():
             word = line.strip()
             for previous_word in previous_words:
                 distance = self.dameraulevenshtein(word, previous_word)
-                if not self.maximum_distance or distance <= self.maximum_distance:
+                if self.maximum_distance is None or distance <= self.maximum_distance:
                     if word < previous_word:
-                        self.unicode_outfile_obj.write(word + u' ' + previous_word + u' ' + unicode(self.dameraulevenshtein(word, previous_word)) + u'\n')
+                        self.unicode_outfile_obj.write(word + u' ' + previous_word + u' ' + unicode(distance) + u'\n')
                     else:
-                        self.unicode_outfile_obj.write(previous_word + ' ' + word + ' ' + str(self.dameraulevenshtein(word, previous_word)) + u'\n')
+                        self.unicode_outfile_obj.write(previous_word + ' ' + word + ' ' + unicode(distance) + u'\n')
             previous_words.append(word)
 
 
 if __name__ == '__main__':
 
     import sys
-    dlc = DamerauLevenshteinComputer(sys.stdin, sys.stdout)
+    maximum_distance = sys.argv[1]
+    dlc = DamerauLevenshteinComputer(sys.stdin, sys.stdout, maximum_distance)
     dlc.compute_all_distances_from_vocab()
