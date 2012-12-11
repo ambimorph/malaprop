@@ -3,6 +3,7 @@
 
 from code.preprocessing import NLTKSegmentThenTokenise
 import codecs, unicodedata, random, sys
+from copy import deepcopy
 
 class MidChannelToken():
 
@@ -20,12 +21,31 @@ class MidChannelToken():
         # Each error accumulated has a probability of happening which
         # is accumulated here to later be multiplied by the absolute
         # probability of error in the channel.
-        self.error_probability_factor = 0
+        self.error_probability_factor = 1
         # Similarly, the number of accumulated non-errors and
         # corresponding probability factor:
         self.number_of_non_errors = 0
-        self.non_error_probability_factor = 0
+        self.non_error_probability_factor = 1
 
+    def __eq__(self, other):
+        for attribute in [
+            'chars_passed',
+            'remaining_chars',
+            'left_char',
+            'right_char',
+            'number_of_errors',
+            'error_probability_factor',
+            'number_of_non_errors',
+            'non_error_probability_factor']:
+            if getattr(self, attribute) != getattr(other, attribute):
+                return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __repr__(self):
+        return '<%s %r %r %r %r %d %d>' % (self.__class__.__name__, self.chars_passed, self.left_char, self.right_char, self.remaining_chars, self.number_of_errors, self.number_of_non_errors)
 
 class RealWordErrorChannel():
 
@@ -66,32 +86,51 @@ class RealWordErrorChannel():
     def is_real_word(self, token):
         return token in self.real_words
 
-    def create_error_with_probability_p(self, left_char, right_char):
+    def create_error(self, left_char, right_char, with_probability_p=True):
+        # 0 = Insertion, 1 = Deletion, 2 = Substitution, 3 = Transposition
         assert not (left_char == u'' and right_char == u'')
 
-        if self.random_number_generator.random() < self.p: # create an error
-            # 0 = Insertion, 1 = Deletion, 2 = Substitution, 3 = Transposition
+        if left_char == u'': # No transposition
+            possible_error_types = range(3)
+        elif right_char == u'': # Insertion only
+            possible_error_types = range(1)
+        else:
+            possible_error_types = range(4)
 
-            if left_char == u'': # No transposition
-                error_type = self.random_number_generator.randrange(3)
-            elif right_char == u'': # Insertion only
-                error_type = 0
-            else:
-                error_type = self.random_number_generator.randrange(4)
+        if with_probability_p:
+            if self.random_number_generator.random() < self.p: # create an error
+                if possible_error_types == [0]:
+                    error_type = 0
+                else:
+                    error_type = self.random_number_generator.choice(possible_error_types)
             
-            if error_type == 0: # print "insertion!"
-                symbol_to_insert = self.random_number_generator.choice(self.symbols)
-                return left_char + symbol_to_insert + right_char
-            elif error_type == 1: # print "deletion!"
-                return left_char
-            elif error_type == 2: # print "substitution!"
-                symbol_to_sub = self.random_number_generator.choice(self.symbols[:self.symbols.index(right_char)] + self.symbols[self.symbols.index(right_char)+1:])
-                return left_char + symbol_to_sub
-            else: # print "transposition!"
-                return right_char + left_char
-            
-        else: # print "no error added!"
-            return left_char + right_char
+                if error_type == 0: # print "insertion!"
+                    symbol_to_insert = self.random_number_generator.choice(self.symbols)
+                    return [left_char, symbol_to_insert, right_char]
+                elif error_type == 1: # print "deletion!"
+                    return [left_char]
+                elif error_type == 2: # print "substitution!"
+                    symbol_to_sub = self.random_number_generator.choice(self.symbols[:self.symbols.index(right_char)] + self.symbols[self.symbols.index(right_char)+1:])
+                    return [left_char, symbol_to_sub]
+                else: # print "transposition!"
+                    return [right_char, left_char]
+
+            else: # print "no error added!"
+                return [left_char, right_char]
+        else:
+            errors = []
+            for error_type in possible_error_types:
+                if error_type == 0:
+                    errors += [(left_char + s + right_char, 1.0/len(possible_error_types)*1.0/(len(self.symbols))) for s in self.symbols]
+                elif error_type == 1:
+                    errors += [(left_char, 1.0/len(possible_error_types))]
+                elif error_type == 2:
+                    errors += [(left_char + s, 1.0/len(possible_error_types)*1.0/(len(self.symbols)-1)) for s in self.symbols[:self.symbols.index(right_char)] + self.symbols[self.symbols.index(right_char)+1:]]
+                else:
+                    errors += [(right_char + left_char, 1.0/len(possible_error_types))]
+
+            return errors
+                
 
     def create_all_possible_errors_and_probs(self, left_char, right_char):
         assert not (left_char == u'' and right_char == u'')
@@ -125,39 +164,40 @@ class RealWordErrorChannel():
         '''
 
         if with_probability_p:
-            if len(mid_channel_token.remaining_chars) > 0:
-                temp = self.create_error_with_probability_p(mid_channel_token.left_char, mid_channel_token.right_char)
-                if temp != mid_channel_token.left_char + mid_channel_token.right_char:
-                    mid_channel_token.number_of_errors += 1
-                if len(temp) <= 1:
-                    mid_channel_token.left_char = temp
-                    mid_channel_token.right_char = mid_channel_token.remaining_chars.pop(0)
-                elif len(temp) == 2:
-                    mid_channel_token.chars_passed += temp[0]
-                    mid_channel_token.left_char = temp[1]
-                    mid_channel_token.right_char = mid_channel_token.remaining_chars.pop(0)
-                elif len(temp) == 3:
-                    mid_channel_token.chars_passed += temp[0]
-                    mid_channel_token.left_char = temp[1]
-                    mid_channel_token.right_char = temp[2]
+            new_mid_channel_token = deepcopy(mid_channel_token)
+            
+            temp = self.create_error(new_mid_channel_token.left_char, new_mid_channel_token.right_char)
+            if temp != [new_mid_channel_token.left_char, new_mid_channel_token.right_char]:
+                new_mid_channel_token.number_of_errors += 1
+            if len(temp) == 1: # deletion happened
+                if len(new_mid_channel_token.remaining_chars) > 0:
+                    new_mid_channel_token.right_char = new_mid_channel_token.remaining_chars.pop(0)
+            elif len(temp) == 2: # substitution or transposition
+                new_mid_channel_token.chars_passed += temp[0]
+                new_mid_channel_token.left_char = temp[1]
+                if len(new_mid_channel_token.remaining_chars) > 0:
+                    new_mid_channel_token.right_char = new_mid_channel_token.remaining_chars.pop(0)
+            elif len(temp) == 3: # insertion happened
+                new_mid_channel_token.chars_passed += temp[0]
+                new_mid_channel_token.left_char = temp[1]
+                new_mid_channel_token.right_char = temp[2]
 
-            else:
-                assert mid_channel_token.right_char == u''
-                if mid_channel_token.left_char != u'':
-                    temp = self.create_error_with_probability_p(mid_channel_token.left_char, mid_channel_token.right_char)
-                    if temp != mid_channel_token.left_char + mid_channel_token.right_char:
-                        mid_channel_token.number_of_errors += 1
-                    if len(temp) == 2:
-                        mid_channel_token.chars_passed += temp[0]
-                        mid_channel_token.left_char = temp[1]
-                    else:
-                        mid_channel_token.chars_passed += temp
-                        mid_channel_token.left_char = u''
-                    mid_channel_token.right_char = u''
+#            else:
+#                assert mid_channel_token.right_char == u''
+#                if mid_channel_token.left_char != u'':
+#                    temp = self.create_error(mid_channel_token.left_char, mid_channel_token.right_char)
+#                    if temp != mid_channel_token.left_char + mid_channel_token.right_char:
+#                        mid_channel_token.number_of_errors += 1
+#                    if len(temp) == 2:
+#                        mid_channel_token.chars_passed += temp[0]
+#                        mid_channel_token.left_char = temp[1]
+#                    else:
+#                        mid_channel_token.chars_passed += temp
+#                        mid_channel_token.left_char = u''
+#                    mid_channel_token.right_char = u''
 
-            return mid_channel_token
-                
-                
+            return new_mid_channel_token
+
     def pass_token_through_channel(self, token):
         # If token is a real word, pass each pair of chars through
         # insert_error, else return original if result is a real word,
@@ -180,6 +220,41 @@ class RealWordErrorChannel():
                 self.real_word_errors += 1
             return mid_channel_token.chars_passed
         return token
+
+    def create_all_real_word_variations(self, token, maximum_errors):
+        '''
+        This will be like passing a token through the channel, but it
+        will be like a beam search.  At each iteration, we add to the
+        new beam every possible next error for the items currently on
+        the beam, plus the non-error of just passing the next char
+        through.
+        '''
+        
+        # Completed variations: either reached maximum_errors, or end
+        # of token, and happened to be real words: Variations here
+        # come with the number of errors and non-errors, and the
+        # accumulated probability of each of those errors and
+        # non-errors to be multiplied by the absolute probability of
+        # error in the channel.
+        complete_variations = []
+
+        mid_channel_token = MidChannelToken(token)
+
+        # The beam holds every possible variation in progress:
+#        beam = [mid_channel_token]
+#        while beam != []:
+#            next_beam = []
+#            for partial_variation in beam:
+#                possible_continuations = self.push_token(partial_variation, with_probability_p=False)
+#                for continuation in possible_continuations:
+#                    if partial_variation.remaining_chars == []:
+#                        complete_variations.append(partial_variation)
+#                    elif partial_variation.number_of_errors == maximum_errors:
+#                        partial_variation.chars_passed += partial_variation.left_char + \
+#                            partial_variation.right_char + u''.join(partial_variation.remaining_chars)
+#                        partial_variation.left_char = partial_variation.right_char = u''
+#                        partial_variation.remaining_chars = []
+        
 
     def pass_sentence_through_channel(self, (original, boundaries, substitutions)):
         # Use boundaries to find tokens
