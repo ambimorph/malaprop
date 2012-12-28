@@ -156,7 +156,7 @@ class RealWordErrorChannel():
 
         return list_of_string_error_factor_pairs
 
-    def push_token(self, mid_channel_token, with_probability_p=True):
+    def push_one_char(self, mid_channel_token, with_probability_p=True):
         '''
         If with_probability_p, returns MidChannelToken with one of the
         possible errors according to channel probability p, else
@@ -167,34 +167,23 @@ class RealWordErrorChannel():
             new_mid_channel_token = deepcopy(mid_channel_token)
             
             temp = self.create_error(new_mid_channel_token.left_char, new_mid_channel_token.right_char)
-            if temp != [new_mid_channel_token.left_char, new_mid_channel_token.right_char]:
-                new_mid_channel_token.number_of_errors += 1
-            if len(temp) == 1: # deletion happened
-                if len(new_mid_channel_token.remaining_chars) > 0:
-                    new_mid_channel_token.right_char = new_mid_channel_token.remaining_chars.pop(0)
-            elif len(temp) == 2: # substitution or transposition
+            if temp == [new_mid_channel_token.left_char, new_mid_channel_token.right_char]:
                 new_mid_channel_token.chars_passed += temp[0]
                 new_mid_channel_token.left_char = temp[1]
                 if len(new_mid_channel_token.remaining_chars) > 0:
                     new_mid_channel_token.right_char = new_mid_channel_token.remaining_chars.pop(0)
-            elif len(temp) == 3: # insertion happened
-                new_mid_channel_token.chars_passed += temp[0]
-                new_mid_channel_token.left_char = temp[1]
-                new_mid_channel_token.right_char = temp[2]
 
-#            else:
-#                assert mid_channel_token.right_char == u''
-#                if mid_channel_token.left_char != u'':
-#                    temp = self.create_error(mid_channel_token.left_char, mid_channel_token.right_char)
-#                    if temp != mid_channel_token.left_char + mid_channel_token.right_char:
-#                        mid_channel_token.number_of_errors += 1
-#                    if len(temp) == 2:
-#                        mid_channel_token.chars_passed += temp[0]
-#                        mid_channel_token.left_char = temp[1]
-#                    else:
-#                        mid_channel_token.chars_passed += temp
-#                        mid_channel_token.left_char = u''
-#                    mid_channel_token.right_char = u''
+            else:
+                new_mid_channel_token.number_of_errors += 1
+                new_mid_channel_token.chars_passed += temp[0]
+                if len(temp) > 1:
+                    new_mid_channel_token.chars_passed += temp[1]
+                if len(new_mid_channel_token.remaining_chars) > 0:
+                    if len(temp) == 3: # insertion happened
+                        new_mid_channel_token.left_char = temp[2]
+                    else:
+                        new_mid_channel_token.left_char = u''
+                    new_mid_channel_token.right_char = new_mid_channel_token.remaining_chars.pop(0)
 
             return new_mid_channel_token
 
@@ -210,7 +199,7 @@ class RealWordErrorChannel():
 
         mid_channel_token = MidChannelToken(token)
         while mid_channel_token.left_char + mid_channel_token.right_char != u'':
-            self.push_token(mid_channel_token)
+            self.push_one_char(mid_channel_token)
 
         self.real_word_tokens_passed_through += 1
         if self.is_real_word(mid_channel_token.chars_passed):
@@ -245,7 +234,7 @@ class RealWordErrorChannel():
 #        while beam != []:
 #            next_beam = []
 #            for partial_variation in beam:
-#                possible_continuations = self.push_token(partial_variation, with_probability_p=False)
+#                possible_continuations = self.push_one_char(partial_variation, with_probability_p=False)
 #                for continuation in possible_continuations:
 #                    if partial_variation.remaining_chars == []:
 #                        complete_variations.append(partial_variation)

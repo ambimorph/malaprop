@@ -6,14 +6,17 @@ from code.preprocessing import NLTKSegmentThenTokenise
 from code.error_insertion import RealWordErrorChannel
 import unittest, random, StringIO
 
+def gen(l):
+    for x in l: yield x
+
 class MockRNG:
-    def __init__(self, r, c):
-        self.r = r
-        self.c = c
+    def __init__(self, r_list, c_list):
+        self.r_list = gen(r_list)
+        self.c_list = gen(c_list)
     def random(self):
-        return self.r 
+        return self.r_list.next() 
     def choice(self, l):
-        return l[self.c]
+        return l[self.c_list.next()]
 
 class RealWordErrorChannelTest(unittest.TestCase):
     
@@ -48,7 +51,8 @@ class RealWordErrorChannelTest(unittest.TestCase):
     def test_create_error(self):
 
         test_cases = [(u'', u'a'), (u's', u'a'), (u's', u'')]
-        mock_random_arguments = [(1, 0), (0, 0), (0, 1), (0, 2), (0, 3)]
+        # no error, insertion, deletion, substitution, transposition
+        mock_random_arguments = [([1],[0]), ([0],[0,0]), ([0],[1]), ([0],[2,2]), ([0],[3])]
         expected_results = { (0,0):[u'', u'a'], \
                              (0,1):[u'', u"'", u'a'], \
                              (0,2):[u''], \
@@ -107,20 +111,18 @@ class RealWordErrorChannelTest(unittest.TestCase):
 
         assert mct0 != mct1
 
-    def test_push_token_does_not_mutate_token(self):
+    def test_push_one_char_does_not_mutate_token(self):
 
-        self.real_word_error_channel.random_number_generator = MockRNG(1, 0)
+        self.real_word_error_channel.random_number_generator = MockRNG([1],[0])
         mct0 = RealWordErrorChannel.MidChannelToken(u'and')
-        print mct0
-        mct1 = self.real_word_error_channel.push_token(mct0)
-        print mct0
+        mct1 = self.real_word_error_channel.push_one_char(mct0)
         mct0base = RealWordErrorChannel.MidChannelToken(u'and')
         assert mct0 == mct0base, (repr(mct0), repr(mct0base))
 
-    def test_push_token_no_error(self):
+    def test_push_one_char_no_error(self):
         
         # create no error
-        self.real_word_error_channel.random_number_generator = MockRNG(1, 0)
+        self.real_word_error_channel.random_number_generator = MockRNG([1,1,1,1],[0])
 
         attributes = ['chars_passed',
             'left_char',
@@ -129,28 +131,28 @@ class RealWordErrorChannelTest(unittest.TestCase):
             'number_of_errors']
 
         mct0 = RealWordErrorChannel.MidChannelToken(u'and')
-        mct1 = self.real_word_error_channel.push_token(mct0)
+        mct1 = self.real_word_error_channel.push_one_char(mct0)
         expected_attributes = (u'', u'a', u'n', [u'd', u''], 0)
         for i in range(len(attributes)):
             self.assertEqual(getattr(mct1, attributes[i]), expected_attributes[i])
 
-        mct2 = self.real_word_error_channel.push_token(mct1)
+        mct2 = self.real_word_error_channel.push_one_char(mct1)
         expected_attributes = (u'a', u'n', u'd', [u''], 0)
         
-        mct3 = self.real_word_error_channel.push_token(mct2)
+        mct3 = self.real_word_error_channel.push_one_char(mct2)
         expected_attributes = (u'an', u'd', u'', [], 0)
 
-        mct4 = self.real_word_error_channel.push_token(mct3)
+        mct4 = self.real_word_error_channel.push_one_char(mct3)
         expected_attributes = (u'and', u'', u'', [], 0)
 
         try:
-            mct5 = self.real_word_error_channel.push_token(mct4)
+            mct5 = self.real_word_error_channel.push_one_char(mct4)
         except:
             pass
         else:
             self.assertRaises(AssertionError)
         
-    def test_push_token_error(self):
+    def test_push_one_char_error(self):
         
         attributes = ['chars_passed',
             'left_char',
@@ -158,23 +160,42 @@ class RealWordErrorChannelTest(unittest.TestCase):
             'remaining_chars',
             'number_of_errors']
 
-        mct = RealWordErrorChannel.MidChannelToken(u'as')
+        mct0 = RealWordErrorChannel.MidChannelToken(u'ask')
+        expected_attributes = (u'', u'', u'a', [u's', u'k', u''], 0)
+        for i in range(len(attributes)):
+            self.assertEqual(getattr(mct0, attributes[i]), expected_attributes[i])
         # insertion, deletion, substitution, transposition
-        mock_random_arguments = [(0, 0), (0, 1), (0, 2), (0, 3)]
-        expected_attributes = [(u'', u'\'', u'a', [u'n', u'd', u''], 0),
-                               (u'', u'a', u'n', [u'd', u''], 0),
-                               
-        
-        self.real_word_error_channel.random_number_generator = MockRNG(0, 0)
+        mock_random_arguments = [([0],[0,0]), ([0],[1]), ([0],[2,2]), ([0],[3])]
+        expected_attributes = [(u'\'', u'a', u's', [u'k', u''], 1),
+                               (u'', u'', u's', [u'k', u''], 1),
+                               (u'c', u'', u's', [u'k', u''], 1)]
 
-        assert mct1.chars_passed == u'', repr(mct1)
-        assert mct1.left_char == u'\'', repr(mct1)
-        assert mct1.right_char == u'a', repr(mct1)
-        assert mct1.number_of_errors == 1, mct1.number_of_errors
-        
+        for i in [2, 1, 0]: # to end on token with 2 chars in channel for next part
+            self.real_word_error_channel.random_number_generator = MockRNG(*mock_random_arguments[i])
+            mct1 = self.real_word_error_channel.push_one_char(mct0)
+            for j in range(len(attributes)):
+                self.assertEqual(getattr(mct1, attributes[j]), expected_attributes[i][j], repr(mct1))
+
+        # mct1 now = <MidChannelToken u"'" u'a' u's' [u'k', u''] 1 0>
+        expected_attributes = [(u"'a'", u's', u'k', [u''], 2),
+                               (u"'a", u'', u'k', [u''], 2),
+                               (u"'aa", u'', u'k', [u''], 2),
+                               (u"'sa", u'', u'k', [u''], 2)]
+        for i in range(4):
+            self.real_word_error_channel.random_number_generator = MockRNG(*mock_random_arguments[i])
+            mct2 = self.real_word_error_channel.push_one_char(mct1)
+            for j in range(len(attributes)):
+                self.assertEqual(getattr(mct2, attributes[j]), expected_attributes[i][j], repr(mct2))
+
         
 
     def test_pass_token_through_channel(self):
+
+        mock_random_no_error = MockRNG(1,0)
+        mock_random_insertion = MockRNG(0,0)
+        mock_random_deletion = MockRNG(0,1)
+        mock_random_substitution = MockRNG(0,2)
+        mock_random_transposition = MockRNG(0,3)
 
         self.real_word_error_channel.random_number_generator = random.Random(999)
         self.real_word_error_channel.reset_stats()
