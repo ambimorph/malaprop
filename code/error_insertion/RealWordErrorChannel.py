@@ -104,18 +104,23 @@ class RealWordErrorChannel():
                 else:
                     error_type = self.random_number_generator.choice(possible_error_types)
             
-                if error_type == 0: # print "insertion!"
+                if error_type == 0:
+                    print "insertion!", left_char, right_char
                     symbol_to_insert = self.random_number_generator.choice(self.symbols)
                     return [left_char, symbol_to_insert, right_char]
-                elif error_type == 1: # print "deletion!"
+                elif error_type == 1:
+                    print "deletion!", left_char, right_char
                     return [left_char]
-                elif error_type == 2: # print "substitution!"
+                elif error_type == 2:
+                    print "substitution!", left_char, right_char
                     symbol_to_sub = self.random_number_generator.choice(self.symbols[:self.symbols.index(right_char)] + self.symbols[self.symbols.index(right_char)+1:])
                     return [left_char, symbol_to_sub]
-                else: # print "transposition!"
+                else:
+                    print "transposition!", left_char, right_char
                     return [right_char, left_char]
 
-            else: # print "no error added!"
+            else:
+                print "no error added!", left_char, right_char
                 return [left_char, right_char]
         else:
             errors = []
@@ -167,6 +172,7 @@ class RealWordErrorChannel():
             new_mid_channel_token = deepcopy(mid_channel_token)
             
             temp = self.create_error(new_mid_channel_token.left_char, new_mid_channel_token.right_char)
+            print "temp:", temp
             if temp == [new_mid_channel_token.left_char, new_mid_channel_token.right_char]:
                 new_mid_channel_token.chars_passed += temp[0]
                 new_mid_channel_token.left_char = temp[1]
@@ -178,12 +184,14 @@ class RealWordErrorChannel():
                 new_mid_channel_token.chars_passed += temp[0]
                 if len(temp) > 1:
                     new_mid_channel_token.chars_passed += temp[1]
+                if len(temp) == 3: # insertion happened
+                    new_mid_channel_token.left_char = temp[2]
+                else:
+                    new_mid_channel_token.left_char = u''
                 if len(new_mid_channel_token.remaining_chars) > 0:
-                    if len(temp) == 3: # insertion happened
-                        new_mid_channel_token.left_char = temp[2]
-                    else:
-                        new_mid_channel_token.left_char = u''
                     new_mid_channel_token.right_char = new_mid_channel_token.remaining_chars.pop(0)
+                else:
+                    new_mid_channel_token.right_char = u''
 
             return new_mid_channel_token
 
@@ -199,7 +207,11 @@ class RealWordErrorChannel():
 
         mid_channel_token = MidChannelToken(token)
         while mid_channel_token.left_char + mid_channel_token.right_char != u'':
-            self.push_one_char(mid_channel_token)
+            print mid_channel_token
+            mid_channel_token = self.push_one_char(mid_channel_token)
+
+        if mid_channel_token.left_char == u'' and mid_channel_token.right_char == u'':
+            print "HERE"
 
         self.real_word_tokens_passed_through += 1
         if self.is_real_word(mid_channel_token.chars_passed):
