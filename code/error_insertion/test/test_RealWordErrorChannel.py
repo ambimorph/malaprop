@@ -204,6 +204,11 @@ class RealWordErrorChannelTest(unittest.TestCase):
         result = self.real_word_error_channel.pass_token_through_channel(token_0)
         self.assertEqual(result, token_0)
 
+        # error that gets corrected, because it is not a real word: man -> mn
+        self.real_word_error_channel.random_number_generator = MockRNG([1,0,1,1], [1])
+        result = self.real_word_error_channel.pass_token_through_channel(token_1)
+        self.assertEqual(result, u'man')
+
         # deletion at the beginning: man -> an
         self.real_word_error_channel.random_number_generator = MockRNG([0,1,1,1], [1])
         result = self.real_word_error_channel.pass_token_through_channel(token_1)
