@@ -10,13 +10,13 @@ def gen(l):
     for x in l: yield x
 
 class MockRNG:
-    def __init__(self, r_list, c_list):
-        self.r_list = gen(r_list)
-        self.c_list = gen(c_list)
+    def __init__(self, r_generator, c_generator):
+        self.r_generator = r_generator
+        self.c_generator = c_generator
     def random(self):
-        return self.r_list.next() 
+        return self.r_generator.next() 
     def choice(self, l):
-        return l[self.c_list.next()]
+        return l[self.c_generator.next()]
 
 class RealWordErrorChannelTest(unittest.TestCase):
     
@@ -66,7 +66,8 @@ class RealWordErrorChannelTest(unittest.TestCase):
                              (2,1):[u's', u"'", u'']}
 
         for k,v in expected_results.iteritems():
-            self.real_word_error_channel.random_number_generator = MockRNG(*(mock_random_arguments[k[1]]))
+            mock_random_generator = [map(gen, x) for x in [i for i in mock_random_arguments]]
+            self.real_word_error_channel.random_number_generator = MockRNG(*(mock_random_generator[k[1]]))
         
             try:
                 result = self.real_word_error_channel.create_error(*test_cases[k[0]])
@@ -113,7 +114,7 @@ class RealWordErrorChannelTest(unittest.TestCase):
 
     def test_push_one_char_does_not_mutate_token(self):
 
-        self.real_word_error_channel.random_number_generator = MockRNG([1],[0])
+        self.real_word_error_channel.random_number_generator = MockRNG(gen([1]),gen([0]))
         mct0 = RealWordErrorChannel.MidChannelToken(u'and')
         mct1 = self.real_word_error_channel.push_one_char(mct0)
         mct0base = RealWordErrorChannel.MidChannelToken(u'and')
@@ -122,7 +123,7 @@ class RealWordErrorChannelTest(unittest.TestCase):
     def test_push_one_char_no_error(self):
         
         # create no error
-        self.real_word_error_channel.random_number_generator = MockRNG([1,1,1,1],[0])
+        self.real_word_error_channel.random_number_generator = MockRNG(gen([1,1,1,1]),gen([0]))
 
         attributes = ['chars_passed',
             'left_char',
@@ -166,12 +167,13 @@ class RealWordErrorChannelTest(unittest.TestCase):
             self.assertEqual(getattr(mct0, attributes[i]), expected_attributes[i])
         # insertion, deletion, substitution, transposition
         mock_random_arguments = [([0],[0,0]), ([0],[1]), ([0],[2,2]), ([0],[3])]
+        mock_random_generator = [map(gen, x) for x in [i for i in mock_random_arguments]]
         expected_attributes = [(u'\'', u'a', u's', [u'k', u''], 1),
                                (u'', u'', u's', [u'k', u''], 1),
                                (u'c', u'', u's', [u'k', u''], 1)]
 
         for i in [2, 1, 0]: # to end on token with 2 chars in channel for next part
-            self.real_word_error_channel.random_number_generator = MockRNG(*mock_random_arguments[i])
+            self.real_word_error_channel.random_number_generator = MockRNG(*mock_random_generator[i])
             mct1 = self.real_word_error_channel.push_one_char(mct0)
             for j in range(len(attributes)):
                 self.assertEqual(getattr(mct1, attributes[j]), expected_attributes[i][j], repr(mct1))
@@ -181,8 +183,10 @@ class RealWordErrorChannelTest(unittest.TestCase):
                                (u"'a", u'', u'k', [u''], 2),
                                (u"'aa", u'', u'k', [u''], 2),
                                (u"'sa", u'', u'k', [u''], 2)]
+
+        mock_random_generator = [map(gen, x) for x in [i for i in mock_random_arguments]]
         for i in range(4):
-            self.real_word_error_channel.random_number_generator = MockRNG(*mock_random_arguments[i])
+            self.real_word_error_channel.random_number_generator = MockRNG(*mock_random_generator[i])
             mct2 = self.real_word_error_channel.push_one_char(mct1)
             for j in range(len(attributes)):
                 self.assertEqual(getattr(mct2, attributes[j]), expected_attributes[i][j], repr(mct2))
@@ -200,46 +204,46 @@ class RealWordErrorChannelTest(unittest.TestCase):
         token_4 = u'no'
 
         # No error
-        self.real_word_error_channel.random_number_generator = MockRNG([1,1,1],[0])
+        self.real_word_error_channel.random_number_generator = MockRNG(gen([1,1,1]),gen([0]))
         result = self.real_word_error_channel.pass_token_through_channel(token_0)
         self.assertEqual(result, token_0)
 
         # error that gets corrected, because it is not a real word: man -> mn
-        self.real_word_error_channel.random_number_generator = MockRNG([1,0,1,1], [1])
+        self.real_word_error_channel.random_number_generator = MockRNG(gen([1,0,1,1]), gen([1]))
         result = self.real_word_error_channel.pass_token_through_channel(token_1)
         self.assertEqual(result, u'man')
 
         # deletion at the beginning: man -> an
-        self.real_word_error_channel.random_number_generator = MockRNG([0,1,1,1], [1])
+        self.real_word_error_channel.random_number_generator = MockRNG(gen([0,1,1,1]), gen([1]))
         result = self.real_word_error_channel.pass_token_through_channel(token_1)
         self.assertEqual(result, u'an')
 
         # deletion in the middle: then -> ten
-        self.real_word_error_channel.random_number_generator = MockRNG([1,0,1,1,1], [1])
+        self.real_word_error_channel.random_number_generator = MockRNG(gen([1,0,1,1,1]), gen([1]))
         result = self.real_word_error_channel.pass_token_through_channel(token_2)
         self.assertEqual(result, u'ten')
 
         # deletion at end: an -> a
-        self.real_word_error_channel.random_number_generator = MockRNG([1,0],[1])
+        self.real_word_error_channel.random_number_generator = MockRNG(gen([1,0]),gen([1]))
         result = self.real_word_error_channel.pass_token_through_channel(token_0)
         self.assertEqual(result, u'a')
         
         # insertion at beginning: an -> man
         m = self.real_word_error_channel.symbols.index(u'm')
-        self.real_word_error_channel.random_number_generator = MockRNG([0,1,1],[0,m])
+        self.real_word_error_channel.random_number_generator = MockRNG(gen([0,1,1]),gen([0,m]))
         result = self.real_word_error_channel.pass_token_through_channel(token_0)
         self.assertEqual(result, u'man')
 
         # insertion in the middle: ten -> then
         h = self.real_word_error_channel.symbols.index(u'h')
-        self.real_word_error_channel.random_number_generator = MockRNG([1,0,1,1],[0,h])
+        self.real_word_error_channel.random_number_generator = MockRNG(gen([1,0,1,1]),gen([0,h]))
         result = self.real_word_error_channel.pass_token_through_channel(token_3)
         self.assertEqual(result, u'then')
 
         # insertion at end: an -> and
         print "an -> and"
         d = self.real_word_error_channel.symbols.index(u'd')
-        self.real_word_error_channel.random_number_generator = MockRNG([1,1,0],[d])
+        self.real_word_error_channel.random_number_generator = MockRNG(gen([1,1,0]),gen([d]))
         result = self.real_word_error_channel.pass_token_through_channel(token_0)
         self.assertEqual(result, u'and')
 
@@ -249,7 +253,7 @@ class RealWordErrorChannelTest(unittest.TestCase):
         symbols_minus_a = self.real_word_error_channel.symbols[:a] + \
             self.real_word_error_channel.symbols[a+1:]
         i = symbols_minus_a.index(u'i')
-        self.real_word_error_channel.random_number_generator = MockRNG([0,1,1],[2,i])
+        self.real_word_error_channel.random_number_generator = MockRNG(gen([0,1,1]),gen([2,i]))
         result = self.real_word_error_channel.pass_token_through_channel(token_0)
         self.assertEqual(result, u'in')
 
@@ -259,7 +263,7 @@ class RealWordErrorChannelTest(unittest.TestCase):
         symbols_minus_e = self.real_word_error_channel.symbols[:e] + \
             self.real_word_error_channel.symbols[e+1:]
         a = symbols_minus_e.index(u'a')
-        self.real_word_error_channel.random_number_generator = MockRNG([1,1,0,1,1],[2,a])
+        self.real_word_error_channel.random_number_generator = MockRNG(gen([1,1,0,1,1]),gen([2,a]))
         result = self.real_word_error_channel.pass_token_through_channel(token_2)
         self.assertEqual(result, u'than')
 
