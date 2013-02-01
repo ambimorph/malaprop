@@ -44,10 +44,7 @@ def randomise_wikipedia_articles(target, source, env):
     rand_obj = random.Random(7)
     ar = WikipediaArticleRandomiser.Randomiser(article_file_obj, train_file_obj, devel_file_obj, test_file_obj, rand_obj)
     ar.randomise()
-# Somewhere, perhaps here, we ought to assert that the results give the following md5sums:
-# 72c01f8951f8968788bea57034e121a0  training_set.bz2
-# 19d502cfdedc5517e4b2a808171f9ac4  development_set.bz2
-# e683df17e81a5732605eefc9618d0403  test_set.bz2
+# Somewhere, perhaps here, we ought to assert that the results give particular md5sums.
     return None
 
 def split_training_files_into_chunks(training_file_name):
