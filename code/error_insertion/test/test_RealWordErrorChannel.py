@@ -20,21 +20,21 @@ class MockRNG:
 
 class RealWordErrorChannelTest(unittest.TestCase):
     
-    @classmethod
-    def setUpClass(self):
-        text_to_corrupt = open('test_data/segmenter_training', 'rb')
-        vocab_file = open('test_data/1K_test_real_word_vocab', 'rb')
+    def setUp(self):
+        self.text_to_corrupt = open('test_data/segmenter_training', 'rb')
+        self.vocab_file = open('test_data/1K_test_real_word_vocab', 'rb')
         self.corrupted_file = StringIO.StringIO()
         self.corrections_file = StringIO.StringIO()
-        p = .3
-        r = random.Random(999)
+        self.p = .3
+        self.r = random.Random(999)
         class MockSegmenterTokenizer:
             def __init__(self, *args, **kwargs):
                 pass
 
+        self.original_segmenter_tokenizer = RealWordErrorChannel.NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser
         RealWordErrorChannel.NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser = MockSegmenterTokenizer
 
-        self.real_word_error_channel = RealWordErrorChannel.RealWordErrorChannel(text_to_corrupt, vocab_file, self.corrupted_file, self.corrections_file, p, r)
+        self.real_word_error_channel = RealWordErrorChannel.RealWordErrorChannel(self.text_to_corrupt, self.vocab_file, self.corrupted_file, self.corrections_file, self.p, self.r)
 
     def test_real_words(self):
         for test_word in [u'with', u'end', u'don\'t']:
@@ -80,8 +80,6 @@ class RealWordErrorChannelTest(unittest.TestCase):
 
     def test_create_all_possible_errors_and_probs(self):
 
-        self.skipTest("")
-
         test_cases = [ \
             (u'', u'a', \
                  [(s + u'a', 1.0/3*1.0/(len(self.real_word_error_channel.symbols))) for s in self.real_word_error_channel.symbols] + \
@@ -97,7 +95,7 @@ class RealWordErrorChannelTest(unittest.TestCase):
 
         for t in test_cases:
             try:
-                result = self.real_word_error_channel.create_error(t[0], t[1], with_probability_p=False)
+                result = self.real_word_error_channel.create_all_possible_errors_and_probs(t[0], t[1])
                 assert result == t[2]
  
             except AssertionError, exp:
@@ -416,6 +414,8 @@ class RealWordErrorChannelTest(unittest.TestCase):
 
     def test_pass_file_through_channel_regression(self):
         self.skipTest("")
+        RealWordErrorChannel.NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser = self.original_segmenter_tokenizer
+        self.real_word_error_channel = RealWordErrorChannel.RealWordErrorChannel(self.text_to_corrupt, self.vocab_file, self.corrupted_file, self.corrections_file, self.p, self.r)
         self.real_word_error_channel.random_number_generator = random.Random(999)
         self.real_word_error_channel.reset_stats()
 

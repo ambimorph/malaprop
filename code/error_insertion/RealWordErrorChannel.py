@@ -128,20 +128,21 @@ class RealWordErrorChannel():
         list_of_string_error_factor_pairs = []
 
         if left_char == u'': # No transposition
-            number_of_error_types = 3
+            possible_error_types = ["INSERTION", "DELETION", "SUBSTITUTION"]
         elif right_char == u'': # Insertion only
-            number_of_error_types = 1
+            possible_error_types = ["INSERTION"]
         else:
-            number_of_error_types = 4
+            possible_error_types = ["INSERTION", "DELETION", "SUBSTITUTION", "TRANSPOSITION"]
+        number_of_error_types = len(possible_error_types)
 
-        for i in range(number_of_error_types):
-            if i == 0: # insertions
+        for i in possible_error_types:
+            if i == "INSERTION":
                 list_of_string_error_factor_pairs += [(left_char + s + right_char, 1.0/number_of_error_types*1.0/(len(self.symbols))) for s in self.symbols]
-            elif i == 1: # deletions
+            elif i == "DELETION":
                 list_of_string_error_factor_pairs += [(left_char, 1.0/number_of_error_types)]
-            elif i == 2: # substitutions
+            elif i == "SUBSTITUTION":
                 list_of_string_error_factor_pairs += [(left_char + s, 1.0/number_of_error_types*1.0/(len(self.symbols)-1)) for s in self.symbols[:self.symbols.index(right_char)] + self.symbols[self.symbols.index(right_char)+1:]]
-            else: # transpositions
+            else: # i == "TRANSPOSITION"
                 list_of_string_error_factor_pairs += [(right_char + left_char, 1.0/number_of_error_types)]
 
         return list_of_string_error_factor_pairs
