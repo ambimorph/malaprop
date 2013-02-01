@@ -86,55 +86,40 @@ class RealWordErrorChannel():
     def is_real_word(self, token):
         return token in self.real_words
 
-    def create_error(self, left_char, right_char, with_probability_p=True):
-        # 0 = Insertion, 1 = Deletion, 2 = Substitution, 3 = Transposition
+    def create_error(self, left_char, right_char):
         assert not (left_char == u'' and right_char == u'')
 
         if left_char == u'': # No transposition
-            possible_error_types = range(3)
+            possible_error_types = ["INSERTION", "DELETION", "SUBSTITUTION"]
         elif right_char == u'': # Insertion only
-            possible_error_types = range(1)
+            possible_error_types = ["INSERTION"]
         else:
-            possible_error_types = range(4)
+            possible_error_types = ["INSERTION", "DELETION", "SUBSTITUTION", "TRANSPOSITION"]
 
-        if with_probability_p:
-            if self.random_number_generator.random() < self.p: # create an error
-                if possible_error_types == [0]:
-                    error_type = 0
-                else:
-                    error_type = self.random_number_generator.choice(possible_error_types)
-            
-                if error_type == 0:
-                    print "insertion!", left_char, right_char
-                    symbol_to_insert = self.random_number_generator.choice(self.symbols)
-                    return [left_char, symbol_to_insert, right_char]
-                elif error_type == 1:
-                    print "deletion!", left_char, right_char
-                    return [left_char]
-                elif error_type == 2:
-                    print "substitution!", left_char, right_char
-                    symbol_to_sub = self.random_number_generator.choice(self.symbols[:self.symbols.index(right_char)] + self.symbols[self.symbols.index(right_char)+1:])
-                    return [left_char, symbol_to_sub]
-                else:
-                    print "transposition!", left_char, right_char
-                    return [right_char, left_char]
-
+        if self.random_number_generator.random() < self.p: # create an error
+            if possible_error_types == ["INSERTION"]:
+                error_type = "INSERTION"
             else:
-                print "no error added!", left_char, right_char
-                return [left_char, right_char]
-        else:
-            errors = []
-            for error_type in possible_error_types:
-                if error_type == 0:
-                    errors += [(left_char + s + right_char, 1.0/len(possible_error_types)*1.0/(len(self.symbols))) for s in self.symbols]
-                elif error_type == 1:
-                    errors += [(left_char, 1.0/len(possible_error_types))]
-                elif error_type == 2:
-                    errors += [(left_char + s, 1.0/len(possible_error_types)*1.0/(len(self.symbols)-1)) for s in self.symbols[:self.symbols.index(right_char)] + self.symbols[self.symbols.index(right_char)+1:]]
-                else:
-                    errors += [(right_char + left_char, 1.0/len(possible_error_types))]
+                error_type = self.random_number_generator.choice(possible_error_types)
+        
+            if error_type == "INSERTION":
+                print "insertion!", left_char, right_char
+                symbol_to_insert = self.random_number_generator.choice(self.symbols)
+                return [left_char, symbol_to_insert, right_char]
+            elif error_type == "DELETION":
+                print "deletion!", left_char, right_char
+                return [left_char]
+            elif error_type == "SUBSTITUTION":
+                print "substitution!", left_char, right_char
+                symbol_to_sub = self.random_number_generator.choice(self.symbols[:self.symbols.index(right_char)] + self.symbols[self.symbols.index(right_char)+1:])
+                return [left_char, symbol_to_sub]
+            else:
+                print "transposition!", left_char, right_char
+                return [right_char, left_char]
 
-            return errors
+        else:
+            print "no error added!", left_char, right_char
+            return [left_char, right_char]
                 
 
     def create_all_possible_errors_and_probs(self, left_char, right_char):
