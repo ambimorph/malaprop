@@ -2,6 +2,5 @@
 *~
 *SConstruct#
 .sconsign.dblite
-data
 bare_git
 .#SConstruct
