@@ -10,6 +10,7 @@ del sys.modules['pickle']
 
 from code.preprocessing import WikipediaArticleRandomiser
 from code.language_modelling import vocabulary_cutter
+from code.error_insertion import RealWordVocabExtractor
 from code.error_insertion import RealWordErrorChannel
 
 # Make these into one unicode open function with compression options.
@@ -147,6 +148,20 @@ def split_development_files_into_chunks(development_file_name):
             current_file_number += 1
     return
 
+def extract_real_word_vocabulary(target, source, env):
+
+    for i in range(len(vocabulary_sizes)):
+        size = vocabulary_sizes[i]
+        vocabulary_file_name = language_model_directory + str(size) + 'K.vocab'
+        vocabulary_file_obj = open_with_unicode(vocabulary_file_name, 'r')
+        real_word_vocabulary_file_name = language_model_directory + str(size) + 'K.real_word_vocab'
+
+        assert target[i].path == real_word_vocabulary_file_name, 'Target was: ' + target[i].path
+        real_word_vocabulary_file_obj = open_with_unicode(real_word_vocabulary_file_name, 'w')
+        extractor = RealWordVocabExtractor.RealWordVocabExtractor(vocabulary_file_obj, real_word_vocabulary_file_obj)
+        extractor.extract_real_words()
+    return
+
 def create_error_sets(target, source, env):
 
     split_development_files_into_chunks(source[0].path)
@@ -179,14 +194,17 @@ error_rate = .05
 learning_sets_builder = Builder(action = randomise_wikipedia_articles)
 vocabulary_files_builder = Builder(action = create_vocabularies)
 trigram_models_builder = Builder(action = create_trigram_models)
+real_word_vocabulary_builder = Builder(action = extract_real_word_vocabulary)
 error_set_builder = Builder(action = create_error_sets)
 
-env = Environment(BUILDERS = {'learning_sets' : learning_sets_builder, 'vocabulary_files' : vocabulary_files_builder, 'trigram_models' : trigram_models_builder, 'error_sets' : error_set_builder})
+env = Environment(BUILDERS = {'learning_sets' : learning_sets_builder, 'vocabulary_files' : vocabulary_files_builder, 'trigram_models' : trigram_models_builder, 'real_word_vocabulary_files' : real_word_vocabulary_builder, 'error_sets' : error_set_builder})
 
 env.learning_sets([corpus_directory + set_name for set_name in ['training_set.bz2', 'development_set.bz2', 'test_set.bz2']], corpus_directory + 'WestburyLab.wikicorp.201004.txt.bz2')
 
 env.vocabulary_files([language_model_directory + str(size) + 'K.vocab' for size in vocabulary_sizes], [corpus_directory + 'training_set.bz2'])
 
 env.trigram_models([language_model_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes], [corpus_directory + 'training_set.bz2'] + [language_model_directory + str(size) + 'K.vocab' for size in vocabulary_sizes])
+
+env.real_word_vocabulary_files([language_model_directory + str(size) + 'K.real_word_vocab' for size in vocabulary_sizes], [language_model_directory + str(size) + 'K.vocab' for size in vocabulary_sizes])
 
 env.error_sets([error_set_directory + 'errors_at_' + str(error_rate) + '_' + str(size) + 'K_vocabulary_' + development_file_name + '.bz2' for size in vocabulary_sizes for development_file_name in os.listdir(development_chunk_path)] + [error_set_directory + 'corrections_' + str(error_rate) + '_' + str(size) + 'K_vocabulary_' + development_file_name + '.bz2' for size in vocabulary_sizes for development_file_name in os.listdir(development_chunk_path)], [corpus_directory + 'development_set.bz2'] + [language_model_directory + str(size) + 'K.vocab' for size in vocabulary_sizes])
