@@ -66,8 +66,7 @@ class RealWordErrorChannel():
         self.max_errors_per_word = 0.0
 
     def get_stats(self):
-        return self.real_word_errors, self.real_word_tokens_passed_through, self.mean_errors_per_word, self.max_errors_per_word
-        
+        return "Real word errors: %d\nTokens passed through channel: %d\nMean character errors per real word error: %.2f\nMax character errors per word: %d" % (self.real_word_errors, self.real_word_tokens_passed_through, self.mean_errors_per_word, self.max_errors_per_word)
     
     def get_real_words_and_symbols(self):
         # Unicode-Read the vocab file 
@@ -286,7 +285,7 @@ class RealWordErrorChannel():
             if corrections != []:
                 self.unicode_corrections_file_obj.write(str(i) + ' ' + repr(corrections) + '\n')
             i += 1
-        self.unicode_corrections_file_obj.write(repr(self.get_stats()))
+        self.unicode_corrections_file_obj.write(self.get_stats())
 
 if __name__ == '__main__':
 
