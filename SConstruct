@@ -153,11 +153,11 @@ def extract_real_word_vocabulary(target, source, env):
     for i in range(len(vocabulary_sizes)):
         size = vocabulary_sizes[i]
         vocabulary_file_name = language_model_directory + str(size) + 'K.vocab'
-        vocabulary_file_obj = open_with_unicode(vocabulary_file_name, 'r')
+        vocabulary_file_obj = open(vocabulary_file_name, 'r')
         real_word_vocabulary_file_name = language_model_directory + str(size) + 'K.real_word_vocab'
 
         assert target[i].path == real_word_vocabulary_file_name, 'Target was: ' + target[i].path
-        real_word_vocabulary_file_obj = open_with_unicode(real_word_vocabulary_file_name, 'w')
+        real_word_vocabulary_file_obj = open(real_word_vocabulary_file_name, 'w')
         extractor = RealWordVocabExtractor.RealWordVocabExtractor(vocabulary_file_obj, real_word_vocabulary_file_obj)
         extractor.extract_real_words()
     return
