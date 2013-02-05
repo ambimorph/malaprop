@@ -11,7 +11,7 @@ class WikipediaArticleRandomiserTest(unittest.TestCase):
 
         r = random.Random(999)
 
-        a1 = ["John gammon.\n", "Birth Through Elementary School.\n", 'John Michael Gammon was born on April 7, 1991 to Melinda Jane Gammon and William P. Oakes. Unfortunately William "Big Willy" was killed before the birth of the soon to come "Prince of America".\n', "John knew how to speak before he could even suck the milk from his mothers tit. He could read before he could walk. He could do Geometry before he could do basic multiplication. When he was in kindergarden he knew more than his teacher, thus earning him a place among the fifth graders at only five years old. Until the government took him hostage and wiped his memory and destroying all he had accomplished.\n", "---END.OF.DOCUMENT---\n"]
+        a1 = ["Anarchism.\n", "Anarchism is a political philosophy which considers the state undesirable, unnecessary and harmful, and instead promotes a stateless society, or anarchy. It seeks to diminish or even abolish authority in the conduct of human relations. Anarchists may widely disagree on what additional criteria are required in anarchism. \"The Oxford Companion to Philosophy\" says, \"there is no single defining position that all anarchists hold, and those considered anarchists at best share a certain family resemblance.\"", "---END.OF.DOCUMENT---\n"]
         a2 = ["Hidehiko Shimizu.\n", "Hidehiko Shimizu (born 4 November 1954) is a former Japanese football player. He has played for Nissan Motors.\n", "---END.OF.DOCUMENT---\n"]
         a3 = ["Some other thing.\n", "this\n", "could\n", "be a line or three.\n", "---END.OF.DOCUMENT---\n"]
         a4 = ["Finally.\n", "Another one.\n", "---END.OF.DOCUMENT---\n"]

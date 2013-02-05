@@ -433,7 +433,7 @@ class RealWordErrorChannelTest(unittest.TestCase):
         text_to_create_errors_in = u'Autism.\nAutism is a disorder of neural development characterized by impaired social interaction and communication, and by restricted and repetitive behavior. These signs all begin before a child is three years old. Autism affects information processing in the brain by altering how nerve cells and their synapses connect and organize; how this occurs is not well understood. The two other autism spectrum disorders (ASD) are Asperger syndrome, which lacks delays in cognitive development and language, and PDD-NOS, diagnosed when full criteria for the other two disorders are not met.\nAutism has a strong genetic basis, although the genetics of autism are complex and it is unclear whether ASD is explained more by rare mutations, or by rare combinations of common genetic variants. In rare cases, autism is strongly associated with agents that cause birth defects. Controversies surround other proposed environmental causes, such as heavy metals, pesticides or childhood vaccines; the vaccine hypotheses are biologically implausible and lack convincing scientific evidence. The prevalence of autism is about 1–2 per 1,000 people; the prevalence of ASD is about 6 per 1,000, with about four times as many males as females. The number of people diagnosed with autism has increased dramatically since the 1980s, partly due to changes in diagnostic practice; the question of whether actual prevalence has increased is unresolved.\nParents usually notice signs in the first two years of their child\'s life. The signs usually develop gradually, but some autistic children first develop more normally and then regress. Although early behavioral or cognitive intervention can help autistic children gain self-care, social, and communication skills, there is no known cure. Not many children with autism live independently after reaching adulthood, though some become successful. An autistic culture has developed, with some individuals seeking a cure and others believing autism should be tolerated as a difference and not treated as a disorder.'
 
         expected_text_output = "Autism.\nAutism is a disorder of neural development characterized by impaired social interaction and communication, and by restricted an repetitive behavior.\nThese signs all begin before a child is three years old.\nAutism affects information processing in the brain by altering how nerve cells and their synapses connect and organize; how this occurs is not well understood.\nThe two other autism spectrum disorders (ASD) are Asperger syndrome, which lacks delays in cognitive development and language, and PDD-NOS, diagnosed when full criteria for the other two disorders are not met.\nAutism has a strong genetic basis, although the genetics of autism are complex and it is unclear whether ASD is explained more by rare mutations, or my rare combinations of common genetic variants.\nIn rare cases, autism is strongly associated with agents that cause birth defects.\nControversies surround other proposed environmental causes, such a heavy metals, pesticides or childhood vaccines; the vaccine hypotheses are biologically implausible and lack convincing scientific evidence.\nThe prevalence of autism s about 1\xe2\x80\x932 per 1,000 people; the prevalence of ASD is about 6 per 1,000, with about four times as many males as females.\nThe number of people diagnosed with autism has increased dramatically since the 1980s, partly due to changes in diagnostic practice; the question of whether actual prevalence has increased is unresolved.\nParents usually notice signs in the first two years of their child's life.\nThe signs usually develop gradually, but some autistic children first develop more normally and then regress.\nAlthough early behavioral or cognitive intervention can help autistic children gain self-care, social, and communication skills, there is no known cure.\nNot many children with autism live independently after reaching adulthood, though some become successful.\nAn autistic culture has developed, with some individuals seeking a cure and others believing autism should be tolerated as a difference and not treated as a disorder.\n" 
-        expected_corrections_output = "1 [(125, u'an', u'and')]\n5 [(149, u'my', u'by')]\n7 [(65, u'a', u'as')]\n8 [(25, u's', u'is')]\n(4.0, 166.0, 1.0, 1)"
+        expected_corrections_output = "1 [(125, u'an', u'and')]\n5 [(149, u'my', u'by')]\n7 [(65, u'a', u'as')]\n8 [(25, u's', u'is')]\nReal word errors: 4\nTokens passed through channel: 166\nMean character errors per real word error: 1.00\nMax character errors per word: 1"
 
         self.real_word_error_channel.pass_file_through_channel(text=text_to_create_errors_in)
         
@@ -450,23 +450,5 @@ class RealWordErrorChannelTest(unittest.TestCase):
                 print '\nexpected: ', repr(expected[i:])
                 raise exp
 
-        expected_real_word_errors = 4
-        expected_real_word_tokens_passed_through = 166
-        expected_mean_errors_per_word = 1.0
-        expected_max_errors_per_word = 1
-
-        real_word_errors, real_word_tokens_passed_through, mean_errors_per_word, max_errors_per_word \
-            = self.real_word_error_channel.get_stats()
-
-        tolerance = 0.000001
-        assert abs(expected_real_word_errors - real_word_errors) < tolerance, \
-            "Expected real word errors " + str(expected_real_word_errors) + ", but got " + str(real_word_errors)
-        assert abs(expected_real_word_tokens_passed_through - real_word_tokens_passed_through) < tolerance, \
-            "Expected real_word_tokens_passed_through " + str(expected_real_word_tokens_passed_through) + ", but got " + str(real_word_tokens_passed_through)
-        assert abs(mean_errors_per_word - expected_mean_errors_per_word) < tolerance, \
-            "Expected mean_errors_per_word " + str(expected_mean_errors_per_word) + ", but got " + str(mean_errors_per_word)
-        assert abs(max_errors_per_word - expected_max_errors_per_word) < tolerance, "\
-            Expected max_errors_per_word-rate " + str(expected_max_errors_per_word) + ", but got " + str(max_errors_per_word)
-        
 if __name__ == '__main__':
     unittest.main()

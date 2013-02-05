@@ -18,14 +18,6 @@ class MidChannelToken():
         self.right_char = self.remaining_chars.pop(0)
         # The number of errors accumulated in this variation:
         self.number_of_errors = 0
-        # Each error accumulated has a probability of happening which
-        # is accumulated here to later be multiplied by the absolute
-        # probability of error in the channel.
-        self.error_probability_factor = 1
-        # Similarly, the number of accumulated non-errors and
-        # corresponding probability factor:
-        self.number_of_non_errors = 0
-        self.non_error_probability_factor = 1
 
     def __eq__(self, other):
         for attribute in [
@@ -33,10 +25,7 @@ class MidChannelToken():
             'remaining_chars',
             'left_char',
             'right_char',
-            'number_of_errors',
-            'error_probability_factor',
-            'number_of_non_errors',
-            'non_error_probability_factor']:
+            'number_of_errors']:
             if getattr(self, attribute) != getattr(other, attribute):
                 return False
         return True
@@ -45,7 +34,7 @@ class MidChannelToken():
         return not self.__eq__(other)
 
     def __repr__(self):
-        return '<%s %r %r %r %r %d %d>' % (self.__class__.__name__, self.chars_passed, self.left_char, self.right_char, self.remaining_chars, self.number_of_errors, self.number_of_non_errors)
+        return '<%s %r %r %r %r %d>' % (self.__class__.__name__, self.chars_passed, self.left_char, self.right_char, self.remaining_chars, self.number_of_errors)
 
 class RealWordErrorChannel():
 
@@ -69,9 +58,11 @@ class RealWordErrorChannel():
         return "Real word errors: %d\nTokens passed through channel: %d\nMean character errors per real word error: %.2f\nMax character errors per word: %d" % (self.real_word_errors, self.real_word_tokens_passed_through, self.mean_errors_per_word, self.max_errors_per_word)
     
     def get_real_words_and_symbols(self):
-        # Unicode-Read the vocab file 
-        # For every item than contains letters and possibly periods and apostrophes
-        # add item to real_words and symbols to symbols
+        """
+        Unicode-Read the vocab file .
+        For every item than contains letters and possibly periods and apostrophes:
+        add item to real_words and symbols to symbols.
+        """
         real_words = set([])
         symbols = set([])
         for line in self.unicode_vocabfile_obj.readlines():
@@ -102,22 +93,17 @@ class RealWordErrorChannel():
                 error_type = self.random_number_generator.choice(possible_error_types)
         
             if error_type == "INSERTION":
-                # print "insertion!", left_char, right_char
                 symbol_to_insert = self.random_number_generator.choice(self.symbols)
                 return [left_char, symbol_to_insert, right_char]
             elif error_type == "DELETION":
-                # print "deletion!", left_char, right_char
                 return [left_char]
             elif error_type == "SUBSTITUTION":
-                # print "substitution!", left_char, right_char
                 symbol_to_sub = self.random_number_generator.choice(self.symbols[:self.symbols.index(right_char)] + self.symbols[self.symbols.index(right_char)+1:])
                 return [left_char, symbol_to_sub]
             else:
-                # print "transposition!", left_char, right_char
                 return [right_char, left_char]
 
         else:
-            # print "no error added!", left_char, right_char
             return [left_char, right_char]
                 
 
@@ -146,45 +132,48 @@ class RealWordErrorChannel():
 
         return list_of_string_error_factor_pairs
 
-    def push_one_char(self, mid_channel_token, with_probability_p=True):
+    def push_one_char(self, mid_channel_token):
         '''
-        If with_probability_p, returns MidChannelToken with one of the
-        possible errors according to channel probability p, else
-        returns all possible MidChannelTokens that are continuations.
+        Returns MidChannelToken with one of the
+        possible errors according to channel probability p.
         '''
 
-        if with_probability_p:
-            new_mid_channel_token = deepcopy(mid_channel_token)
-            
-            temp = self.create_error(new_mid_channel_token.left_char, new_mid_channel_token.right_char)
-            if temp == [new_mid_channel_token.left_char, new_mid_channel_token.right_char]:
-                new_mid_channel_token.chars_passed += temp[0]
-                new_mid_channel_token.left_char = temp[1]
-                if len(new_mid_channel_token.remaining_chars) > 0:
-                    new_mid_channel_token.right_char = new_mid_channel_token.remaining_chars.pop(0)
+        new_mid_channel_token = deepcopy(mid_channel_token)
+        
+        temp = self.create_error(new_mid_channel_token.left_char, new_mid_channel_token.right_char)
+        if temp == [new_mid_channel_token.left_char, new_mid_channel_token.right_char]:
+            new_mid_channel_token.chars_passed += temp[0]
+            new_mid_channel_token.left_char = temp[1]
+            if len(new_mid_channel_token.remaining_chars) > 0:
+                new_mid_channel_token.right_char = new_mid_channel_token.remaining_chars.pop(0)
 
+        else:
+            new_mid_channel_token.number_of_errors += 1
+            new_mid_channel_token.chars_passed += temp[0]
+            if len(temp) > 1:
+                new_mid_channel_token.chars_passed += temp[1]
+            if len(temp) == 3: # insertion happened
+                new_mid_channel_token.left_char = temp[2]
             else:
-                new_mid_channel_token.number_of_errors += 1
-                new_mid_channel_token.chars_passed += temp[0]
-                if len(temp) > 1:
-                    new_mid_channel_token.chars_passed += temp[1]
-                if len(temp) == 3: # insertion happened
-                    new_mid_channel_token.left_char = temp[2]
-                else:
-                    new_mid_channel_token.left_char = u''
-                if len(new_mid_channel_token.remaining_chars) > 0:
-                    new_mid_channel_token.right_char = new_mid_channel_token.remaining_chars.pop(0)
-                else:
-                    new_mid_channel_token.right_char = u''
+                new_mid_channel_token.left_char = u''
+            if len(new_mid_channel_token.remaining_chars) > 0:
+                new_mid_channel_token.right_char = new_mid_channel_token.remaining_chars.pop(0)
+            else:
+                new_mid_channel_token.right_char = u''
 
-            return new_mid_channel_token
+        return new_mid_channel_token
 
     def pass_token_through_channel(self, token):
-        # If token is a real word, pass each pair of chars through
-        # insert_error, else return original if result is a real word,
-        # return it (possibly re-uppering), else return original
-        # Update real_word_errors, real_word_tokens_passed_through,
-        # mean_errors_per_word, max_errors_per_word
+        """
+        If token is a real word, pass each pair of chars through
+        insert_error, else return original.
+
+        If result is a real word, return it (possibly re-uppering),
+        else return original
+
+        Update real_word_errors, real_word_tokens_passed_through,
+        mean_errors_per_word, max_errors_per_word
+        """
         assert len(token) > 0, token
         if not self.is_real_word(token):
             return token
@@ -238,10 +227,13 @@ class RealWordErrorChannel():
         
 
     def pass_sentence_through_channel(self, (original, boundaries, substitutions)):
-        # Use boundaries to find tokens
-        # If there are no substitutions within the token, lowercase it and pass it through the channel.
-        # If it is replaced, recase it if necessary
-        # else just put original token.
+        """
+        Use boundaries to find tokens.
+        If there are no substitutions within the token, lowercase it
+        and pass it through the channel.
+        If it is replaced, recase it if necessary,
+        else just put original token.
+        """
         result = u''
         corrections = []
         substitution_indices = [sub[0] for sub in substitutions]

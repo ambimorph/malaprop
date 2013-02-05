@@ -13,7 +13,7 @@ from code.language_modelling import vocabulary_cutter
 from code.error_insertion import RealWordVocabExtractor
 from code.error_insertion import RealWordErrorChannel
 
-# Make these into one unicode open function with compression options.
+# TODO: Make these into one unicode open function with compression options.
 
 def open_with_unicode_bzip2(file_name, mode):
     assert mode in ['r', 'w']
@@ -37,7 +37,11 @@ def open_with_unicode(file_name, mode):
         return codecs.getwriter('utf-8')(open(file_name, mode))
 
 def randomise_wikipedia_articles(target, source, env):
-    "target is a list of files corresponding to the training, development, and test sets.  source is a single bzipped file of wikipedia articles."
+    """
+    target is a list of files corresponding to the training,
+    development, and test sets.  source is a single bzipped file of
+    wikipedia articles.
+    """
     article_file_obj = open_with_unicode_bzip2(source[0].path, 'r')
     train_file_obj = open_with_unicode_bzip2(target[0].path, 'w')
     devel_file_obj = open_with_unicode_bzip2(target[1].path, 'w')
@@ -45,14 +49,14 @@ def randomise_wikipedia_articles(target, source, env):
     rand_obj = random.Random(7)
     ar = WikipediaArticleRandomiser.Randomiser(article_file_obj, train_file_obj, devel_file_obj, test_file_obj, rand_obj)
     ar.randomise()
-# Somewhere, perhaps here, we ought to assert that the results give particular md5sums.
     return None
 
 def split_training_files_into_chunks(training_file_name):
-
-    # We take the training set and split it into files of 100000 lines each so that srilm can make counts without choking.
-    # It also needs a list of the names of the resulting files.
-
+    """
+     We take the training set and split it into files of 100000 lines
+     each so that srilm can make counts without choking.  srilm also
+     needs a list of the names of the resulting files.
+    """
     lines_per_chunk = 100000
     if not os.path.isdir(chunk_path):
         training_file_obj = open_with_unicode_bzip2(training_file_name, 'r')
@@ -74,7 +78,11 @@ def split_training_files_into_chunks(training_file_name):
     return
 
 def create_vocabularies(target, source, env):
-    "For each n in vocabulary_sizes, gets the unigram counts from the source files and puts the n most frequent words in the vocabulary file."
+    """
+    For each n in vocabulary_sizes, gets the unigram counts from the
+    source files and puts the n most frequent words in the vocabulary
+    file.
+    """
 
     split_training_files_into_chunks(source[0].path)
 
@@ -98,7 +106,7 @@ def create_vocabularies(target, source, env):
         cutter.cut_vocabulary(size*1000)
         print "hello4"
 
-    # Delete count files
+    # TODO: Delete count files:
     # shutil.rmtree(temporary_counts_directory)
 
     return None
@@ -120,17 +128,19 @@ def create_trigram_models(target, source, env):
         assert target[i].path == trigram_model_name, target[i].path
         srilm_make_big_lm = subprocess.call(['make-big-lm', '-debug', '2', '-kndiscount3', '-unk', '-read', temporary_counts_directory + 'merge-iter7-1.ngrams.gz', '-vocab', vocabulary_file_name, '-lm', trigram_model_name])
 
-    # Do these only when everything else has worked!
+    # TODO: remove temporary files:
     # shutil.rmtree(chunk_path)  
-# Important to do this, or lm will not change
+    # Important to do this when developing the language model, or lm will not change.
     # shutil.rmtree(temporary_counts_directory)
 
     return None
 
 def split_development_files_into_chunks(development_file_name):
-
-    # We take the development set and split it into files of 100000 lines each so that the nltk segmenter can make counts without choking.
-
+    """
+    We take the development set and split it into files of 100000
+    lines each so that the nltk segmenter can make counts without
+    choking.
+    """
     lines_per_chunk = 100000
     if not os.path.isdir(development_chunk_path):
         development_file_obj = open_with_unicode_bzip2(development_file_name, 'r')

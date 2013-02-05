@@ -1,6 +1,8 @@
 # 2012 L. Amber Wilcox-O'Hearn
 # test_NLTKSegmentThenTokenise.py
 
+# These are essentially all regression tests.
+
 from code.preprocessing import NLTKSegmentThenTokenise
 import unittest, StringIO
 

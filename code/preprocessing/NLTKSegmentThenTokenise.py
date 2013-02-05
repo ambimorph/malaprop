@@ -28,8 +28,11 @@ class NLTKSegmenterPlusTokeniser():
         return False
 
     def apply_ugly_hack_to_reattach_wrong_splits_in_certain_cases_with_initials(self, lines):
-        # NLTK currently splits sentences between 2 initials.  Hacking those back together.
-        # Also has the effect of collapsing whitespace to a single space char.
+        """
+        NLTK currently splits sentences between 2 initials.  Hacking
+        those back together.  Also has the effect of collapsing
+        whitespace to a single space char.
+        """
         lines = list(lines)
         if len(lines) == 0: return []
         reattached_lines = []
@@ -63,12 +66,15 @@ class NLTKSegmenterPlusTokeniser():
         return reattached_lines
                 
     def lists_of_internal_token_boundaries_and_special_tokens(self, line):
-        # If any chars are unicode punctuation and not periods, put boundary marks around them
-        # except at the beginning and end of the line, and unless it is a
-        # contraction or an inter-numeric comma.
-        # Also put boundaries around ellipses.
-        # Strings of digits are listed in the substitutions list with '<n-digit-integer>'
-        # I've traded some readability for doing it in one pass.
+        """
+        If any chars are unicode punctuation and not periods, put
+        boundary marks around them except at the beginning and end of
+        the line, and unless it is a contraction or an inter-numeric
+        comma.  Also put boundaries around ellipses.  Strings of
+        digits are listed in the substitutions list with
+        '<n-digit-integer>' I've traded some readability for doing it
+        in one pass.
+        """
 
         boundaries_set = set([])
         special_tokens = []
