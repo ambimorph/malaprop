@@ -77,30 +77,6 @@ class RealWordErrorChannelMockSegmenterTokeniserTest(unittest.TestCase):
                 print  u'Expected ' + str(v) + ', but got ' + str(result)
                 raise exp
 
-    def test_create_all_possible_errors_and_probs(self):
-
-        test_cases = [ \
-            (u'', u'a', \
-                 [(s + u'a', 1.0/3*1.0/(len(self.real_word_error_channel.symbols))) for s in self.real_word_error_channel.symbols] + \
-                 [(u'', 1.0/3)] + \
-                 [(s, 1.0/3*1.0/(len(self.real_word_error_channel.symbols)-1)) for s in self.real_word_error_channel.symbols[:self.real_word_error_channel.symbols.index(u'a')] + self.real_word_error_channel.symbols[self.real_word_error_channel.symbols.index(u'a')+1:]]), \
-            (u's', u'a', \
-                 [(u's' + s + u'a', 1.0/4*1.0/(len(self.real_word_error_channel.symbols))) for s in self.real_word_error_channel.symbols] + \
-                 [(u's', 1.0/4)] + \
-                 [(u's' + s, 1.0/4*1.0/(len(self.real_word_error_channel.symbols)-1)) for s in self.real_word_error_channel.symbols[:self.real_word_error_channel.symbols.index(u'a')] + self.real_word_error_channel.symbols[self.real_word_error_channel.symbols.index(u'a')+1:]] + \
-                 [(u'as', 1.0/4)]), \
-            (u's', u'', \
-                 [(u's' + s, 1.0/(len(self.real_word_error_channel.symbols))) for s in self.real_word_error_channel.symbols])]
-
-        for t in test_cases:
-            try:
-                result = self.real_word_error_channel.create_all_possible_errors_and_probs(t[0], t[1])
-                assert result == t[2]
- 
-            except AssertionError, exp:
-                print  u'Expected ' + repr(t[2]) + ', but got ' + repr(result)
-                raise exp
-
     def test_mct_eq(self):
         mct0 = RealWordErrorChannel.MidChannelToken(u'and')
         mct0base = RealWordErrorChannel.MidChannelToken(u'and')
@@ -275,28 +251,6 @@ class RealWordErrorChannelMockSegmenterTokeniserTest(unittest.TestCase):
         self.real_word_error_channel.random_number_generator = MockRNG(gen([1,0]),gen([3]))
         result = self.real_word_error_channel.pass_token_through_channel(token_4)
         self.assertEqual(result, u'on')
-
-
-    def test_create_all_real_word_variations(self):
-
-        self.skipTest("")
-
-        test_tokens = [u'an', u'and', u'the', u'there', u'late']
-        expected_results = [ \
-                [u'man', u'a'], \
-                [u'end',], \
-                [u'he'], \
-                [u'three'], \
-                [u'data']]
-                
-        for i in range(len(test_tokens)):
-            result = self.real_word_error_channel.create_all_real_word_variations(test_tokens[i], 3)
-            try:
-                assert expected_results[i] == result
-
-            except AssertionError, exp:
-                print  u'Expected ' + repr(expected_results[i]) + ', but got ' + repr(result)
-                raise exp
 
     def test_pass_sentence_through_channel(self):
 

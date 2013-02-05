@@ -106,32 +106,6 @@ class RealWordErrorChannel():
         else:
             return [left_char, right_char]
                 
-
-    def create_all_possible_errors_and_probs(self, left_char, right_char):
-        assert not (left_char == u'' and right_char == u'')
-
-        list_of_string_error_factor_pairs = []
-
-        if left_char == u'': # No transposition
-            possible_error_types = ["INSERTION", "DELETION", "SUBSTITUTION"]
-        elif right_char == u'': # Insertion only
-            possible_error_types = ["INSERTION"]
-        else:
-            possible_error_types = ["INSERTION", "DELETION", "SUBSTITUTION", "TRANSPOSITION"]
-        number_of_error_types = len(possible_error_types)
-
-        for i in possible_error_types:
-            if i == "INSERTION":
-                list_of_string_error_factor_pairs += [(left_char + s + right_char, 1.0/number_of_error_types*1.0/(len(self.symbols))) for s in self.symbols]
-            elif i == "DELETION":
-                list_of_string_error_factor_pairs += [(left_char, 1.0/number_of_error_types)]
-            elif i == "SUBSTITUTION":
-                list_of_string_error_factor_pairs += [(left_char + s, 1.0/number_of_error_types*1.0/(len(self.symbols)-1)) for s in self.symbols[:self.symbols.index(right_char)] + self.symbols[self.symbols.index(right_char)+1:]]
-            else: # i == "TRANSPOSITION"
-                list_of_string_error_factor_pairs += [(right_char + left_char, 1.0/number_of_error_types)]
-
-        return list_of_string_error_factor_pairs
-
     def push_one_char(self, mid_channel_token):
         '''
         Returns MidChannelToken with one of the
@@ -190,41 +164,6 @@ class RealWordErrorChannel():
                 self.real_word_errors += 1
             return mid_channel_token.chars_passed
         return token
-
-    def create_all_real_word_variations(self, token, maximum_errors):
-        '''
-        This will be like passing a token through the channel, but it
-        will be like a beam search.  At each iteration, we add to the
-        new beam every possible next error for the items currently on
-        the beam, plus the non-error of just passing the next char
-        through.
-        '''
-        
-        # Completed variations: either reached maximum_errors, or end
-        # of token, and happened to be real words: Variations here
-        # come with the number of errors and non-errors, and the
-        # accumulated probability of each of those errors and
-        # non-errors to be multiplied by the absolute probability of
-        # error in the channel.
-        complete_variations = []
-
-        mid_channel_token = MidChannelToken(token)
-
-        # The beam holds every possible variation in progress:
-#        beam = [mid_channel_token]
-#        while beam != []:
-#            next_beam = []
-#            for partial_variation in beam:
-#                possible_continuations = self.push_one_char(partial_variation, with_probability_p=False)
-#                for continuation in possible_continuations:
-#                    if partial_variation.remaining_chars == []:
-#                        complete_variations.append(partial_variation)
-#                    elif partial_variation.number_of_errors == maximum_errors:
-#                        partial_variation.chars_passed += partial_variation.left_char + \
-#                            partial_variation.right_char + u''.join(partial_variation.remaining_chars)
-#                        partial_variation.left_char = partial_variation.right_char = u''
-#                        partial_variation.remaining_chars = []
-        
 
     def pass_sentence_through_channel(self, (original, boundaries, substitutions)):
         """
