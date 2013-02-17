@@ -7,8 +7,7 @@
 #
 # This script will create three directories: train, devel, and test, containing
 # approximately 60%, 20%, and 20% respectively of the total text, in a random
-# order.  Each article will be a separate file without a title or end of
-# document line.  The name of the file will be derived from the article title.
+# order.  
 
 import sys, random
 
