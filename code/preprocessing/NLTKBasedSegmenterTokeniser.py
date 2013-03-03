@@ -6,10 +6,11 @@ import re, sys, codecs, unicodedata, string
 
 class NLTKBasedSegmenterTokeniser():
 
-    def __init__(self, infile_obj, outfile_obj):
+    def __init__(self, infile_obj):
         self.unicode_infile_obj = codecs.getreader('utf-8')(infile_obj)
         self.text = self.unicode_infile_obj.read()
-        self.unicode_outfile_obj = codecs.getwriter('utf-8')(outfile_obj)
+        assert isinstance(self.text, unicode)
+        assert len(self.text) > 0
         trainer = nltk.tokenize.punkt.PunktTrainer()
         trainer.ABBREV = .15
         trainer.IGNORE_ABBREV_PENALTY = True
@@ -186,7 +187,7 @@ class NLTKBasedSegmenterTokeniser():
            
                     
 
-    def segmented_and_tokenised(self, text=None, file_output=True):
+    def segmented_and_tokenised(self, text=None, output_file_obj=None):
         assert text is None or isinstance(text, unicode), text
         if text == None: text = self.text
         for line in (t for t in text.split('\n')):
@@ -195,15 +196,16 @@ class NLTKBasedSegmenterTokeniser():
             for sentence in sentences:
                 sentence_and_token_information = (sentence,) + self.lists_of_internal_token_boundaries_and_special_tokens(sentence)
                 yield sentence_and_token_information
-                if file_output:
+                if output_file_obj:
+                    unicode_outfile_obj = codecs.getwriter('utf-8')(output_file_obj)
                     lowered_text = sentence_and_token_information[0].lower()
                     lowered_sentence_and_token_information = (lowered_text, sentence_and_token_information[1], sentence_and_token_information[2])
-                    self.unicode_outfile_obj.write(u' '.join(self.tokenised_text(lowered_sentence_and_token_information).split()) + u'\n')
+                    unicode_outfile_obj.write(u' '.join(self.tokenised_text(lowered_sentence_and_token_information).split()) + u'\n')
         
 
 
 if __name__ == '__main__':
 
-    st = NLTKBasedSegmenterTokeniser(sys.stdin, sys.stdout)
-    for sti in st.segmented_and_tokenised():
+    st = NLTKBasedSegmenterTokeniser(sys.stdin)
+    for sti in st.segmented_and_tokenised(output_file_obj=sys.stdout):
         pass

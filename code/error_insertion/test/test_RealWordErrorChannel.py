@@ -2,7 +2,7 @@
 # 2012 L. Amber Wilcox-O'Hearn
 # test_RealWordErrorChannel.py
 
-from code.preprocessing import NLTKSegmentThenTokenise
+from code.preprocessing import NLTKBasedSegmenterTokeniser
 from code.error_insertion import RealWordErrorChannel
 import unittest, random, StringIO
 
@@ -18,7 +18,7 @@ class MockRNG:
     def choice(self, l):
         return l[self.c_generator.next()]
 
-class RealWordErrorChannelMockSegmenterTokeniserTest(unittest.TestCase):
+class RealWordErrorChannelTest(unittest.TestCase):
     
     def setUp(self):
         self.text_to_corrupt = open('test_data/segmenter_training', 'rb')
@@ -31,7 +31,7 @@ class RealWordErrorChannelMockSegmenterTokeniserTest(unittest.TestCase):
             def __init__(self, *args, **kwargs):
                 pass
 
-        NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser = MockSegmenterTokenizer
+        NLTKBasedSegmenterTokeniser.NLTKBasedSegmenterTokeniser = MockSegmenterTokenizer
 
         self.real_word_error_channel = RealWordErrorChannel.RealWordErrorChannel(self.vocab_file, self.corrupted_file, self.corrections_file, self.p, self.r)
 
@@ -411,44 +411,3 @@ class RealWordErrorChannelMockSegmenterTokeniserTest(unittest.TestCase):
                         print '\nDid not match: \nGot: ', results[i], '\nExpected: ', expected[i]
                 raise exp
 
-
-
-class RealWordErrorChannelTest(unittest.TestCase):
-    
-    def setUp(self):
-        self.text_to_corrupt = open('test_data/segmenter_training', 'rb')
-        self.vocab_file = open('test_data/1K_test_real_word_vocab', 'rb')
-        self.corrupted_file = StringIO.StringIO()
-        self.corrections_file = StringIO.StringIO()
-        self.p = .3
-        self.r = random.Random(999)
-        self.real_word_error_channel = RealWordErrorChannel.RealWordErrorChannel(self.text_to_corrupt, self.vocab_file, self.corrupted_file, self.corrections_file, self.p, self.r)
-
-
-
-    def test_pass_file_through_channel_regression(self):
-        self.real_word_error_channel.random_number_generator = random.Random(999)
-        self.real_word_error_channel.reset_stats()
-
-        text_to_create_errors_in = u'Autism.\nAutism is a disorder of neural development characterized by impaired social interaction and communication, and by restricted and repetitive behavior. These signs all begin before a child is three years old. Autism affects information processing in the brain by altering how nerve cells and their synapses connect and organize; how this occurs is not well understood. The two other autism spectrum disorders (ASD) are Asperger syndrome, which lacks delays in cognitive development and language, and PDD-NOS, diagnosed when full criteria for the other two disorders are not met.\nAutism has a strong genetic basis, although the genetics of autism are complex and it is unclear whether ASD is explained more by rare mutations, or by rare combinations of common genetic variants. In rare cases, autism is strongly associated with agents that cause birth defects. Controversies surround other proposed environmental causes, such as heavy metals, pesticides or childhood vaccines; the vaccine hypotheses are biologically implausible and lack convincing scientific evidence. The prevalence of autism is about 1–2 per 1,000 people; the prevalence of ASD is about 6 per 1,000, with about four times as many males as females. The number of people diagnosed with autism has increased dramatically since the 1980s, partly due to changes in diagnostic practice; the question of whether actual prevalence has increased is unresolved.\nParents usually notice signs in the first two years of their child\'s life. The signs usually develop gradually, but some autistic children first develop more normally and then regress. Although early behavioral or cognitive intervention can help autistic children gain self-care, social, and communication skills, there is no known cure. Not many children with autism live independently after reaching adulthood, though some become successful. An autistic culture has developed, with some individuals seeking a cure and others believing autism should be tolerated as a difference and not treated as a disorder.'
-
-        expected_text_output = "Autism.\nAutism is a disorder of neural development characterized by impaired social interaction and communication, and by restricted an repetitive behavior.\nThese signs all begin before a child is three years old.\nAutism affects information processing in the brain by altering how nerve cells and their synapses connect and organize; how this occurs is not well understood.\nThe two other autism spectrum disorders (ASD) are Asperger syndrome, which lacks delays in cognitive development and language, and PDD-NOS, diagnosed when full criteria for the other two disorders are not met.\nAutism has a strong genetic basis, although the genetics of autism are complex and it is unclear whether ASD is explained more by rare mutations, or my rare combinations of common genetic variants.\nIn rare cases, autism is strongly associated with agents that cause birth defects.\nControversies surround other proposed environmental causes, such a heavy metals, pesticides or childhood vaccines; the vaccine hypotheses are biologically implausible and lack convincing scientific evidence.\nThe prevalence of autism s about 1\xe2\x80\x932 per 1,000 people; the prevalence of ASD is about 6 per 1,000, with about four times as many males as females.\nThe number of people diagnosed with autism has increased dramatically since the 1980s, partly due to changes in diagnostic practice; the question of whether actual prevalence has increased is unresolved.\nParents usually notice signs in the first two years of their child's life.\nThe signs usually develop gradually, but some autistic children first develop more normally and then regress.\nAlthough early behavioral or cognitive intervention can help autistic children gain self-care, social, and communication skills, there is no known cure.\nNot many children with autism live independently after reaching adulthood, though some become successful.\nAn autistic culture has developed, with some individuals seeking a cure and others believing autism should be tolerated as a difference and not treated as a disorder.\n" 
-        expected_corrections_output = "1 [(125, u'an', u'and')]\n5 [(149, u'my', u'by')]\n7 [(65, u'a', u'as')]\n8 [(25, u's', u'is')]\nReal word errors: 4\nTokens passed through channel: 166\nMean character errors per real word error: 1.00\nMax character errors per word: 1"
-
-        self.real_word_error_channel.pass_file_through_channel(text=text_to_create_errors_in)
-        
-        for got, expected in [(self.corrupted_file.getvalue(), expected_text_output), (self.corrections_file.getvalue(), expected_corrections_output)]:
-            assert isinstance(got, str), (type(got), repr(got))
-            try:
-                assert got == expected
-            except AssertionError, exp:
-                x = got
-                for i in range(len(x)):
-                    if i >= len(expected) or x[i] != expected[i]: break
-                print '\nMatching prefix of output and expected output: ', repr(x[:i])
-                print '\noutput differs starting here: ', repr(x[i:])
-                print '\nexpected: ', repr(expected[i:])
-                raise exp
-
-if __name__ == '__main__':
-    unittest.main()

@@ -1,7 +1,6 @@
 # 2012 L. Amber Wilcox-O'Hearn
 # RealWordErrorChannel.py
 
-from code.preprocessing import NLTKSegmentThenTokenise
 import codecs, unicodedata, random, sys
 from copy import deepcopy
 
@@ -263,23 +262,3 @@ class RealWordErrorChannel():
             last_boundary = next_boundary
             
         return result, corrections
-
-    def pass_file_through_channel(self, text=None):
-        assert text is None or isinstance(text, unicode), text
-        if text == None: text = self.segmenter_tokeniser.text 
-
-        sentence_info_generator = self.segmenter_tokeniser.segmented_and_tokenised(text, file_output=False)
-        i = 0
-        for sentence in sentence_info_generator:
-            possibly_erroneous_sentence, corrections = self.pass_sentence_through_channel(sentence)
-            self.unicode_error_file_obj.write(possibly_erroneous_sentence + u'\n')
-            if corrections != []:
-                self.unicode_corrections_file_obj.write(str(i) + ' ' + repr(corrections) + '\n')
-            i += 1
-        self.unicode_corrections_file_obj.write(self.get_stats())
-
-if __name__ == '__main__':
-
-    vocab_file_name, corrections_file_name, p, seed = sys.argv[1:]
-    rwec = RealWordErrorChannel(sys.stdin, open(vocab_file_name, 'rb'), sys.stdout, open(corrections_file_name, 'wb'), float(p), random.Random(int(seed)))
-    rwec.pass_file_through_channel()
