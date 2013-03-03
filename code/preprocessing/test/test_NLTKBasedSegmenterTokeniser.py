@@ -1,9 +1,9 @@
 # 2012 L. Amber Wilcox-O'Hearn
-# test_NLTKSegmentThenTokenise.py
+# test_NLTKBasedSegmenterTokeniser.py
 
 # These are essentially all regression tests.
 
-from code.preprocessing import NLTKSegmentThenTokenise
+from code.preprocessing import NLTKBasedSegmenterTokeniser
 import unittest, StringIO
 
 
@@ -16,7 +16,7 @@ class SegmenterAndTokeniserTest(unittest.TestCase):
     def run_assertions(self, text_to_segment_tokenise, expected_list_of_tuple_output, expected_text_output):
         
         out_file_obj = StringIO.StringIO()
-        seg_tok = NLTKSegmentThenTokenise.NLTKSegmenterPlusTokeniser(self.training_text_file, out_file_obj)
+        seg_tok = NLTKBasedSegmenterTokeniser.NLTKBasedSegmenterTokeniser(self.training_text_file, out_file_obj)
         tuple_generator = seg_tok.segmented_and_tokenised(text_to_segment_tokenise)
         list_output = [x for x in tuple_generator]
 

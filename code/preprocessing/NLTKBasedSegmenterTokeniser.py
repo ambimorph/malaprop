@@ -1,10 +1,10 @@
 # 2012 L. Amber Wilcox-O'Hearn
-# NLTKSegmentThenTokenise.py
+# NLTKBasedSegmenterTokeniser.py
 
 import nltk
 import re, sys, codecs, unicodedata, string
 
-class NLTKSegmenterPlusTokeniser():
+class NLTKBasedSegmenterTokeniser():
 
     def __init__(self, infile_obj, outfile_obj):
         self.unicode_infile_obj = codecs.getreader('utf-8')(infile_obj)
@@ -204,6 +204,6 @@ class NLTKSegmenterPlusTokeniser():
 
 if __name__ == '__main__':
 
-    st = NLTKSegmenterPlusTokeniser(sys.stdin, sys.stdout)
+    st = NLTKBasedSegmenterTokeniser(sys.stdin, sys.stdout)
     for sti in st.segmented_and_tokenised():
         pass
