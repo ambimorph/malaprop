@@ -31,9 +31,14 @@ class RealWordErrorChannelTest(unittest.TestCase):
             def __init__(self, *args, **kwargs):
                 pass
 
+        self.original_segmenter_tokeniser = NLTKBasedSegmenterTokeniser.NLTKBasedSegmenterTokeniser
         NLTKBasedSegmenterTokeniser.NLTKBasedSegmenterTokeniser = MockSegmenterTokenizer
 
         self.real_word_error_channel = RealWordErrorChannel.RealWordErrorChannel(self.vocab_file, self.corrupted_file, self.corrections_file, self.p, self.r)
+
+    def tearDown(self):
+        
+        NLTKBasedSegmenterTokeniser.NLTKBasedSegmenterTokeniser = self.original_segmenter_tokeniser 
 
     def test_real_words(self):
         for test_word in [u'with', u'end', u'don\'t']:
@@ -276,27 +281,6 @@ class RealWordErrorChannelTest(unittest.TestCase):
         result = self.real_word_error_channel.pass_token_through_channel(token_4)
         self.assertEqual(result, u'on')
 
-
-    def test_create_all_real_word_variations(self):
-
-        self.skipTest("")
-
-        test_tokens = [u'an', u'and', u'the', u'there', u'late']
-        expected_results = [ \
-                [u'man', u'a'], \
-                [u'end',], \
-                [u'he'], \
-                [u'three'], \
-                [u'data']]
-                
-        for i in range(len(test_tokens)):
-            result = self.real_word_error_channel.create_all_real_word_variations(test_tokens[i], 3)
-            try:
-                assert expected_results[i] == result
-
-            except AssertionError, exp:
-                print  u'Expected ' + repr(expected_results[i]) + ', but got ' + repr(result)
-                raise exp
 
     def test_pass_sentence_through_channel(self):
 
