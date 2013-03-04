@@ -6,7 +6,7 @@
 import sys
 del sys.modules['pickle']
 
-import codecs, bz2, gzip, random, subprocess, os, StringIO
+import codecs, bz2, gzip, random, subprocess, os, StringIO, filecmp
 
 from code.preprocessing import WikipediaArticleRandomiser
 from code.language_modelling import vocabulary_cutter
@@ -96,7 +96,7 @@ def create_vocabularies(target, source, env):
         unigram_counts_file_obj = open_with_unicode(temporary_counts_directory + merged_counts_file, 'gzip', 'r')
         size = vocabulary_sizes[i]
         vocabulary_file_name = data_directory + str(size) + 'K.vocab'
-        assert target[i].path == vocabulary_file_name, 'Target was: ' + target[i].path
+        assert target[i].path == vocabulary_file_name, 'Target was: ' + target[i].path + '; Expected: ' + vocabulary_file_name
         vocabulary_file_obj = open_with_unicode(vocabulary_file_name, None, 'w')
         cutter = vocabulary_cutter.VocabularyCutter(unigram_counts_file_obj, vocabulary_file_obj)
         cutter.cut_vocabulary(int(float(size)*1000))
@@ -128,11 +128,11 @@ def extract_real_word_vocabulary(target, source, env):
     for i in range(len(vocabulary_sizes)):
         size = vocabulary_sizes[i]
         vocabulary_file_name = data_directory + str(size) + 'K.vocab'
-        vocabulary_file_obj = open_with_unicode(vocabulary_file_name, None, 'r')
+        vocabulary_file_obj = open(vocabulary_file_name, 'r')
         real_word_vocabulary_file_name = data_directory + str(size) + 'K.real_word_vocab'
 
         assert target[i].path == real_word_vocabulary_file_name, 'Target was: ' + target[i].path
-        real_word_vocabulary_file_obj = open_with_unicode(real_word_vocabulary_file_name, None, 'w')
+        real_word_vocabulary_file_obj = open(real_word_vocabulary_file_name, 'w')
         extractor = RealWordVocabExtractor.RealWordVocabExtractor(vocabulary_file_obj, real_word_vocabulary_file_obj)
         extractor.extract_real_words()
     return
@@ -167,23 +167,53 @@ def create_error_sets(target, source, env):
                     rwec.unicode_corrections_file_obj.write(str(sentence_number) + ' ' + repr(corrections) + '\n')
                 sentence_number += 1
         rwec.unicode_corrections_file_obj.write(rwec.get_stats())
+        rwec.unicode_error_file_obj.close()
+        rwec.unicode_corrections_file_obj.close()
+
+    if TEST:
+        assert filecmp.cmp(data_directory + 'errors_at_0.2_0.05K_vocabulary.bz2', 'test_data/errors_at_0.2_0.05K_vocabulary.bz2', shallow=False), "Test result errors_at_0.2_0.05K_vocabulary.bz2 differs from expected."
+        assert filecmp.cmp(data_directory + 'errors_at_0.2_0.5K_vocabulary.bz2', 'test_data/errors_at_0.2_0.5K_vocabulary.bz2', shallow=False), "Test result errors_at_0.2_0.5K_vocabulary.bz2 differs from expected."
+        assert filecmp.cmp(data_directory + 'corrections_0.2_0.05K_vocabulary.bz2', 'test_data/corrections_0.2_0.05K_vocabulary.bz2', shallow=False), "Test result corrections_0.2_0.05K_vocabulary.bz2 differs from expected."
+        assert filecmp.cmp(data_directory + 'corrections_0.2_0.5K_vocabulary.bz2', 'test_data/corrections_0.2_0.5K_vocabulary.bz2', shallow=False), "Test result corrections_0.2_0.5K_vocabulary.bz2 differs from expected."
         
 
     return None
 
 
+# Get commandline configuration:
+
+data_directory = ''
 vocabulary_sizes = []
-error_rate = 0
 lines_per_chunk = 100000
-for key, value in ARGLIST:
-    if key == "data_directory":
-        data_directory = value
-    elif key == "vocabulary_size":
-        vocabulary_sizes.append(value)
-    elif key == "error_rate":
-        error_rate = float(value)
-    elif key == "lines_per_chunk":
-        lines_per_chunk = int(value)
+error_rate = .05
+TEST = False
+
+try:
+    data_directory = [x[1] for x in ARGLIST if x[0] == "data_directory"][0] + '/'
+except:
+    print "Usage: scons data_directory=DIR variables target"
+    raise Exception
+
+if [x for x in ARGLIST if x[0] == "test"]:
+    TEST = True
+    vocabulary_sizes = [0.05, 0.5]
+    lines_per_chunk = 25
+    error_rate = .2
+
+elif [x for x in ARGLIST if x[0] == "replicate"]:
+    vocabulary_sizes = [50, 100]
+    lines_per_chunk = 100000
+    error_rate = .05
+
+else:
+    for key, value in ARGLIST:
+        if key == "vocabulary_size":
+            vocabulary_sizes.append(value)
+        elif key == "lines_per_chunk":
+            lines_per_chunk = int(value)
+        elif key == "error_rate":
+            error_rate = float(value)
+
 
 learning_sets_builder = Builder(action = randomise_wikipedia_articles)
 vocabulary_files_builder = Builder(action = create_vocabularies)
