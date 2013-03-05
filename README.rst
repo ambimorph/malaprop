@@ -1,25 +1,30 @@
 Malaprop
 Author: L. Amber Wilcox-O'Hearn
+Contact: amber@cs.toronto.edu
 Date: March 3rd, 2013
 
 ============
 Introduction
 ============
-Malaprop is a project involving transformations of natural text that result in some words being replaced by real-word near neighbours.  From Wikipedia: Mrs. Malaprop is a character "in Richard Brinsley Sheridan's 1775 play The Rivals who frequently misspeaks (to great comic effect) by using words which don't have the meaning she intends, but which sound similar to words that do."   The term malapropism was first used in the context of this computational task by Graeme Hirst and Alex Budanitsky.
+Malaprop is a project involving transformations of natural text that result in some words being replaced by real-word near neighbours.  
 
-Malaprop is written in the spirit of the adversarial evaluation paradigm for natural language processing proposed by Noah Smith.  Please see http://subsymbol.org for discussion.
+Malaprop is written in the spirit of the adversarial evaluation paradigm for natural language processing proposed by Noah Smith [http://arxiv.org/abs/1207.0245].  Please see http://subsymbol.org for discussion.
 
 This first version includes code to 
-(1) Divide a corpus of Wikipedia articles into training, development, and test sets.
+(1) Divide a corpus of text articles (e.g. Wikipedia) into training, development, and test sets.
 (2) Generate trigram models from a training set.
-(3) Create a corpus of real-word errors embedded in the development set:
+(3) Create a corpus of real-word errors embedded in a copy of the development set along with a spearate index to the errors and their corrections.
 
-It acts as a noisy channel, randomly inserting Damerau-Levenshtein ( http://en.wikipedia.org/wiki/Damerau%E2%80%93Levenshtein_distance ) errors at the character level as a word is passed through. If the resulting string is a *real word* — that is, a sufficiently frequent word in the original corpus — the new word replaces the original.
+It acts as a noisy channel, randomly inserting Damerau-Levenshtein [http://en.wikipedia.org/wiki/Damerau%E2%80%93Levenshtein_distance] errors at the character level as a word is passed through. If the resulting string is a *real word* — that is, a sufficiently frequent word in the original corpus — the new word replaces the original.
 
 ============
 Dependencies
 ============
-Malaprop was tested using the following software:
+Malaprop requires:
+
+Python, Scons, NLTK, and SRILM
+
+It was tested under the following versions:
 
 Ubuntu 12.04.2 LTS
 Python 2.7.3
@@ -32,8 +37,9 @@ Running the tests
 =================
 Unit tests: Run $ python -m unittest discover
 
-SCons test
-Create a directory DIR for testing, and copy or link your b2zipped corpus as corpus.bz2.
+SCons test:
+Create a directory DIR for testing, and copy or link test_data/Wikipedia_small_subset.bz2 as corpus.bz2.
+$ ln -s ../test_data/Wikipedia_small_subset.bz2 DIR/corpus.bz2
 Run $ scons data_directory=DIR test=1
 
 =================================
@@ -42,21 +48,49 @@ Running Malaprop on your own data
 Create a directory DIR for testing, and copy or link your b2zipped corpus as corpus.bz2.
 Run $ scons data_directory=DIR variables target
 
-Possible targets at this point are: learning_sets, vocabulary_files, trigram_models, real_word_vocabulary_files, and error_sets.
+Current possible targets: 
 
-In addition to the presence of the corpus.bz2 file, targets require these variables:
+* learning_sets
+    * DIR must contain corpus.bz2
+        * corpus.bz2 contains articles divided by the following line:
+        "---END.OF.DOCUMENT---\n"
+    * no variables 
 
-* learning_sets (requires no further arguments)
-* vocabulary_files, trigram_models:
+    * -> divided into 60-20-20% training, development, and test
+
+* vocabulary_files:
+    * DIR must contain training_set.bz2 OR dependencies for learning_sets
     * one or more variables vocabulary_size=n
     * lines_per_chunk=n (defaults to 100000)
+
+    * -> nK.vocab for n in vocabulary_size
+
+* trigram_models:
+    * variables vocabulary_size=n 
+    * DIR must contain a vocabulary file nK.vocab for n in vocabulary_size
+      OR 
+    * dependencies met for vocabulary_files
+
+    * -> trigram_model_nK.arpa for n in vocabulary_size
+
 * real_word_vocabulary_files
-    * one or more variables vocabulary_size=n
-    * lines_per_chunk=n (defaults to 100000) (only needed if vocabulary_files not already built)
+    * variables vocabulary_size=n 
+    * DIR must contain nK.vocab for each n in vocabulary_size
+      OR
+    * dependencies met for vocabulary_files
+
+    * -> nK.real_word_vocab for n in vocabulary_size
+
 * error_sets
-    * one or more variables vocabulary_size=n
+    * DIR must contain development_set.bz2 or dependencies met for learning_sets
     * lines_per_chunk=n (defaults to 100000)
     * error_rate in {0,1} (defaults to .05)
+    * variables vocabulary_size=n
+    * DIR must contain nK.real_word_vocab for n in vocabulary_size
+      OR 
+    * dependencies met for real_word_vocabulary_files
+
+    * -> errors_at_e_nK_vocabulary.bz2, corrections_e_nK_vocabulary.bz2 for e=error_rate for n in vocabulary_size
 
 Note: vocabulary_size is given in thousands.
 
