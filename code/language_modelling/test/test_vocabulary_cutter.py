@@ -1,4 +1,4 @@
-# Copyright 2011 L. Amber Wilcox-O'Hearn
+# L. Amber Wilcox-O'Hearn 2011
 # test_vocabulary_cutter.py
 
 import unittest, StringIO

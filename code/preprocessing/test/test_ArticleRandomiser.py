@@ -1,4 +1,4 @@
-# Copyright 2011 L. Amber Wilcox-O'Hearn
+# L. Amber Wilcox-O'Hearn 2011
 # test_ArticleRandomiser.py
 
 from code.preprocessing import ArticleRandomiser
