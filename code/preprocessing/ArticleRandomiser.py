@@ -1,5 +1,5 @@
-# Copyright 2011 L. Amber Wilcox-O'Hearn
-# WikipediaArticleRandomiser.py
+# L. Amber Wilcox-O'Hearn 2011
+# ArticleRandomiser.py
 
 # The Westbury Lab Corpus consists of a single file containing all and only the
 # text of the articles of Wikipedia.  Each article begins with a title on a

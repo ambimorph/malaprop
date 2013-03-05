@@ -14,7 +14,7 @@ class RealWordVocabExtractor():
         My current definition of real word is that it contains
         letters, and if there are symbols in it, they have to be
         either apostrophes or periods.  In addition, it cannot be the
-        special end.of.document word in Wikipedia.
+        special end.of.document word in Westbury Labs' Wikipedia.
         """
         for line in self.unicode_vocabfile_obj.readlines():
             word = line.strip()

@@ -1,11 +1,11 @@
 # Copyright 2011 L. Amber Wilcox-O'Hearn
-# test_WikipediaArticleRandomiser.py
+# test_ArticleRandomiser.py
 
-from code.preprocessing import WikipediaArticleRandomiser
+from code.preprocessing import ArticleRandomiser
 import unittest, StringIO, random
 
 
-class WikipediaArticleRandomiserTest(unittest.TestCase):
+class ArticleRandomiserTest(unittest.TestCase):
 
     def test_randomise(self):
 
@@ -24,7 +24,7 @@ class WikipediaArticleRandomiserTest(unittest.TestCase):
         devel_file_obj = StringIO.StringIO()
         test_file_obj = StringIO.StringIO()
 
-        ar = WikipediaArticleRandomiser.Randomiser(article_file_obj, train_file_obj, devel_file_obj, test_file_obj, r)
+        ar = ArticleRandomiser.Randomiser(article_file_obj, train_file_obj, devel_file_obj, test_file_obj, r)
         ar.randomise()
         assert train_file_obj.getvalue() == "".join(a2+a4), "".join(a2+a4) + train_file_obj.getvalue()
         assert devel_file_obj.getvalue() == "".join(a1), "".join(a1) + devel_file_obj.getvalue()
