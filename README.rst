@@ -41,14 +41,17 @@ SCons test:
 Create a directory DIR for testing, and copy or link test_data/Wikipedia_small_subset.bz2 as corpus.bz2.
 ::
  $ ln -s ../test_data/Wikipedia_small_subset.bz2 DIR/corpus.bz2
-Run ::
+Run 
+::
  $ scons data_directory=DIR test=1
 
 =================================
 Running Malaprop on your own data
 =================================
 Create a directory DIR for testing, and copy or link your b2zipped corpus as corpus.bz2.
-Run $ scons data_directory=DIR variables target
+Run 
+::
+ $ scons data_directory=DIR variables target
 
 Current possible targets: 
 
