@@ -11,7 +11,7 @@ Introduction
 ============
 Malaprop is a project involving transformations of natural text that result in some words being replaced by real-word near neighbours.  
 
-Malaprop is written in the spirit of the adversarial evaluation paradigm for natural language processing proposed by Noah Smith [http://arxiv.org/abs/1207.0245].  Please see http://subsymbol.org for discussion.
+Malaprop is written in the spirit of `the adversarial evaluation paradigm for natural language processing proposed by Noah Smith`_.  Please see http://subsymbol.org for discussion.
 
 This first version includes code to 
 
@@ -21,7 +21,7 @@ This first version includes code to
 
 (3) Create a corpus of real-word errors embedded in a copy of the development set along with a separate index to the errors and their corrections.
 
-It acts as a noisy channel, randomly inserting Damerau-Levenshtein [http://en.wikipedia.org/wiki/Damerau%E2%80%93Levenshtein_distance] errors at the character level as a word is passed through. If the resulting string is a *real word* — that is, a sufficiently frequent word in the original corpus — the new word replaces the original.
+It acts as a noisy channel, randomly inserting `Damerau-Levenshtein`_  errors at the character level as a word is passed through. If the resulting string is a *real word* — that is, a sufficiently frequent word in the original corpus — the new word replaces the original.
 
 ============
 Dependencies
@@ -119,3 +119,7 @@ Note: vocabulary_size is given in thousands.
 Acknowledgements
 ================
 Zooko Wilcox-O'Hearn contributed endless hours to engineering and debuggery advice.
+
+.. _the adversarial evaluation paradigm for natural language processing proposed by Noah Smith: http://arxiv.org/abs/1207.0245
+
+.. _Damerau-Levenshtein: http://en.wikipedia.org/wiki/Damerau%E2%80%93Levenshtein_distance
