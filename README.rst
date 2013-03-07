@@ -42,15 +42,22 @@ It was tested under the following versions:
 Running the tests
 =================
 Unit tests: Run 
+
 ::
+
  $ python -m unittest discover
 
 SCons test:
 Create a directory DIR for testing, and copy or link test_data/Wikipedia_small_subset.bz2 as corpus.bz2.
+
 ::
+
  $ ln -s ../test_data/Wikipedia_small_subset.bz2 DIR/corpus.bz2
+
 Run 
+
 ::
+
  $ scons data_directory=DIR test=1
 
 =================================
@@ -58,14 +65,16 @@ Running Malaprop on your own data
 =================================
 Create a directory DIR for testing, and copy or link your b2zipped corpus as corpus.bz2.
 Run 
+
 ::
+
  $ scons data_directory=DIR variables target
 
 Current possible targets: 
 
 * learning_sets
     * DIR must contain corpus.bz2, which consists of articles divided by the following line:
-        "---END.OF.DOCUMENT---\n"
+        "---END.OF.DOCUMENT---"
     * no variables 
 
     * -> divided into 60-20-20% training, development, and test
