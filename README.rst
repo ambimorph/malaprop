@@ -1,6 +1,9 @@
 Malaprop
+
 Author: L. Amber Wilcox-O'Hearn
+
 Contact: amber@cs.toronto.edu
+
 Date: March 3rd, 2013
 
 ============
@@ -35,7 +38,9 @@ It was tested under the following versions:
 =================
 Running the tests
 =================
-Unit tests: Run $ python -m unittest discover
+Unit tests: Run 
+::
+ $ python -m unittest discover
 
 SCons test:
 Create a directory DIR for testing, and copy or link test_data/Wikipedia_small_subset.bz2 as corpus.bz2.
