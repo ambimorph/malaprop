@@ -4,7 +4,7 @@ Author: L. Amber Wilcox-O'Hearn
 
 Contact: amber@cs.toronto.edu
 
-Date: March 3rd, 2013
+Released under the GNU AFFERO GENERAL PUBLIC LICENSE, see COPYING file for details.
 
 ============
 Introduction
@@ -64,8 +64,7 @@ Run
 Current possible targets: 
 
 * learning_sets
-    * DIR must contain corpus.bz2
-        * corpus.bz2 contains articles divided by the following line:
+    * DIR must contain corpus.bz2, which consists of articles divided by the following line:
         "---END.OF.DOCUMENT---\n"
     * no variables 
 
