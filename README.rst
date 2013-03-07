@@ -22,15 +22,15 @@ Dependencies
 ============
 Malaprop requires:
 
-Python, Scons, NLTK, and SRILM
+Python, Scons, NLTK, and SRILM.
 
 It was tested under the following versions:
 
-Ubuntu 12.04.2 LTS
-Python 2.7.3
-SCons v2.1.0.r5357
-NLTK 2.0b9
-SRILM 1.5.5
+* Ubuntu 12.04.2 LTS
+* Python 2.7.3
+* SCons v2.1.0.r5357
+* NLTK 2.0b9
+* SRILM 1.5.5
 
 =================
 Running the tests
