@@ -14,9 +14,12 @@ Malaprop is a project involving transformations of natural text that result in s
 Malaprop is written in the spirit of the adversarial evaluation paradigm for natural language processing proposed by Noah Smith [http://arxiv.org/abs/1207.0245].  Please see http://subsymbol.org for discussion.
 
 This first version includes code to 
+
 (1) Divide a corpus of text articles (e.g. Wikipedia) into training, development, and test sets.
+
 (2) Generate trigram models from a training set.
-(3) Create a corpus of real-word errors embedded in a copy of the development set along with a spearate index to the errors and their corrections.
+
+(3) Create a corpus of real-word errors embedded in a copy of the development set along with a separate index to the errors and their corrections.
 
 It acts as a noisy channel, randomly inserting Damerau-Levenshtein [http://en.wikipedia.org/wiki/Damerau%E2%80%93Levenshtein_distance] errors at the character level as a word is passed through. If the resulting string is a *real word* — that is, a sufficiently frequent word in the original corpus — the new word replaces the original.
 
