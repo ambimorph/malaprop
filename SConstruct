@@ -8,7 +8,7 @@ del sys.modules['pickle']
 
 import codecs, bz2, gzip, random, subprocess, os, StringIO, filecmp
 
-from code.preprocessing import WikipediaArticleRandomiser
+from code.preprocessing import ArticleRandomiser
 from code.language_modelling import vocabulary_cutter
 from code.error_insertion import RealWordVocabExtractor
 from code.preprocessing import NLTKBasedSegmenterTokeniser
@@ -55,18 +55,18 @@ def split_file_into_chunks(file_name, chunk_path):
     return
 
 
-def randomise_wikipedia_articles(target, source, env):
+def randomise_articles(target, source, env):
     """
     target is a list of files corresponding to the training,
     development, and test sets.  source is a single bzipped file of
-    wikipedia articles.
+    articles.
     """
     article_file_obj = open_with_unicode(source[0].path, 'bzip2', 'r')
     train_file_obj = open_with_unicode(target[0].path, 'bzip2', 'w')
     devel_file_obj = open_with_unicode(target[1].path, 'bzip2', 'w')
     test_file_obj = open_with_unicode(target[2].path, 'bzip2', 'w')
     rand_obj = random.Random(7)
-    ar = WikipediaArticleRandomiser.Randomiser(article_file_obj, train_file_obj, devel_file_obj, test_file_obj, rand_obj)
+    ar = ArticleRandomiser.Randomiser(article_file_obj, train_file_obj, devel_file_obj, test_file_obj, rand_obj)
     ar.randomise()
     return None
 
@@ -215,7 +215,7 @@ else:
             error_rate = float(value)
 
 
-learning_sets_builder = Builder(action = randomise_wikipedia_articles)
+learning_sets_builder = Builder(action = randomise_articles)
 vocabulary_files_builder = Builder(action = create_vocabularies)
 trigram_models_builder = Builder(action = create_trigram_models)
 real_word_vocabulary_builder = Builder(action = extract_real_word_vocabulary)
