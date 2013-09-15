@@ -2,14 +2,14 @@
 # 2012 L. Amber Wilcox-O'Hearn
 # test_RealWordVocabExtractor.py
 
-from code.error_insertion import RealWordVocabExtractor
+from malaprop.error_insertion import RealWordVocabExtractor
 import unittest, StringIO
 
 
 class RealWordVocabExtractorTest(unittest.TestCase):
     
     def test_real_word_vocab_extactor(self):
-        vocab_file_obj = open('test_data/1K_test_vocab', 'rb')
+        vocab_file_obj = open('malaprop/test/data/1K_test_vocab', 'rb')
         outfile_obj = StringIO.StringIO()
         real_word_vocab_extractor = RealWordVocabExtractor.RealWordVocabExtractor(vocab_file_obj, outfile_obj)
         real_word_vocab_extractor.extract_real_words()

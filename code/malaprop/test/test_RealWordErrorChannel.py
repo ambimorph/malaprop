@@ -2,8 +2,8 @@
 # 2012 L. Amber Wilcox-O'Hearn
 # test_RealWordErrorChannel.py
 
-from code.preprocessing import NLTKBasedSegmenterTokeniser
-from code.error_insertion import RealWordErrorChannel
+from recluse import nltk_based_segmenter_tokeniser
+from malaprop.error_insertion import RealWordErrorChannel
 import unittest, random, StringIO
 
 def gen(l):
@@ -21,8 +21,8 @@ class MockRNG:
 class RealWordErrorChannelTest(unittest.TestCase):
     
     def setUp(self):
-        self.text_to_corrupt = open('test_data/segmenter_training', 'rb')
-        self.vocab_file = open('test_data/1K_test_real_word_vocab', 'rb')
+        self.text_to_corrupt = open('malaprop/test/data/segmenter_training', 'rb')
+        self.vocab_file = open('malaprop/test/data/1K_test_real_word_vocab', 'rb')
         self.corrupted_file = StringIO.StringIO()
         self.corrections_file = StringIO.StringIO()
         self.p = .3
@@ -31,14 +31,14 @@ class RealWordErrorChannelTest(unittest.TestCase):
             def __init__(self, *args, **kwargs):
                 pass
 
-        self.original_segmenter_tokeniser = NLTKBasedSegmenterTokeniser.NLTKBasedSegmenterTokeniser
-        NLTKBasedSegmenterTokeniser.NLTKBasedSegmenterTokeniser = MockSegmenterTokenizer
+        self.original_segmenter_tokeniser = nltk_based_segmenter_tokeniser.NLTKBasedSegmenterTokeniser
+        nltk_based_segmenter_tokeniser.NLTKBasedSegmenterTokeniser = MockSegmenterTokenizer
 
         self.real_word_error_channel = RealWordErrorChannel.RealWordErrorChannel(self.vocab_file, self.corrupted_file, self.corrections_file, self.p, self.r)
 
     def tearDown(self):
         
-        NLTKBasedSegmenterTokeniser.NLTKBasedSegmenterTokeniser = self.original_segmenter_tokeniser 
+        nltk_based_segmenter_tokeniser.NLTKBasedSegmenterTokeniser = self.original_segmenter_tokeniser 
 
     def test_real_words(self):
         for test_word in [u'with', u'end', u'don\'t']:
