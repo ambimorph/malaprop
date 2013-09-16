@@ -6,6 +6,16 @@ Contact: amber@cs.toronto.edu
 
 Released under the GNU AFFERO GENERAL PUBLIC LICENSE, see COPYING file for details.
 
+========
+ Notice
+========
+Pardon the mess.
+I have moved most of the preprocessing functionality out to `recluse`_.
+I intend to keep here only the code for error insertion and correction.
+However, it is temporarily in flux, as I rearrange modules.
+
+Here is the description of the previous version, some of which is now in `recluse`_:
+
 ============
 Introduction
 ============
@@ -123,3 +133,5 @@ Zooko Wilcox-O'Hearn contributed endless hours to engineering and debuggery advi
 .. _the adversarial evaluation paradigm for natural language processing proposed by Noah Smith: http://arxiv.org/abs/1207.0245
 
 .. _Damerau-Levenshtein: http://en.wikipedia.org/wiki/Damerau%E2%80%93Levenshtein_distance
+
+.. _recluse: https://github.com/lamber/recluse
