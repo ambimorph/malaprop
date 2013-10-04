@@ -6,16 +6,6 @@ Contact: amber@cs.toronto.edu
 
 Released under the GNU AFFERO GENERAL PUBLIC LICENSE, see COPYING file for details.
 
-========
- Notice
-========
-Pardon the mess.
-I have moved most of the preprocessing functionality out to `recluse`_.
-I intend to keep here only the code for error insertion and correction.
-However, it is temporarily in flux, as I rearrange modules.
-
-Here is the description of the previous version, some of which is now in `recluse`_:
-
 ============
 Introduction
 ============
@@ -38,12 +28,13 @@ Dependencies
 ============
 Malaprop requires:
 
-Python, Scons, NLTK, and SRILM.
+Python, recluse, Scons, NLTK, and SRILM.
 
 It was tested under the following versions:
 
 * Ubuntu 12.04.2 LTS
 * Python 2.7.3
+* recluse 0.1.21
 * SCons v2.1.0.r5357
 * NLTK 2.0b9
 * SRILM 1.5.5
@@ -62,7 +53,7 @@ Create a directory DIR for testing, and copy or link test_data/Wikipedia_small_s
 
 ::
 
- $ ln -s ../test_data/Wikipedia_small_subset.bz2 DIR/corpus.bz2
+ $ ln -s ../malaprop/test/data/Wikipedia_small_subset.bz2 DIR/corpus.bz2
 
 Run 
 
