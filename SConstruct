@@ -6,54 +6,12 @@
 import sys
 del sys.modules['pickle']
 
-import codecs, bz2, gzip, random, subprocess, os, StringIO, filecmp
+import codecs, bz2, gzip, random, subprocess, os, StringIO, filecmp, shutil
 
-from code.preprocessing import ArticleRandomiser
-from code.language_modelling import vocabulary_cutter
-from code.error_insertion import RealWordVocabExtractor
-from code.preprocessing import NLTKBasedSegmenterTokeniser
-from code.error_insertion import RealWordErrorChannel
-
-def open_with_unicode(file_name, compression_type, mode):
-    assert compression_type in [None, 'gzip', 'bzip2']
-    assert mode in ['r', 'w']
-    if compression_type == None:
-        if mode == 'r':
-            return codecs.getreader('utf-8')(open(file_name, mode))
-        elif mode == 'w':
-            return codecs.getwriter('utf-8')(open(file_name, mode))
-    elif compression_type == 'gzip':
-        if mode == 'r':
-            return codecs.getreader('utf-8')(gzip.GzipFile(file_name, mode))
-        elif mode == 'w':
-            return codecs.getwriter('utf-8')(gzip.GzipFile(file_name, mode))
-    elif compression_type == 'bzip2':
-        if mode == 'r':
-            return codecs.getreader('utf-8')(bz2.BZ2File(file_name, mode))
-        elif mode == 'w':
-            return codecs.getwriter('utf-8')(bz2.BZ2File(file_name, mode))
-
-def split_file_into_chunks(file_name, chunk_path):
-
-    if not os.path.isdir(chunk_path):
-        os.mkdir(chunk_path)
-    file_obj = open_with_unicode(file_name, 'bzip2', 'r')
-    current_line_number = 0
-    current_file_number = 0
-    end_of_file = False
-    while not end_of_file:
-        current_filename = chunk_path + '%03d' % current_file_number + '.bz2'
-        current_file_obj = open_with_unicode(current_filename, 'bzip2', 'w')
-        current_file_obj.write(file_obj.readline())
-        current_line_number += 1
-        while current_line_number % lines_per_chunk > 0:
-            current_line = file_obj.readline()
-            end_of_file = current_line == ''
-            current_file_obj.write(current_line)
-            current_line_number += 1
-        current_file_number += 1
-    return
-
+from math import ceil
+from recluse import article_randomiser, vocabulary_generator, nltk_based_segmenter_tokeniser
+from recluse.utils import *
+from code.malaprop.error_insertion import RealWordVocabExtractor, RealWordErrorChannel
 
 def randomise_articles(target, source, env):
     """
@@ -66,60 +24,62 @@ def randomise_articles(target, source, env):
     devel_file_obj = open_with_unicode(target[1].path, 'bzip2', 'w')
     test_file_obj = open_with_unicode(target[2].path, 'bzip2', 'w')
     rand_obj = random.Random(7)
-    ar = ArticleRandomiser.Randomiser(article_file_obj, train_file_obj, devel_file_obj, test_file_obj, rand_obj)
+    ar = article_randomiser.Randomiser(article_file_obj, train_file_obj, devel_file_obj, test_file_obj, rand_obj, proportions)
     ar.randomise()
     return None
 
+def create_language_models(target, source, env):
 
-def create_vocabularies(target, source, env):
-    """
-    For each n in vocabulary_sizes, gets the unigram counts from the
-    source files and puts the n most frequent words in the vocabulary
-    file.
-    """
+    # Split training set
+    chunk_directory = data_directory + 'FILE_CHUNKS/'
+    os.mkdir(chunk_directory)
 
-    # Run srilm make/merge-batch-counts
+    split_file_into_chunks(source[0].path, chunk_directory, lines_per_chunk)
 
-    temporary_chunk_directory = data_directory + 'TEMP_CHUNK_DIR/'
-    split_file_into_chunks(source[0].path, temporary_chunk_directory)
-    file_names_file_obj = open(temporary_chunk_directory + 'file_names', 'w')
-    file_names_file_obj.writelines([temporary_chunk_directory + s + '\n' for s in os.listdir(temporary_chunk_directory) if s != 'file_names'])
+    file_names = [chunk_directory + s for s in os.listdir(chunk_directory)]
+    file_names_file_obj = open(chunk_directory + 'file_names', 'w')
+    file_names_file_obj.writelines([s + '\n' for s in file_names])
     file_names_file_obj.close()
-    temporary_counts_directory = data_directory + 'TEMP_COUNTS_DIR/'
-    srilm_make_batch_counts = subprocess.call(['make-batch-counts', temporary_chunk_directory + 'file_names', '1', 'code/preprocessing/nltksegmentandtokenise.sh', temporary_counts_directory, '-write-order 1'])
-    srilm_merge_batch_counts = subprocess.call(['merge-batch-counts', temporary_counts_directory])
 
-    # Make vocabularies
-
+    # Create vocabularies:
+    # For each n in vocabulary_sizes, gets the unigram counts from the
+    # source files and puts the n thousand most frequent words in the
+    # vocabulary file.
+    vocab_gen = vocabulary_generator.VocabularyGenerator(file_names)
     for i in range(len(vocabulary_sizes)):
-        merged_counts_file = [f for f in os.listdir(temporary_counts_directory) if f.endswith('.ngrams.gz')][0]
-        unigram_counts_file_obj = open_with_unicode(temporary_counts_directory + merged_counts_file, 'gzip', 'r')
-        size = vocabulary_sizes[i]
-        vocabulary_file_name = data_directory + str(size) + 'K.vocab'
-        assert target[i].path == vocabulary_file_name, 'Target was: ' + target[i].path + '; Expected: ' + vocabulary_file_name
-        vocabulary_file_obj = open_with_unicode(vocabulary_file_name, None, 'w')
-        cutter = vocabulary_cutter.VocabularyCutter(unigram_counts_file_obj, vocabulary_file_obj)
-        cutter.cut_vocabulary(int(float(size)*1000))
+        size = int(1000*vocabulary_sizes[i])
+        vocab_gen.generate_vocabulary(size, open_with_unicode(target[i].path, None, 'w'))
 
-    return None
-
-def create_trigram_models(target, source, env):
-    
+    # create trigram model:
     # Run srilm make/merge-batch-counts
 
-    temporary_counts_directory = data_directory + 'TEMP_UPTO3_COUNTS_DIR/'
-    temporary_chunk_directory = data_directory + 'TEMP_CHUNK_DIR/'
-    if not os.path.isdir(temporary_chunk_directory):
-        split_file_into_chunks(source[0].path, temporary_chunk_directory)
-    srilm_make_batch_counts = subprocess.call(['make-batch-counts', temporary_chunk_directory + 'file_names', '1', 'code/preprocessing/nltksegmentandtokenise.sh', temporary_counts_directory])
-    srilm_merge_batch_counts = subprocess.call(['merge-batch-counts', temporary_counts_directory])
+    cwd = os.getcwd()
+    bash_script_name = cwd + "/nltkbasedsegmentandtokenise.sh"
+    bash_script_file_obj = open(bash_script_name, 'w')
+    bash_script_file_obj.write("bzcat $1 | nltkbasedsegmentertokeniserrunner\n")
+    bash_script_file_obj.close()
+    os.chmod(bash_script_name, 0755)
+
+    counts_directory = data_directory + 'TEMP_UPTO3_COUNTS_DIR/'
+    srilm_make_batch_counts = subprocess.call(['make-batch-counts', chunk_directory + 'file_names', '1', bash_script_name, counts_directory])
+
+    os.remove(bash_script_name)
+
+    srilm_merge_batch_counts = subprocess.call(['merge-batch-counts', counts_directory])
     for i in range(len(vocabulary_sizes)):
         size = vocabulary_sizes[i]
         vocabulary_file_name = data_directory + str(size) + 'K.vocab'
-        merged_counts_file = [f for f in os.listdir(temporary_counts_directory) if f.endswith('.ngrams.gz')][0]
+        merged_counts_file = [f for f in os.listdir(counts_directory) if f.endswith('.ngrams.gz')][0]
         trigram_model_name = data_directory + 'trigram_model_' + str(size) + 'K.arpa'
-        assert target[i].path == trigram_model_name, target[i].path
-        srilm_make_big_lm = subprocess.call(['make-big-lm', '-debug', '2', '-kndiscount3', '-unk', '-read', temporary_counts_directory + merged_counts_file, '-vocab', vocabulary_file_name, '-lm', trigram_model_name])
+        assert target[len(vocabulary_sizes) + i].path == trigram_model_name, target[len(vocabulary_sizes) + i].path
+
+        srilm_make_big_lm = subprocess.call(['make-big-lm', '-debug', '2', '-kndiscount3', '-unk', '-read', counts_directory + merged_counts_file, '-vocab', vocabulary_file_name, '-lm', trigram_model_name])
+
+    # delete split files and counts
+    shutil.rmtree(chunk_directory)
+    shutil.rmtree(counts_directory)
+    shutil.rmtree(cwd + '/biglm.kndir')
+    [os.remove(f) for f in os.listdir(os.getcwd()) if f.startswith('biglm')]
 
     return None
 
@@ -158,7 +118,7 @@ def create_error_sets(target, source, env):
                 line_number += 1
             line_number = 0
             chunk.seek(0)
-            segmenter_tokeniser = NLTKBasedSegmenterTokeniser.NLTKBasedSegmenterTokeniser(chunk)
+            segmenter_tokeniser = nltk_based_segmenter_tokeniser.NLTKBasedSegmenterTokeniser(chunk)
             for sentence_obj in segmenter_tokeniser.segmented_and_tokenised():
             
                 possibly_erroneous_sentence, corrections = rwec.pass_sentence_through_channel(sentence_obj)
@@ -171,21 +131,22 @@ def create_error_sets(target, source, env):
         rwec.unicode_corrections_file_obj.close()
 
     if TEST:
-        assert filecmp.cmp(data_directory + 'errors_at_0.2_0.05K_vocabulary.bz2', 'test_data/errors_at_0.2_0.05K_vocabulary.bz2', shallow=False), "Test result errors_at_0.2_0.05K_vocabulary.bz2 differs from expected."
-        assert filecmp.cmp(data_directory + 'errors_at_0.2_0.5K_vocabulary.bz2', 'test_data/errors_at_0.2_0.5K_vocabulary.bz2', shallow=False), "Test result errors_at_0.2_0.5K_vocabulary.bz2 differs from expected."
-        assert filecmp.cmp(data_directory + 'corrections_0.2_0.05K_vocabulary.bz2', 'test_data/corrections_0.2_0.05K_vocabulary.bz2', shallow=False), "Test result corrections_0.2_0.05K_vocabulary.bz2 differs from expected."
-        assert filecmp.cmp(data_directory + 'corrections_0.2_0.5K_vocabulary.bz2', 'test_data/corrections_0.2_0.5K_vocabulary.bz2', shallow=False), "Test result corrections_0.2_0.5K_vocabulary.bz2 differs from expected."
+        assert filecmp.cmp(data_directory + 'errors_at_0.2_0.05K_vocabulary.bz2', 'code/malaprop/test/data/errors_at_0.2_0.05K_vocabulary.bz2', shallow=False), "Test result errors_at_0.2_0.05K_vocabulary.bz2 differs from expected."
+        assert filecmp.cmp(data_directory + 'errors_at_0.2_0.5K_vocabulary.bz2', 'code/malaprop/test/data/errors_at_0.2_0.5K_vocabulary.bz2', shallow=False), "Test result errors_at_0.2_0.5K_vocabulary.bz2 differs from expected."
+        assert filecmp.cmp(data_directory + 'corrections_0.2_0.05K_vocabulary.bz2', 'code/malaprop/test/data/corrections_0.2_0.05K_vocabulary.bz2', shallow=False), "Test result corrections_0.2_0.05K_vocabulary.bz2 differs from expected."
+        assert filecmp.cmp(data_directory + 'corrections_0.2_0.5K_vocabulary.bz2', 'code/malaprop/test/data/corrections_0.2_0.5K_vocabulary.bz2', shallow=False), "Test result corrections_0.2_0.5K_vocabulary.bz2 differs from expected."
         
 
     return None
 
 
-# Get commandline configuration:
-
+# Get and set configuration:
+# These are defaults that may be reset by the commandline:
 data_directory = ''
 vocabulary_sizes = []
 lines_per_chunk = 100000
 error_rate = .05
+proportions = [.6,.2,.2]
 TEST = False
 
 try:
@@ -214,26 +175,26 @@ else:
         elif key == "error_rate":
             error_rate = float(value)
 
+# These are settings are derived from the above:
+data_file = data_directory + 'corpus.bz2'
+# -----
+
+# SConstruct dependency information
 
 learning_sets_builder = Builder(action = randomise_articles)
-vocabulary_files_builder = Builder(action = create_vocabularies)
-trigram_models_builder = Builder(action = create_trigram_models)
+language_models_builder = Builder(action = create_language_models)
 real_word_vocabulary_builder = Builder(action = extract_real_word_vocabulary)
 error_set_builder = Builder(action = create_error_sets)
 
-env = Environment(BUILDERS = {'learning_sets' : learning_sets_builder, 'vocabulary_files' : vocabulary_files_builder, 'trigram_models' : trigram_models_builder, 'real_word_vocabulary_files' : real_word_vocabulary_builder, 'error_sets' : error_set_builder})
+env = Environment(BUILDERS = {'learning_sets' : learning_sets_builder, 'language_models' : language_models_builder, 'real_word_vocabulary_files' : real_word_vocabulary_builder, 'error_sets' : error_set_builder})
 
-env.learning_sets([data_directory + set_name for set_name in ['training_set.bz2', 'development_set.bz2', 'test_set.bz2']], data_directory + 'corpus.bz2')
+env.learning_sets([data_directory + set_name for set_name in ['training_set.bz2', 'development_set.bz2', 'test_set.bz2']], data_file)
 
 env.Alias('learning_sets', [data_directory + set_name for set_name in ['training_set.bz2', 'development_set.bz2', 'test_set.bz2']])
 
-env.vocabulary_files([data_directory + str(size) + 'K.vocab' for size in vocabulary_sizes], [data_directory + 'training_set.bz2'])
+env.language_models([data_directory + str(size) + 'K.vocab' for size in vocabulary_sizes] + [data_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes], [data_directory + 'training_set.bz2'])
 
-env.Alias('vocabulary_files', [data_directory + str(size) + 'K.vocab' for size in vocabulary_sizes])
-
-env.trigram_models([data_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes], [data_directory + 'training_set.bz2'] + [data_directory + str(size) + 'K.vocab' for size in vocabulary_sizes])
-
-env.Alias('trigram_models', [data_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes])
+env.Alias('language_models', [data_directory + str(size) + 'K.vocab' for size in vocabulary_sizes] + [data_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes])
 
 env.real_word_vocabulary_files([data_directory + str(size) + 'K.real_word_vocab' for size in vocabulary_sizes], [data_directory + str(size) + 'K.vocab' for size in vocabulary_sizes])
 
