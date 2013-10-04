@@ -11,7 +11,7 @@ import codecs, bz2, gzip, random, subprocess, os, StringIO, filecmp, shutil
 from math import ceil
 from recluse import article_randomiser, vocabulary_generator, nltk_based_segmenter_tokeniser
 from recluse.utils import *
-from code.malaprop.error_insertion import RealWordVocabExtractor, RealWordErrorChannel
+from malaprop.error_insertion import RealWordVocabExtractor, RealWordErrorChannel
 
 def randomise_articles(target, source, env):
     """
@@ -131,10 +131,10 @@ def create_error_sets(target, source, env):
         rwec.unicode_corrections_file_obj.close()
 
     if TEST:
-        assert filecmp.cmp(data_directory + 'errors_at_0.2_0.05K_vocabulary.bz2', 'code/malaprop/test/data/errors_at_0.2_0.05K_vocabulary.bz2', shallow=False), "Test result errors_at_0.2_0.05K_vocabulary.bz2 differs from expected."
-        assert filecmp.cmp(data_directory + 'errors_at_0.2_0.5K_vocabulary.bz2', 'code/malaprop/test/data/errors_at_0.2_0.5K_vocabulary.bz2', shallow=False), "Test result errors_at_0.2_0.5K_vocabulary.bz2 differs from expected."
-        assert filecmp.cmp(data_directory + 'corrections_0.2_0.05K_vocabulary.bz2', 'code/malaprop/test/data/corrections_0.2_0.05K_vocabulary.bz2', shallow=False), "Test result corrections_0.2_0.05K_vocabulary.bz2 differs from expected."
-        assert filecmp.cmp(data_directory + 'corrections_0.2_0.5K_vocabulary.bz2', 'code/malaprop/test/data/corrections_0.2_0.5K_vocabulary.bz2', shallow=False), "Test result corrections_0.2_0.5K_vocabulary.bz2 differs from expected."
+        assert filecmp.cmp(data_directory + 'errors_at_0.2_0.05K_vocabulary.bz2', 'malaprop/test/data/errors_at_0.2_0.05K_vocabulary.bz2', shallow=False), "Test result errors_at_0.2_0.05K_vocabulary.bz2 differs from expected."
+        assert filecmp.cmp(data_directory + 'errors_at_0.2_0.5K_vocabulary.bz2', 'malaprop/test/data/errors_at_0.2_0.5K_vocabulary.bz2', shallow=False), "Test result errors_at_0.2_0.5K_vocabulary.bz2 differs from expected."
+        assert filecmp.cmp(data_directory + 'corrections_0.2_0.05K_vocabulary.bz2', 'malaprop/test/data/corrections_0.2_0.05K_vocabulary.bz2', shallow=False), "Test result corrections_0.2_0.05K_vocabulary.bz2 differs from expected."
+        assert filecmp.cmp(data_directory + 'corrections_0.2_0.5K_vocabulary.bz2', 'malaprop/test/data/corrections_0.2_0.5K_vocabulary.bz2', shallow=False), "Test result corrections_0.2_0.5K_vocabulary.bz2 differs from expected."
         
 
     return None
