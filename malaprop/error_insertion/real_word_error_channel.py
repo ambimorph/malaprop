@@ -56,6 +56,10 @@ class SimpleDamerauLevenshteinChannel():
 
         return self.random_number_generator.choice(self.symbol_set)
 
+    def flush(self):
+
+        self.write(self.pop())
+
     def accept_char(self, char):
 
         if char is not None: self.stats['chars'] += 1
@@ -85,6 +89,3 @@ class SimpleDamerauLevenshteinChannel():
             self.push(char)
             self.write(self.push(pending))
 
-    def flush(self):
-
-        self.write(self.pop())
