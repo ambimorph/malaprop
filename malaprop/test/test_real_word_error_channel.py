@@ -29,6 +29,7 @@ class SimpleDamerauLevenshteinChannelTest(unittest.TestCase):
         sdlc.accept_char('a')
         sdlc.flush()
         self.assertEqual(output_string.getvalue(), 'a'), output_string.getvalue()
+        self.assertDictEqual(sdlc.stats, {'chars':1, 'subs':0, 'ins':0, 'dels':0, 'trans':0}), sdlc.stats
 
     def test_substitution(self):
 
@@ -37,6 +38,7 @@ class SimpleDamerauLevenshteinChannelTest(unittest.TestCase):
         sdlc.accept_char('a')
         sdlc.flush()
         self.assertEqual(output_string.getvalue(), 'c'), output_string.getvalue()
+        self.assertDictEqual(sdlc.stats, {'chars':1, 'subs':1, 'ins':0, 'dels':0, 'trans':0}), sdlc.stats
 
     def test_insertion(self):
 
@@ -48,6 +50,7 @@ class SimpleDamerauLevenshteinChannelTest(unittest.TestCase):
         sdlc.accept_char('a')
         sdlc.flush()
         self.assertEqual(output_string.getvalue(), 'bca'), output_string.getvalue()
+        self.assertDictEqual(sdlc.stats, {'chars':1, 'subs':0, 'ins':2, 'dels':0, 'trans':0}), sdlc.stats
 
     def test_deletion(self):
 
@@ -56,6 +59,7 @@ class SimpleDamerauLevenshteinChannelTest(unittest.TestCase):
         sdlc.accept_char('a')
         sdlc.flush()
         self.assertEqual(output_string.getvalue(), ''), output_string.getvalue()
+        self.assertDictEqual(sdlc.stats, {'chars':1, 'subs':0, 'ins':0, 'dels':1, 'trans':0}), sdlc.stats
 
     def test_transposition(self):
 
@@ -66,6 +70,7 @@ class SimpleDamerauLevenshteinChannelTest(unittest.TestCase):
         sdlc.accept_char('c')
         sdlc.flush()
         self.assertEqual(output_string.getvalue(), 'acb'), output_string.getvalue()
+        self.assertDictEqual(sdlc.stats, {'chars':3, 'subs':0, 'ins':0, 'dels':0, 'trans':1}), sdlc.stats
         
 
 

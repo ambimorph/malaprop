@@ -30,6 +30,7 @@ class SimpleDamerauLevenshteinChannel():
         self.symbol_set = symbol_set
         self.write = output_method
         self.queue = []
+        self.stats = {'chars':0, 'subs':0, 'ins':0, 'dels':0, 'trans':0}
 
     def pop(self):
 
@@ -57,23 +58,30 @@ class SimpleDamerauLevenshteinChannel():
 
     def accept_char(self, char):
 
+        if char is not None: self.stats['chars'] += 1
+
         random_number = self.random_number_generator.random()
 
         if random_number < self.probabilities.none:
             self.write(self.push(char))
 
-        elif random_number < self.probabilities.none + self.probabilities.substitution:
+        elif random_number < self.probabilities.none + self.probabilities.substitution \
+                and char is not None:
+            self.stats['subs'] += 1
             self.write(self.push(self.get_substitute(char)))
 
         elif random_number < self.probabilities.none + self.probabilities.substitution + self.probabilities.insertion:
+            self.stats['ins'] += 1
             self.write(self.push(self.get_insert()))
             self.write(self.push(char))
 
         elif random_number < self.probabilities.none + self.probabilities.substitution + self.probabilities.insertion + self.probabilities.deletion:
+            if char is not None: self.stats['dels'] += 1
             self.write(self.pop()) # Dequeue in case of pending transpositions.
             
         else: # transposition
             pending = self.pop()
+            if pending is not None and char is not None: self.stats['trans'] += 1
             self.push(char)
             self.write(self.push(pending))
 
