@@ -1,4 +1,4 @@
-# real_word_error_channel.py
+# damerau_levenshtein_channel.py
 
 import codecs, unicodedata, random, sys
 from copy import deepcopy
@@ -17,7 +17,7 @@ class ErrorProbabilities():
         self.transposition = transposition
         self.deletion = deletion
 
-class SimpleDamerauLevenshteinChannel():
+class DamerauLevenshteinChannel():
 
     """
     Holds up to one char in a queue, and processes incoming chars.
