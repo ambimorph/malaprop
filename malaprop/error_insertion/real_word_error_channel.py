@@ -89,3 +89,11 @@ class SimpleDamerauLevenshteinChannel():
             self.push(char)
             self.write(self.push(pending))
 
+
+    def accept_string(self, string):
+
+        for char in string:
+            self.accept_char(char)
+        self.accept_char(None) # Possible insertion
+        self.flush()
+

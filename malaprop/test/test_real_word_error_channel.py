@@ -71,6 +71,14 @@ class SimpleDamerauLevenshteinChannelTest(unittest.TestCase):
         sdlc.flush()
         self.assertEqual(output_string.getvalue(), 'acb'), output_string.getvalue()
         self.assertDictEqual(sdlc.stats, {'chars':3, 'subs':0, 'ins':0, 'dels':0, 'trans':1}), sdlc.stats
+
+    def test_accept_string(self):
+
+        output_string = StringIO.StringIO()
+        sdlc = real_word_error_channel.SimpleDamerauLevenshteinChannel(MockRNG(gen([.9, .1,.9, .1]), gen([])), self.error_probabilities, 'abc', output_string.write)
+        sdlc.accept_string('abc')
+        self.assertEqual(output_string.getvalue(), 'acb'), output_string.getvalue()
+        self.assertDictEqual(sdlc.stats, {'chars':3, 'subs':0, 'ins':0, 'dels':0, 'trans':1}), sdlc.stats
         
 
 
