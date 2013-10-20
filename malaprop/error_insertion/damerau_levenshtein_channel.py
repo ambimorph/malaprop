@@ -62,7 +62,13 @@ class DamerauLevenshteinChannel():
 
     def accept_char(self, char):
 
-        if char is not None: self.stats['chars'] += 1
+        if char is not None: 
+            # Always leave unknown chars alone
+            if char not in self.symbol_set:
+                self.write(self.push(char))
+                self.flush()
+                return
+            self.stats['chars'] += 1
 
         random_number = self.random_number_generator.random()
 
@@ -92,8 +98,13 @@ class DamerauLevenshteinChannel():
 
     def accept_string(self, string):
 
-        for char in string:
+        for i in range(len(string)):
+            char = string[i]
+            if char not in self.symbol_set:
+                self.accept_char(None) # Possible insertion
+                self.flush()
             self.accept_char(char)
+
         self.accept_char(None) # Possible insertion
         self.flush()
 
