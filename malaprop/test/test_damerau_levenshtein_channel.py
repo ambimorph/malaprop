@@ -16,6 +16,12 @@ class MockRNG:
     def choice(self, l):
         return l[self.c_generator.next()]
 
+NONE = .1
+SUBS = .3
+INS = .5
+DEL = .7
+TRANS = .9
+
 class DamerauLevenshteinChannelTest(unittest.TestCase):
 
     def setUp(self):
@@ -25,7 +31,7 @@ class DamerauLevenshteinChannelTest(unittest.TestCase):
     def test_unknown_char(self):
 
         output_string = StringIO.StringIO()
-        dlc = damerau_levenshtein_channel.DamerauLevenshteinChannel(MockRNG(gen([.3]), gen([1])), self.error_probabilities, 'abc', output_string.write)
+        dlc = damerau_levenshtein_channel.DamerauLevenshteinChannel(MockRNG(gen([SUBS]), gen([1])), self.error_probabilities, 'abc', output_string.write)
         dlc.accept_char('x')
         dlc.flush()
         self.assertEqual(output_string.getvalue(), 'x'), output_string.getvalue()
@@ -34,7 +40,7 @@ class DamerauLevenshteinChannelTest(unittest.TestCase):
     def test_no_error(self):
 
         output_string = StringIO.StringIO()
-        dlc = damerau_levenshtein_channel.DamerauLevenshteinChannel(MockRNG(gen([.1]), gen([])), self.error_probabilities, 'abc', output_string.write)
+        dlc = damerau_levenshtein_channel.DamerauLevenshteinChannel(MockRNG(gen([NONE]), gen([])), self.error_probabilities, 'abc', output_string.write)
         dlc.accept_char('a')
         dlc.flush()
         self.assertEqual(output_string.getvalue(), 'a'), output_string.getvalue()
@@ -43,7 +49,7 @@ class DamerauLevenshteinChannelTest(unittest.TestCase):
     def test_substitution(self):
 
         output_string = StringIO.StringIO()
-        dlc = damerau_levenshtein_channel.DamerauLevenshteinChannel(MockRNG(gen([.3]), gen([1])), self.error_probabilities, 'abc', output_string.write)
+        dlc = damerau_levenshtein_channel.DamerauLevenshteinChannel(MockRNG(gen([SUBS]), gen([1])), self.error_probabilities, 'abc', output_string.write)
         dlc.accept_char('a')
         dlc.flush()
         self.assertEqual(output_string.getvalue(), 'c'), output_string.getvalue()
@@ -52,7 +58,7 @@ class DamerauLevenshteinChannelTest(unittest.TestCase):
     def test_insertion(self):
 
         output_string = StringIO.StringIO()
-        dlc = damerau_levenshtein_channel.DamerauLevenshteinChannel(MockRNG(gen([.5,.5]), gen([1,2])), self.error_probabilities, 'abc', output_string.write)
+        dlc = damerau_levenshtein_channel.DamerauLevenshteinChannel(MockRNG(gen([INS,INS]), gen([1,2])), self.error_probabilities, 'abc', output_string.write)
         dlc.accept_char(None)
         dlc.flush()
         self.assertEqual(output_string.getvalue(), 'b'), output_string.getvalue()
@@ -64,7 +70,7 @@ class DamerauLevenshteinChannelTest(unittest.TestCase):
     def test_deletion(self):
 
         output_string = StringIO.StringIO()
-        dlc = damerau_levenshtein_channel.DamerauLevenshteinChannel(MockRNG(gen([.7]), gen([])), self.error_probabilities, 'abc', output_string.write)
+        dlc = damerau_levenshtein_channel.DamerauLevenshteinChannel(MockRNG(gen([DEL]), gen([])), self.error_probabilities, 'abc', output_string.write)
         dlc.accept_char('a')
         dlc.flush()
         self.assertEqual(output_string.getvalue(), ''), output_string.getvalue()
@@ -73,7 +79,7 @@ class DamerauLevenshteinChannelTest(unittest.TestCase):
     def test_transposition(self):
 
         output_string = StringIO.StringIO()
-        dlc = damerau_levenshtein_channel.DamerauLevenshteinChannel(MockRNG(gen([.9, .1,.9]), gen([])), self.error_probabilities, 'abc', output_string.write)
+        dlc = damerau_levenshtein_channel.DamerauLevenshteinChannel(MockRNG(gen([TRANS, NONE,TRANS]), gen([])), self.error_probabilities, 'abc', output_string.write)
         dlc.accept_char('a')
         dlc.accept_char('b')
         dlc.accept_char('c')
@@ -84,7 +90,7 @@ class DamerauLevenshteinChannelTest(unittest.TestCase):
     def test_accept_string(self):
 
         output_string = StringIO.StringIO()
-        dlc = damerau_levenshtein_channel.DamerauLevenshteinChannel(MockRNG(gen([.9, .1,.9, .1]), gen([])), self.error_probabilities, 'abc', output_string.write)
+        dlc = damerau_levenshtein_channel.DamerauLevenshteinChannel(MockRNG(gen([TRANS, NONE,TRANS, NONE]), gen([])), self.error_probabilities, 'abc', output_string.write)
         dlc.accept_string('abc')
         self.assertEqual(output_string.getvalue(), 'acb'), output_string.getvalue()
         self.assertDictEqual(dlc.stats, {'chars':3, 'subs':0, 'ins':0, 'dels':0, 'trans':1}), dlc.stats
@@ -92,13 +98,13 @@ class DamerauLevenshteinChannelTest(unittest.TestCase):
     def test_accept_string_with_unknown_chars(self):
 
         output_string = StringIO.StringIO()
-        dlc = damerau_levenshtein_channel.DamerauLevenshteinChannel(MockRNG(gen([.1, .9, .1, .1]), gen([])), self.error_probabilities, 'abc', output_string.write)
+        dlc = damerau_levenshtein_channel.DamerauLevenshteinChannel(MockRNG(gen([NONE, TRANS, NONE]), gen([])), self.error_probabilities, 'abc', output_string.write)
         dlc.accept_string('\'bc')
         self.assertEqual(output_string.getvalue(), '\'bc'), output_string.getvalue()
         self.assertDictEqual(dlc.stats, {'chars':2, 'subs':0, 'ins':0, 'dels':0, 'trans':0}), dlc.stats
         
         output_string = StringIO.StringIO()
-        dlc = damerau_levenshtein_channel.DamerauLevenshteinChannel(MockRNG(gen([.1, .1, .1, .5, .9, .1,.9, .1]), gen([0])), self.error_probabilities, 'abc', output_string.write)
+        dlc = damerau_levenshtein_channel.DamerauLevenshteinChannel(MockRNG(gen([NONE, NONE, NONE, INS, TRANS, NONE, TRANS, NONE]), gen([0])), self.error_probabilities, 'abc', output_string.write)
         dlc.accept_string('aaa\'bc')
         self.assertEqual(output_string.getvalue(), 'aaaa\'bc'), output_string.getvalue()
         self.assertDictEqual(dlc.stats, {'chars':5, 'subs':0, 'ins':1, 'dels':0, 'trans':0}), dlc.stats
