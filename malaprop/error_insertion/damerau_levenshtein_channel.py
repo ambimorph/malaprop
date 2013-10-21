@@ -100,7 +100,7 @@ class DamerauLevenshteinChannel():
         prior_errors = sum([self.stats[x] for x in ['subs', 'ins', 'dels', 'trans']])
         for i in range(len(string)):
             char = string[i]
-            if char not in self.symbol_set:
+            if i != 0 and char not in self.symbol_set:
                 self.accept_char(None) # Possible insertion
                 self.flush()
             self.accept_char(char)

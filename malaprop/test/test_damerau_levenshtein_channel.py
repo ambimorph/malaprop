@@ -98,10 +98,10 @@ class DamerauLevenshteinChannelTest(unittest.TestCase):
     def test_accept_string_with_unknown_chars(self):
 
         output_string = StringIO.StringIO()
-        dlc = damerau_levenshtein_channel.DamerauLevenshteinChannel(MockRNG(gen([NONE, TRANS, NONE, NONE]), gen([])), self.error_probabilities, 'abc', output_string.write)
+        dlc = damerau_levenshtein_channel.DamerauLevenshteinChannel(MockRNG(gen([NONE, TRANS, NONE]), gen([])), self.error_probabilities, 'abc', output_string.write)
         dlc.accept_string('\'bc')
-        self.assertEqual(output_string.getvalue(), '\'bc'), output_string.getvalue()
-        self.assertDictEqual(dlc.stats, {'chars':2, 'subs':0, 'ins':0, 'dels':0, 'trans':0, 'strings':1, 'max_errors_per_string':0}), dlc.stats
+        self.assertEqual(output_string.getvalue(), '\'cb'), output_string.getvalue()
+        self.assertDictEqual(dlc.stats, {'chars':2, 'subs':0, 'ins':0, 'dels':0, 'trans':1, 'strings':1, 'max_errors_per_string':1}), dlc.stats
         
         output_string = StringIO.StringIO()
         dlc = damerau_levenshtein_channel.DamerauLevenshteinChannel(MockRNG(gen([NONE, NONE, NONE, INS, TRANS, NONE, TRANS, NONE]), gen([0])), self.error_probabilities, 'abc', output_string.write)
