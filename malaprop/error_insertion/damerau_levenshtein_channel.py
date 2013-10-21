@@ -1,7 +1,6 @@
 # damerau_levenshtein_channel.py
 
-import codecs, unicodedata, random, sys
-from copy import deepcopy
+import codecs, unicodedata, random
 
 class ErrorProbabilities():
 
