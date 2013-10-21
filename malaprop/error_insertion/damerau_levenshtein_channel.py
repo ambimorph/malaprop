@@ -29,7 +29,7 @@ class DamerauLevenshteinChannel():
         self.symbol_set = symbol_set
         self.write = output_method
         self.queue = []
-        self.stats = {'chars':0, 'subs':0, 'ins':0, 'dels':0, 'trans':0}
+        self.stats = {'chars':0, 'subs':0, 'ins':0, 'dels':0, 'trans':0, 'strings':0, 'max_errors_per_string':0}
 
     def pop(self):
 
@@ -97,6 +97,7 @@ class DamerauLevenshteinChannel():
 
     def accept_string(self, string):
 
+        prior_errors = sum([self.stats[x] for x in ['subs', 'ins', 'dels', 'trans']])
         for i in range(len(string)):
             char = string[i]
             if char not in self.symbol_set:
@@ -106,4 +107,7 @@ class DamerauLevenshteinChannel():
 
         self.accept_char(None) # Possible insertion
         self.flush()
+        self.stats['strings'] += 1
+        current_errors = sum([self.stats[x] for x in ['subs', 'ins', 'dels', 'trans']])
+        self.stats['max_errors_per_string'] = max(current_errors-prior_errors, self.stats['max_errors_per_string'])
 
