@@ -39,7 +39,7 @@ class RealWordErrorInserterTest(unittest.TestCase):
         result = rwei.pass_sentence_through_channel(sentence)
         self.assertIs(result, expected_result), result
 
-        error_sequence = [NONE]*8 + [SUBS, NONE, NONE, SUBS] + [NONE]*100
+        error_sequence = [NONE]*8 + [SUBS, NONE, NONE, SUBS] + [NONE, DEL] + [NONE]*100
         error_channel = DamerauLevenshteinChannel(MockRNG(gen(error_sequence), gen([letters.index('t')-1]*100)), self.error_probabilities, letters, None)
         rwei = RealWordErrorInserter(self.segmenter_tokeniser, self.vocabulary, error_channel)
         expected_result = u'Accordingly, "libertarian socialist" it sometimes used as a synonym for socialist anarchism, to distinguish it from "individualist libertarianism" (individualist anarchism).\n', [[2,0,'socialist','socialism'],[3,0,'it','is']]

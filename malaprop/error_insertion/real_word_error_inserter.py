@@ -31,14 +31,15 @@ class RealWordErrorInserter():
                     new_subtoken = StringIO.StringIO()
                     self.error_channel.write = new_subtoken.write
                     self.error_channel.accept_string(subtoken.lower())
-                    if new_subtoken.getvalue() != subtoken.lower():
-                        if subtoken.islower():
-                            replacement = new_subtoken.getvalue()
-                        elif subtoken.istitle():
-                            replacement = new_subtoken.getvalue().title()
-                        else:
-                            replacement = new_subtoken.getvalue().upper()
-                        corrections.append([t, s, replacement, subtoken])
+                    if new_subtoken.getvalue() in self.vocabulary:
+                        if new_subtoken.getvalue() != subtoken.lower():
+                            if subtoken.islower():
+                                replacement = new_subtoken.getvalue()
+                            elif subtoken.istitle():
+                                replacement = new_subtoken.getvalue().title()
+                            else:
+                                replacement = new_subtoken.getvalue().upper()
+                            corrections.append([t, s, replacement, subtoken])
 
         if corrections == []: return None
 
