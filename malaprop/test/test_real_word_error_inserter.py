@@ -68,8 +68,9 @@ class RealWordErrorInserterTest(unittest.TestCase):
             'adversarial' : '["Accordingly, \\"libertarian socialism\\" is sometimes used as a synonym for socialist anarchism, to distinguish it from \\"individualist libertarianism\\" (individualist anarchism).\\n", "Accordingly, \\"libertarian socialist\\" it sometimes used as a synonym for socialist anarchism, to distinguish it from \\"individualist libertarianism\\" (individualist anarchism).\\n"]\n["On the other hand, some use \\"libertarianism\\" to refer to individualistic free-market philosophy only, referring to free-market anarchism a \\"libertarian anarchism.\\"\\n", "On the other hand, some use \\"libertarianism\\" to refer to individualistic free-market philosophy only, referring to free-market anarchism as \\"libertarian anarchism.\\"\\n"]\n',\
             'key' : '01'}
 
-        rwei.corrupt(sentences, file_dict, True, True)
+        sentence_count = rwei.corrupt(sentences, file_dict, True, True)
 
+        self.assertEqual(sentence_count, 4), sentence_count
         for k in ['corrupted', 'corrections', 'adversarial', 'key']:
             self.assertEqual(expected_dict[k], file_dict[k].getvalue()), k + file_dict[k].getvalue()
 
@@ -89,8 +90,9 @@ class RealWordErrorInserterTest(unittest.TestCase):
             'corrupted' : u'Accordingly, "libertarian socialist" it sometimes used as a synonym for socialist anarchism, to distinguish it from "individualist libertarianism" (individualist anarchism).\nOn the other hand, some use "libertarianism" to refer to individualistic free-market philosophy only, referring to free-market anarchism a "libertarian anarchism."\n'+"Citizens can oppose a decision ('besluit') made by a public body ('bestuursorgaan') within the administration\nThe Treaty could be considered unpopular in Scotland: Sir George Lockhart of Carnwath, the only member of the Scottish negotiating team against union, noted that `The whole nation appears against the Union' and even Sir John Clerk of Penicuik, an ardent pro-unionist and Union negotiator, observed that the treaty was `contrary to the inclinations of at least three-fourths of the Kingdom'.\n",\
             'corrections' : '[30, [[2, 0, "socialist", "socialism"], [3, 0, "it", "is"]]]\n[31, [[18, 0, "a", "as"]]]\n'}
 
-        rwei.corrupt(sentences, file_dict, True, False, 30)
+        sentence_count = rwei.corrupt(sentences, file_dict, True, False, 30)
 
+        self.assertEqual(sentence_count, 4), sentence_count
         for k in ['corrupted', 'corrections']:
             self.assertEqual(expected_dict[k], file_dict[k].getvalue()), k + file_dict[k].getvalue()
 

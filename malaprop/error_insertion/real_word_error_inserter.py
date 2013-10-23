@@ -65,6 +65,7 @@ class RealWordErrorInserter():
             adversarial_file_unicode_writer = codecs.getwriter('utf-8')(file_dict['adversarial'])
             key_file_unicode_writer = codecs.getwriter('utf-8')(file_dict['key'])
 
+        first_sentence_id = sentence_id
         for sentence in self.segmenter_tokeniser.sentence_segment(text, tokenise=False, lower=False):
 
             corruption_and_corrections = self.pass_sentence_through_channel(sentence)
@@ -83,5 +84,5 @@ class RealWordErrorInserter():
                     key_file_unicode_writer.write(unicode(int(alternatives[1] == sentence)))
             sentence_id += 1
 
-
+        return sentence_id - first_sentence_id
             
