@@ -73,5 +73,27 @@ class RealWordErrorInserterTest(unittest.TestCase):
         for k in ['corrupted', 'corrections', 'adversarial', 'key']:
             self.assertEqual(expected_dict[k], file_dict[k].getvalue()), k + file_dict[k].getvalue()
 
+    def test_sentence_id(self):
+
+        file_dict = {\
+        'corrupted' : StringIO.StringIO(),\
+        'corrections' : StringIO.StringIO(),\
+            }
+
+        sentences = u'Accordingly, "libertarian socialism" is sometimes used as a synonym for socialist anarchism, to distinguish it from "individualist libertarianism" (individualist anarchism). On the other hand, some use "libertarianism" to refer to individualistic free-market philosophy only, referring to free-market anarchism as "libertarian anarchism." '+"Citizens can oppose a decision ('besluit') made by a public body ('bestuursorgaan') within the administration\nThe Treaty could be considered unpopular in Scotland: Sir George Lockhart of Carnwath, the only member of the Scottish negotiating team against union, noted that `The whole nation appears against the Union' and even Sir John Clerk of Penicuik, an ardent pro-unionist and Union negotiator, observed that the treaty was `contrary to the inclinations of at least three-fourths of the Kingdom'."
+
+        error_sequence = [NONE]*8 + [SUBS, NONE, NONE, SUBS] + [NONE]*41 + [DEL] + [NONE]*1000
+        error_channel = DamerauLevenshteinChannel(MockRNG(gen(error_sequence), gen([letters.index('t')-1]*1000)), self.error_probabilities, letters, None)
+        rwei = RealWordErrorInserter(self.segmenter_tokeniser, self.vocabulary, error_channel)
+        expected_dict = {\
+            'corrupted' : u'Accordingly, "libertarian socialist" it sometimes used as a synonym for socialist anarchism, to distinguish it from "individualist libertarianism" (individualist anarchism).\nOn the other hand, some use "libertarianism" to refer to individualistic free-market philosophy only, referring to free-market anarchism a "libertarian anarchism."\n'+"Citizens can oppose a decision ('besluit') made by a public body ('bestuursorgaan') within the administration\nThe Treaty could be considered unpopular in Scotland: Sir George Lockhart of Carnwath, the only member of the Scottish negotiating team against union, noted that `The whole nation appears against the Union' and even Sir John Clerk of Penicuik, an ardent pro-unionist and Union negotiator, observed that the treaty was `contrary to the inclinations of at least three-fourths of the Kingdom'.\n",\
+            'corrections' : '[30, [[2, 0, "socialist", "socialism"], [3, 0, "it", "is"]]]\n[31, [[18, 0, "a", "as"]]]\n'}
+
+        rwei.corrupt(sentences, file_dict, True, False, 30)
+
+        for k in ['corrupted', 'corrections']:
+            self.assertEqual(expected_dict[k], file_dict[k].getvalue()), k + file_dict[k].getvalue()
+
+
 if __name__ == '__main__':
     unittest.main()

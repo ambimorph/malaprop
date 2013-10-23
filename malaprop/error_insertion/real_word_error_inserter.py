@@ -49,7 +49,7 @@ class RealWordErrorInserter():
         return u' '.join([u''.join(subtoken) for subtoken in token_list]) + '\n', corrections
 
 
-    def corrupt(self, text, file_dict, correction_task=False, adversarial_task=False):
+    def corrupt(self, text, file_dict, correction_task=False, adversarial_task=False, sentence_id=0):
 
         """
         The correction_task requires file objects in the dict for
@@ -63,8 +63,6 @@ class RealWordErrorInserter():
         adversarial_file_unicode_writer = codecs.getwriter('utf-8')(file_dict['adversarial'])
         key_file_unicode_writer = codecs.getwriter('utf-8')(file_dict['key'])
 
-        sentence_id = 0
-        
         for sentence in self.segmenter_tokeniser.sentence_segment(text, tokenise=False, lower=False):
 
             corruption_and_corrections = self.pass_sentence_through_channel(sentence)
