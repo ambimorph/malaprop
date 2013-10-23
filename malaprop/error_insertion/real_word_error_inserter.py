@@ -58,10 +58,12 @@ class RealWordErrorInserter():
         """
 
         assert correction_task or adversarial_task
-        corrupted_file_unicode_writer = codecs.getwriter('utf-8')(file_dict['corrupted'])
-        corrections_file_unicode_writer = codecs.getwriter('utf-8')(file_dict['corrections'])
-        adversarial_file_unicode_writer = codecs.getwriter('utf-8')(file_dict['adversarial'])
-        key_file_unicode_writer = codecs.getwriter('utf-8')(file_dict['key'])
+        if correction_task:
+            corrupted_file_unicode_writer = codecs.getwriter('utf-8')(file_dict['corrupted'])
+            corrections_file_unicode_writer = codecs.getwriter('utf-8')(file_dict['corrections'])
+        if adversarial_task:
+            adversarial_file_unicode_writer = codecs.getwriter('utf-8')(file_dict['adversarial'])
+            key_file_unicode_writer = codecs.getwriter('utf-8')(file_dict['key'])
 
         for sentence in self.segmenter_tokeniser.sentence_segment(text, tokenise=False, lower=False):
 
