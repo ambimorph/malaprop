@@ -134,10 +134,10 @@ def create_error_sets(target, source, env):
 
     # Regression tests
     if TEST:
-        assert filecmp.cmp(data_directory + 'corrupted_error_rate_0.20.05K_vocabulary.bz2', 'malaprop/test/data/corrupted_error_rate_0.20.05K_vocabulary.bz2', shallow=False), "Test result corrupted_error_rate_0.20.05K_vocabulary.bz2 differs from expected."
-        assert filecmp.cmp(data_directory + 'corrections_error_rate_0.20.05K_vocabulary.bz2', 'malaprop/test/data/corrections_error_rate_0.20.05K_vocabulary.bz2', shallow=False), "Test result corrections_error_rate_0.20.05K_vocabulary.bz2 differs from expected."
-        assert filecmp.cmp(data_directory + 'adversarial_error_rate_0.20.05K_vocabulary.bz2', 'malaprop/test/data/adversarial_error_rate_0.20.05K_vocabulary.bz2', shallow=False), "Test result adversarial_error_rate_0.20.05K_vocabulary.bz2 differs from expected."
-        assert filecmp.cmp(data_directory + 'key_error_rate_0.20.05K_vocabulary.bz2', 'malaprop/test/data/key_error_rate_0.20.05K_vocabulary.bz2', shallow=False), "Test result key_error_rate_0.20.05K_vocabulary.bz2 differs from expected."
+        assert filecmp.cmp(data_directory + 'corrupted_error_rate_0.2_0.05K_vocabulary.bz2', 'malaprop/test/data/corrupted_error_rate_0.2_0.05K_vocabulary.bz2', shallow=False), "Test result corrupted_error_rate_0.2_0.05K_vocabulary.bz2 differs from expected."
+        assert filecmp.cmp(data_directory + 'corrections_error_rate_0.2_0.05K_vocabulary.bz2', 'malaprop/test/data/corrections_error_rate_0.2_0.05K_vocabulary.bz2', shallow=False), "Test result corrections_error_rate_0.2_0.05K_vocabulary.bz2 differs from expected."
+        assert filecmp.cmp(data_directory + 'adversarial_error_rate_0.2_0.05K_vocabulary.bz2', 'malaprop/test/data/adversarial_error_rate_0.2_0.05K_vocabulary.bz2', shallow=False), "Test result adversarial_error_rate_0.2_0.05K_vocabulary.bz2 differs from expected."
+        assert filecmp.cmp(data_directory + 'key_error_rate_0.2_0.05K_vocabulary.bz2', 'malaprop/test/data/key_error_rate_0.2_0.05K_vocabulary.bz2', shallow=False), "Test result key_error_rate_0.2_0.05K_vocabulary.bz2 differs from expected."
 
     return None
 
@@ -213,6 +213,6 @@ env.real_word_vocabulary_files([data_directory + str(vocabulary_size) + 'K.real_
 
 env.Alias('real_word_vocabulary_files', [data_directory + str(vocabulary_size) + 'K.real_word_vocab'])
 
-env.error_sets([data_directory + x + '_error_rate_' + str(error_rate) + str(vocabulary_size) + 'K_vocabulary.bz2' for x in error_set_targets], [data_directory + 'development_set.bz2', data_directory + str(vocabulary_size) + 'K.real_word_vocab'])
+env.error_sets([data_directory + x + '_error_rate_' + str(error_rate) + '_' + str(vocabulary_size) + 'K_vocabulary.bz2' for x in error_set_targets], [data_directory + 'development_set.bz2', data_directory + str(vocabulary_size) + 'K.real_word_vocab'])
 
-env.Alias('error_sets', [data_directory + x + '_error_rate_' + str(error_rate) + str(vocabulary_size) + 'K_vocabulary.bz2' for x in error_set_targets])
+env.Alias('error_sets', [data_directory + x + '_error_rate_' + str(error_rate) + '_' + str(vocabulary_size) + 'K_vocabulary.bz2' for x in error_set_targets])
