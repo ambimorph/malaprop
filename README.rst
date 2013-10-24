@@ -23,7 +23,7 @@ This version includes code to
 
 (3) Create a correction task: a corpus of real-word errors embedded in a copy of the development set along with a separate index to the errors and their corrections.
 
-(4) Create an original text recognition task for adversarial evaluation: a set of pairs of sentences, one original, and one corrupted, and a key to ientify them.
+(4) Create an original text recognition task for adversarial evaluation: a set of pairs of sentences, one original, and one corrupted, and a key to identify them.
 
 
 *Reproducibility* is prioritised, so projects are completely built using SCons.
