@@ -11,7 +11,7 @@ Introduction
 ============
 Malaprop is a project involving transformations of natural text that result in some words being replaced by real-word near neighbours.  
 
-Malaprop is written in the spirit of `the adversarial evaluation paradigm for natural language processing proposed by Noah Smith`_.  Please see http://subsymbol.org for discussion.
+Malaprop is written with `the adversarial evaluation paradigm for natural language processing proposed by Noah Smith`_ in mind.  Please see http://www.subsymbol.org/2013/03/malaprop-v010.html for discussion.
 
 The damerau_levenshtein_channel module emulates a noisy channel, randomly inserting `Damerau-Levenshtein`_  errors at the character level as a word is passed through. If the resulting string is a *real word* — that is, a sufficiently frequent word in the original corpus — the new word replaces the original.
 
@@ -139,4 +139,4 @@ Zooko Wilcox-O'Hearn contributed endless hours to engineering and debuggery advi
 
 .. _Damerau-Levenshtein: http://en.wikipedia.org/wiki/Damerau%E2%80%93Levenshtein_distance
 
-.. _recluse: https://github.com/lamber/recluse
+.. _recluse: https://pypi.python.org/pypi/recluse
