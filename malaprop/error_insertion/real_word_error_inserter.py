@@ -20,17 +20,19 @@ class RealWordErrorInserter():
         """
 
         corrections = []
-        token_list = list_subtokenise_and_regularise(sentence.split(), self.segmenter_tokeniser.sbd._params.abbrev_types)
-        
-        for t in range(len(token_list)):
+        subtoken_list = []
+        for token in sentence.split():
+            subtoken_list.append(subtokenise(token, self.segmenter_tokeniser.sbd._params.abbrev_types))
+
+        for t in range(len(subtoken_list)):
             
-            token = token_list[t]
+            token = subtoken_list[t]
             for s in range(len(token)):
                 subtoken = token[s]
-                if subtoken in self.vocabulary:
+                if regularise(subtoken) in self.vocabulary:
                     new_subtoken = StringIO.StringIO()
                     self.error_channel.write = new_subtoken.write
-                    self.error_channel.accept_string(subtoken.lower())
+                    self.error_channel.accept_string(regularise(subtoken).lower())
                     if new_subtoken.getvalue() in self.vocabulary:
                         if new_subtoken.getvalue() != subtoken.lower():
                             if subtoken.islower():
@@ -45,9 +47,9 @@ class RealWordErrorInserter():
 
         for correction in corrections:
             (t, s, replacement, subtoken) = correction
-            token_list[t][s] = replacement
+            subtoken_list[t][s] = replacement
 
-        return u' '.join([u''.join(subtoken) for subtoken in token_list]) + '\n', corrections
+        return u' '.join([u''.join(subtoken) for subtoken in subtoken_list]) + '\n', corrections
 
 
     def corrupt(self, text, file_dict, correction_task=False, adversarial_task=False, sentence_id=0):

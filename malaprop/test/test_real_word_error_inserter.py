@@ -46,6 +46,14 @@ class RealWordErrorInserterTest(unittest.TestCase):
         result = rwei.pass_sentence_through_channel(sentence)
         self.assertTupleEqual(result, expected_result), result
 
+    def test_regularised_token(self):
+
+        sentence = u"Most land areas are in an albedo range of 0.1 to 0.4.\n"
+        error_channel = DamerauLevenshteinChannel(MockRNG(gen([DEL, INS, INS] + [NONE for i in range(100)]), gen([letters.index('f'), letters.index('r')])), self.error_probabilities, letters, None)
+        rwei = RealWordErrorInserter(self.segmenter_tokeniser, self.vocabulary, error_channel)
+        expected_result = u"Most land areas are in an albedo range of 0.1 for 0.4.\n", [[10, 0, 'for', 'to']]
+        result = rwei.pass_sentence_through_channel(sentence)
+        self.assertTupleEqual(result, expected_result), result
 
     def test_corrupt(self):
 
