@@ -6,12 +6,14 @@
 import sys
 del sys.modules['pickle']
 
-import codecs, bz2, gzip, random, subprocess, os, StringIO, filecmp, shutil
+import codecs, bz2, gzip, random, subprocess, os, StringIO, filecmp, shutil, json
 
 from math import ceil
 from recluse import article_randomiser, vocabulary_generator, nltk_based_segmenter_tokeniser
 from recluse.utils import *
-from malaprop.error_insertion import RealWordVocabExtractor, RealWordErrorChannel
+from malaprop.error_insertion import RealWordVocabExtractor
+from malaprop.error_insertion.damerau_levenshtein_channel import *
+from malaprop.error_insertion.real_word_error_inserter import *
 
 def randomise_articles(target, source, env):
     """
@@ -31,7 +33,7 @@ def randomise_articles(target, source, env):
 def create_language_models(target, source, env):
 
     # Split training set
-    chunk_directory = data_directory + 'FILE_CHUNKS/'
+    chunk_directory = data_directory + 'TRAIN_FILE_CHUNKS/'
     os.mkdir(chunk_directory)
 
     split_file_into_chunks(source[0].path, chunk_directory, lines_per_chunk)
@@ -41,14 +43,12 @@ def create_language_models(target, source, env):
     file_names_file_obj.writelines([s + '\n' for s in file_names])
     file_names_file_obj.close()
 
-    # Create vocabularies:
-    # For each n in vocabulary_sizes, gets the unigram counts from the
-    # source files and puts the n thousand most frequent words in the
+    # Create vocabularies: Gets the unigram counts from the source
+    # files and puts the n thousand most frequent words in the
     # vocabulary file.
     vocab_gen = vocabulary_generator.VocabularyGenerator(file_names)
-    for i in range(len(vocabulary_sizes)):
-        size = int(1000*vocabulary_sizes[i])
-        vocab_gen.generate_vocabulary(size, open_with_unicode(target[i].path, None, 'w'))
+    size = int(1000*vocabulary_size)
+    vocab_gen.generate_vocabulary(size, open_with_unicode(target[0].path, None, 'w'))
 
     # create trigram model:
     # Run srilm make/merge-batch-counts
@@ -66,14 +66,8 @@ def create_language_models(target, source, env):
     os.remove(bash_script_name)
 
     srilm_merge_batch_counts = subprocess.call(['merge-batch-counts', counts_directory])
-    for i in range(len(vocabulary_sizes)):
-        size = vocabulary_sizes[i]
-        vocabulary_file_name = data_directory + str(size) + 'K.vocab'
-        merged_counts_file = [f for f in os.listdir(counts_directory) if f.endswith('.ngrams.gz')][0]
-        trigram_model_name = data_directory + 'trigram_model_' + str(size) + 'K.arpa'
-        assert target[len(vocabulary_sizes) + i].path == trigram_model_name, target[len(vocabulary_sizes) + i].path
-
-        srilm_make_big_lm = subprocess.call(['make-big-lm', '-debug', '2', '-kndiscount3', '-unk', '-read', counts_directory + merged_counts_file, '-vocab', vocabulary_file_name, '-lm', trigram_model_name])
+    merged_counts_file = [f for f in os.listdir(counts_directory) if f.endswith('.ngrams.gz')][0]
+    srilm_make_big_lm = subprocess.call(['make-big-lm', '-debug', '2', '-kndiscount3', '-unk', '-read', counts_directory + merged_counts_file, '-vocab', target[0].path, '-lm', target[1].path])
 
     # delete split files and counts
     shutil.rmtree(chunk_directory)
@@ -85,57 +79,65 @@ def create_language_models(target, source, env):
 
 def extract_real_word_vocabulary(target, source, env):
 
-    for i in range(len(vocabulary_sizes)):
-        size = vocabulary_sizes[i]
-        vocabulary_file_name = data_directory + str(size) + 'K.vocab'
-        vocabulary_file_obj = open(vocabulary_file_name, 'r')
-        real_word_vocabulary_file_name = data_directory + str(size) + 'K.real_word_vocab'
-
-        assert target[i].path == real_word_vocabulary_file_name, 'Target was: ' + target[i].path
-        real_word_vocabulary_file_obj = open(real_word_vocabulary_file_name, 'w')
-        extractor = RealWordVocabExtractor.RealWordVocabExtractor(vocabulary_file_obj, real_word_vocabulary_file_obj)
-        extractor.extract_real_words()
+    vocabulary_file_obj = open(source[0].path, 'r')
+    real_word_vocabulary_file_obj = open(target[0].path, 'w')
+    extractor = RealWordVocabExtractor.RealWordVocabExtractor(vocabulary_file_obj, real_word_vocabulary_file_obj)
+    extractor.extract_real_words()
     return
+
+def vocabulary_file_to_sets(vocabulary_file):
+
+    vocabulary = set([])
+    symbols = set([])
+    for line in vocabulary_file:
+        token = line.strip()
+        vocabulary.add(token)
+        for s in token: symbols.add(s)
+    return vocabulary, list(symbols)
+    
 
 def create_error_sets(target, source, env):
 
-    for i in range(len(vocabulary_sizes)):
-        size = vocabulary_sizes[i]
-        vocabulary_file_name = data_directory + str(size) + 'K.real_word_vocab'
-        error_set_file_name = data_directory + 'errors_at_' + str(error_rate) + '_' + str(size) + 'K_vocabulary.bz2'
-        corrections_file_name = data_directory + 'corrections_' + str(error_rate) + '_' + str(size) + 'K_vocabulary.bz2'
-        rwec = RealWordErrorChannel.RealWordErrorChannel(open(vocabulary_file_name, 'r'), bz2.BZ2File(error_set_file_name, 'w'), bz2.BZ2File(corrections_file_name, 'w'), error_rate, random.Random(7))
-        sentence_number = 0
-        development_file_obj = bz2.BZ2File(source[0].path, 'r')
-        line_number = 0
-        line = development_file_obj.readline()
-        while line:
-            chunk = StringIO.StringIO(line)
-            chunk.write(line)
-            while line and line_number < lines_per_chunk:
-                line = development_file_obj.readline()
-                chunk.write(line)
-                line_number += 1
-            line_number = 0
-            chunk.seek(0)
-            segmenter_tokeniser = nltk_based_segmenter_tokeniser.NLTKBasedSegmenterTokeniser(chunk)
-            for sentence_obj in segmenter_tokeniser.segmented_and_tokenised():
-            
-                possibly_erroneous_sentence, corrections = rwec.pass_sentence_through_channel(sentence_obj)
-                rwec.unicode_error_file_obj.write(possibly_erroneous_sentence + u'\n')
-                if corrections != []:
-                    rwec.unicode_corrections_file_obj.write(str(sentence_number) + ' ' + repr(corrections) + '\n')
-                sentence_number += 1
-        rwec.unicode_corrections_file_obj.write(rwec.get_stats())
-        rwec.unicode_error_file_obj.close()
-        rwec.unicode_corrections_file_obj.close()
+    assert correction_task or adversarial_task
 
+    # Split set
+    chunk_directory = data_directory + 'DEV_FILE_CHUNKS/'
+    os.mkdir(chunk_directory)
+    split_file_into_chunks(source[0].path, chunk_directory, lines_per_chunk)
+
+    rand_obj = random.Random(33)
+    uniform_error_rate = error_rate / 4
+    vocabulary, symbols = vocabulary_file_to_sets(open_with_unicode(source[1].path, None, 'r'))
+    error_channel = DamerauLevenshteinChannel(rand_obj, ErrorProbabilities(1-error_rate, uniform_error_rate, uniform_error_rate, uniform_error_rate, uniform_error_rate), symbols, None)
+
+    file_dict = {}
+    if correction_task:
+        file_dict['corrupted'] = bz2.BZ2File(target[0].path, 'w')
+        file_dict['corrections'] = bz2.BZ2File(target[1].path, 'w')
+        if adversarial_task:
+            file_dict['adversarial'] = bz2.BZ2File(target[2].path, 'w')
+            file_dict['key'] = bz2.BZ2File(target[3].path, 'w')
+    else:
+        file_dict['adversarial'] = bz2.BZ2File(target[0].path, 'w')
+        file_dict['key'] = bz2.BZ2File(target[1].path, 'w')
+    
+    sentence_id = 0
+    for chunk in [chunk_directory + s for s in os.listdir(chunk_directory)]:
+        segmenter_tokeniser = NLTKBasedSegmenterTokeniser(bz2.BZ2File(chunk, 'r'))
+        rwei = RealWordErrorInserter(segmenter_tokeniser, vocabulary, error_channel)
+        sentence_id += rwei.corrupt(segmenter_tokeniser.text, file_dict, correction_task, adversarial_task, sentence_id)
+
+    for f in file_dict.values():
+        f.close()
+
+    shutil.rmtree(chunk_directory)
+
+    # Regression tests
     if TEST:
-        assert filecmp.cmp(data_directory + 'errors_at_0.2_0.05K_vocabulary.bz2', 'malaprop/test/data/errors_at_0.2_0.05K_vocabulary.bz2', shallow=False), "Test result errors_at_0.2_0.05K_vocabulary.bz2 differs from expected."
-        assert filecmp.cmp(data_directory + 'errors_at_0.2_0.5K_vocabulary.bz2', 'malaprop/test/data/errors_at_0.2_0.5K_vocabulary.bz2', shallow=False), "Test result errors_at_0.2_0.5K_vocabulary.bz2 differs from expected."
-        assert filecmp.cmp(data_directory + 'corrections_0.2_0.05K_vocabulary.bz2', 'malaprop/test/data/corrections_0.2_0.05K_vocabulary.bz2', shallow=False), "Test result corrections_0.2_0.05K_vocabulary.bz2 differs from expected."
-        assert filecmp.cmp(data_directory + 'corrections_0.2_0.5K_vocabulary.bz2', 'malaprop/test/data/corrections_0.2_0.5K_vocabulary.bz2', shallow=False), "Test result corrections_0.2_0.5K_vocabulary.bz2 differs from expected."
-        
+        assert filecmp.cmp(data_directory + 'corrupted_error_rate_0.20.05K_vocabulary.bz2', 'malaprop/test/data/corrupted_error_rate_0.20.05K_vocabulary.bz2', shallow=False), "Test result corrupted_error_rate_0.20.05K_vocabulary.bz2 differs from expected."
+        assert filecmp.cmp(data_directory + 'corrections_error_rate_0.20.05K_vocabulary.bz2', 'malaprop/test/data/corrections_error_rate_0.20.05K_vocabulary.bz2', shallow=False), "Test result corrections_error_rate_0.20.05K_vocabulary.bz2 differs from expected."
+        assert filecmp.cmp(data_directory + 'adversarial_error_rate_0.20.05K_vocabulary.bz2', 'malaprop/test/data/adversarial_error_rate_0.20.05K_vocabulary.bz2', shallow=False), "Test result adversarial_error_rate_0.20.05K_vocabulary.bz2 differs from expected."
+        assert filecmp.cmp(data_directory + 'key_error_rate_0.20.05K_vocabulary.bz2', 'malaprop/test/data/key_error_rate_0.20.05K_vocabulary.bz2', shallow=False), "Test result key_error_rate_0.20.05K_vocabulary.bz2 differs from expected."
 
     return None
 
@@ -143,10 +145,12 @@ def create_error_sets(target, source, env):
 # Get and set configuration:
 # These are defaults that may be reset by the commandline:
 data_directory = ''
-vocabulary_sizes = []
+vocabulary_size = 0.5
 lines_per_chunk = 100000
 error_rate = .05
 proportions = [.6,.2,.2]
+correction_task = False
+adversarial_task = False
 TEST = False
 
 try:
@@ -157,49 +161,58 @@ except:
 
 if [x for x in ARGLIST if x[0] == "test"]:
     TEST = True
-    vocabulary_sizes = [0.05, 0.5]
+    vocabulary_size = 0.05
     lines_per_chunk = 25
     error_rate = .2
+    correction_task = True
+    adversarial_task = True
 
 elif [x for x in ARGLIST if x[0] == "replicate"]:
-    vocabulary_sizes = [50, 100]
+    vocabulary_sizes = 100
     lines_per_chunk = 100000
     error_rate = .05
 
 else:
     for key, value in ARGLIST:
         if key == "vocabulary_size":
-            vocabulary_sizes.append(value)
+            vocabulary_size = float(value)
         elif key == "lines_per_chunk":
             lines_per_chunk = int(value)
         elif key == "error_rate":
             error_rate = float(value)
+        elif key == "correction_task":
+            correction_task = True
+        elif key == "adversarial_task":
+            adversarial_task = True
 
 # These are settings are derived from the above:
 data_file = data_directory + 'corpus.bz2'
+error_set_targets = []
+if correction_task: error_set_targets += ['corrupted', 'corrections']
+if adversarial_task: error_set_targets += ['adversarial', 'key']
 # -----
 
 # SConstruct dependency information
 
 learning_sets_builder = Builder(action = randomise_articles)
-language_models_builder = Builder(action = create_language_models)
+language_model_builder = Builder(action = create_language_models)
 real_word_vocabulary_builder = Builder(action = extract_real_word_vocabulary)
 error_set_builder = Builder(action = create_error_sets)
 
-env = Environment(BUILDERS = {'learning_sets' : learning_sets_builder, 'language_models' : language_models_builder, 'real_word_vocabulary_files' : real_word_vocabulary_builder, 'error_sets' : error_set_builder})
+env = Environment(BUILDERS = {'learning_sets' : learning_sets_builder, 'language_models' : language_model_builder, 'real_word_vocabulary_files' : real_word_vocabulary_builder, 'error_sets' : error_set_builder})
 
 env.learning_sets([data_directory + set_name for set_name in ['training_set.bz2', 'development_set.bz2', 'test_set.bz2']], data_file)
 
 env.Alias('learning_sets', [data_directory + set_name for set_name in ['training_set.bz2', 'development_set.bz2', 'test_set.bz2']])
 
-env.language_models([data_directory + str(size) + 'K.vocab' for size in vocabulary_sizes] + [data_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes], [data_directory + 'training_set.bz2'])
+env.language_models([data_directory + str(vocabulary_size) + 'K.vocab', data_directory + 'trigram_model_' + str(vocabulary_size) + 'K.arpa'], [data_directory + 'training_set.bz2'])
 
-env.Alias('language_models', [data_directory + str(size) + 'K.vocab' for size in vocabulary_sizes] + [data_directory + 'trigram_model_' + str(size) + 'K.arpa' for size in vocabulary_sizes])
+env.Alias('language_models', [data_directory + str(vocabulary_size) + 'K.vocab', data_directory + 'trigram_model_' + str(vocabulary_size) + 'K.arpa'])
 
-env.real_word_vocabulary_files([data_directory + str(size) + 'K.real_word_vocab' for size in vocabulary_sizes], [data_directory + str(size) + 'K.vocab' for size in vocabulary_sizes])
+env.real_word_vocabulary_files([data_directory + str(vocabulary_size) + 'K.real_word_vocab'], [data_directory + str(vocabulary_size) + 'K.vocab'])
 
-env.Alias('real_word_vocabulary_files', [data_directory + str(size) + 'K.real_word_vocab' for size in vocabulary_sizes])
+env.Alias('real_word_vocabulary_files', [data_directory + str(vocabulary_size) + 'K.real_word_vocab'])
 
-env.error_sets([data_directory + 'errors_at_' + str(error_rate) + '_' + str(size) + 'K_vocabulary.bz2' for size in vocabulary_sizes] + [data_directory + 'corrections_' + str(error_rate) + '_' + str(size) + 'K_vocabulary.bz2' for size in vocabulary_sizes], [data_directory + 'development_set.bz2'] + [data_directory + str(size) + 'K.real_word_vocab' for size in vocabulary_sizes])
+env.error_sets([data_directory + x + '_error_rate_' + str(error_rate) + str(vocabulary_size) + 'K_vocabulary.bz2' for x in error_set_targets], [data_directory + 'development_set.bz2', data_directory + str(vocabulary_size) + 'K.real_word_vocab'])
 
-env.Alias('error_sets', [data_directory + 'errors_at_' + str(error_rate) + '_' + str(size) + 'K_vocabulary.bz2' for size in vocabulary_sizes] + [data_directory + 'corrections_' + str(error_rate) + '_' + str(size) + 'K_vocabulary.bz2' for size in vocabulary_sizes])
+env.Alias('error_sets', [data_directory + x + '_error_rate_' + str(error_rate) + str(vocabulary_size) + 'K_vocabulary.bz2' for x in error_set_targets])
