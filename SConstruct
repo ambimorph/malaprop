@@ -11,7 +11,7 @@ import codecs, bz2, gzip, random, subprocess, os, StringIO, filecmp, shutil, jso
 from math import ceil
 from recluse import article_randomiser, vocabulary_generator, nltk_based_segmenter_tokeniser
 from recluse.utils import *
-from malaprop.error_insertion import RealWordVocabExtractor
+from malaprop.error_insertion import real_word_vocabulary_extractor
 from malaprop.error_insertion.damerau_levenshtein_channel import *
 from malaprop.error_insertion.real_word_error_inserter import *
 
@@ -81,7 +81,7 @@ def extract_real_word_vocabulary(target, source, env):
 
     vocabulary_file_obj = open(source[0].path, 'r')
     real_word_vocabulary_file_obj = open(target[0].path, 'w')
-    extractor = RealWordVocabExtractor.RealWordVocabExtractor(vocabulary_file_obj, real_word_vocabulary_file_obj)
+    extractor = real_word_vocabulary_extractor.RealWordVocabExtractor(vocabulary_file_obj, real_word_vocabulary_file_obj)
     extractor.extract_real_words()
     return
 
