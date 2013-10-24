@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # 2012 L. Amber Wilcox-O'Hearn
-# test_RealWordVocabExtractor.py
+# test_real_word_vocab_extractor.py
 
-from malaprop.error_insertion import RealWordVocabExtractor
+from malaprop.error_insertion import real_word_vocabulary_extractor
 import unittest, StringIO
 
 
@@ -11,8 +11,8 @@ class RealWordVocabExtractorTest(unittest.TestCase):
     def test_real_word_vocab_extactor(self):
         vocab_file_obj = open('malaprop/test/data/1K_test_vocab', 'rb')
         outfile_obj = StringIO.StringIO()
-        real_word_vocab_extractor = RealWordVocabExtractor.RealWordVocabExtractor(vocab_file_obj, outfile_obj)
-        real_word_vocab_extractor.extract_real_words()
+        rwve = real_word_vocabulary_extractor.RealWordVocabExtractor(vocab_file_obj, outfile_obj)
+        rwve.extract_real_words()
         vocabulary = outfile_obj.getvalue()
         for test_word in [u'with', u'end', u'don\'t']:
             assert vocabulary.find(u'\n' + test_word + u'\n') != -1, test_word

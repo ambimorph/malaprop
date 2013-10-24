@@ -1,5 +1,5 @@
 # 2012 L. Amber Wilcox-O'Hearn
-# RealWordVocabExtractor.py
+# real_word_vocabulary_extractor.py
 
 import codecs, unicodedata
 
