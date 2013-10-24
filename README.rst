@@ -93,7 +93,6 @@ Current possible targets:
     * DIR must contain training_set.bz2 OR dependencies for learning_sets
     * vocabulary_size=n
     * lines_per_chunk=l (defaults to 100000)
-    * variables vocabulary_size=n 
 
     * -> nK.vocab
     * -> trigram_model_nK.arpa
@@ -109,7 +108,7 @@ Current possible targets:
 * correction_task or adversarial_task
     * DIR must contain development_set.bz2 or dependencies met for learning_sets
     * lines_per_chunk=n (defaults to 100000)
-    * error_rate e in {0,1} (defaults to .05)
+    * error_rate=e in {0,1} (defaults to .05)
     * vocabulary_size=n
     * DIR must contain nK.real_word_vocab 
       OR 
