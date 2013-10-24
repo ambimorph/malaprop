@@ -56,7 +56,7 @@ Unit tests: Run
 This should find 14 tests.
 
 SCons test:
-Create a directory DIR for testing, and copy or link test_data/Wikipedia_small_subset.bz2 as corpus.bz2.
+Create a directory DIR for testing, and copy or link test/data/Wikipedia_small_subset.bz2 as corpus.bz2.
 
 ::
 
@@ -89,26 +89,20 @@ Current possible targets:
 
     * -> divided into 60-20-20% training, development, and test
 
-* vocabulary_files:
+* language_models:
     * DIR must contain training_set.bz2 OR dependencies for learning_sets
-    * one or more variables vocabulary_size=n
-    * lines_per_chunk=n (defaults to 100000)
-
-    * -> nK.vocab for n in vocabulary_size
-
-* trigram_models:
+    * vocabulary_size=n
+    * lines_per_chunk=l (defaults to 100000)
     * variables vocabulary_size=n 
-    * DIR must contain a vocabulary file nK.vocab for n in vocabulary_size
-      OR 
-    * dependencies met for vocabulary_files
 
-    * -> trigram_model_nK.arpa for n in vocabulary_size
+    * -> nK.vocab
+    * -> trigram_model_nK.arpa
 
 * real_word_vocabulary_files
-    * variables vocabulary_size=n 
-    * DIR must contain nK.vocab for each n in vocabulary_size
+    * vocabulary_size=n 
+    * DIR must contain nK.vocab
       OR
-    * dependencies met for vocabulary_files
+    * dependencies met for language_models
 
     * -> nK.real_word_vocab for n in vocabulary_size
 
