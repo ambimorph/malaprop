@@ -17,7 +17,7 @@ The damerau_levenshtein_channel module emulates a noisy channel, randomly insert
 
 This version includes code to 
 
-(1) Divide a corpus of text articles (e.g. Wikipedia) into training, development, and test sets (from recluse).
+(1) Divide a corpus of text articles (e.g. Wikipedia) into training, development, and test sets (from `recluse`_).
 
 (2) Generate trigram models from a training set by wrapping some specific calls to the srilm tool-kit over text segmented and tokenised using a customised version of the NLTK sentence segmenter.
 
@@ -33,7 +33,7 @@ Dependencies
 ============
 Malaprop requires:
 
-Python, recluse, SCons, NLTK, and SRILM.
+Python, `recluse`_, SCons, NLTK, and SRILM.
 
 It was tested under the following versions:
 
