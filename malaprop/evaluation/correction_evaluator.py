@@ -28,19 +28,65 @@ xyx = 'True Positive'
 xyy = 'False Negative'
 xyz = 'Detection True Positive, Correction False Negative, Correction False Positive'
 
+from collections import Counter
 
-def classify_correction_instance(original, error, observed, correction):
+class CorrectionEvaluator():
 
-    assert original and error or not error
-    assert observed and correction or not correction
-    if original: assert original != error
-    if observed: assert observed != correction
-    if error and observed: assert observed == error
 
-    if correction and not error: return xxy
-    if correction:
-        if correction == original: return xyx
-        else: return xyz
-    else:
-        assert error and not correction
-        return xyy
+    def __init__(self):
+
+        self.detection_true_positives = 0
+        self.correction_true_positives = 0
+        self.detection_false_positives = 0
+        self.correction_false_positives = 0
+        self.detection_false_negatives = 0
+        self.correction_false_negatives = 0
+
+        self.distributions = {
+            xxy : Counter(),
+            xyx : Counter(),
+            xyy : Counter(),
+            xyz : Counter(),
+            }
+
+    def classify_correction_instance(self, original, error, observed, correction):
+
+        assert original and error or not error
+        assert observed and correction or not correction
+        if original: assert original != error
+        if observed: assert observed != correction
+        if error and observed: assert observed == error
+
+        if correction and not error: # xxy
+            self.detection_false_positives += 1
+            self.correction_false_positives += 1
+            self.distributions[xxy][(observed, correction)] += 1
+            return
+
+        if correction:
+            if correction == original: # xyx
+                self.detection_true_positives += 1
+                self.correction_true_positives += 1
+                self.distributions[xyx][(observed, correction)] += 1
+                return
+                
+            else: # xyz
+                self.detection_true_positives += 1
+                self.correction_false_negatives += 1
+                self.correction_false_positives += 1
+                self.distributions[xyz][(observed, original, correction)] +=1
+                return
+
+        else: # xyy
+            assert error and not correction
+            self.detection_false_negatives += 1
+            self.correction_false_negatives += 1
+            self.distributions[xyy][(error, original)] += 1
+            return
+
+
+
+if __name__ == '__main__':
+
+    pass
+
