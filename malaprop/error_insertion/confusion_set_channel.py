@@ -21,5 +21,9 @@ class ConfusionSetChannel():
             self.write(string)
 
         else:
-            self.write(self.random_number_generator.choice(self.confusion_set_function(string)))
-            self.errors += 1
+            variations = self.confusion_set_function(string)
+            if variations == []:
+                self.write(string)
+            else:
+                self.write(self.random_number_generator.choice(variations))
+                self.errors += 1

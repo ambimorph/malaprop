@@ -40,3 +40,13 @@ class ConfusionSetChannelTest(unittest.TestCase):
         self.assertEqual(output_string.getvalue(), 'an'), output_string.getvalue()
         self.assertEqual(csc.tokens, 1), csc.tokens
         self.assertEqual(csc.errors, 1), csc.errors
+
+    def test_no_variations(self):
+
+        output_string = StringIO.StringIO()
+        csc = ConfusionSetChannel(MockRNG(gen([0.4]), gen([])), 0.5, mock_confusion_set, output_string.write)
+        csc.accept_string('man')
+        self.assertEqual(output_string.getvalue(), 'man'), output_string.getvalue()
+        self.assertEqual(csc.tokens, 1), csc.tokens
+        self.assertEqual(csc.errors, 0), csc.errors
+
