@@ -32,6 +32,83 @@ This version includes code to
 
 *Reproducibility* is prioritised, so projects are completely built using SCons.
 
+
+==============
+Example Output
+==============
+
+Correction Task:
+================
+
+The following examples are taken directly from the regression tests.  You can replicate them by running the SCons test as described below.  They are also included in the directory malaprop/test/data/.
+
+The corrupted file begins with these lines:
+
+---
+
+| Albedo.
+| The albedo of an object is a measure of how strongly it reflects light from light sources such as the Sun.
+| It is therefore a more specific from of the term reflectivity.
+| Albedo is defined as the ratio off total-reflected to incident electromagnetic radiation.
+| It is a unitless measure indicative of a surface's or boy's diffuse reflectivity.
+| The word is derived form Latin "albedo" "whiteness", in turn from "albus" "white", and was introduced into optics by Johann Heinrich Lambert in his 1760 work "Photometria".
+| The range of possible values is from 0 (dark) so 1 (bright).
+| The albedo is an important concept ii climatology and astronomy, as well as in computer graphics and computer vision.
+| In climatology i is sometimes expressed as a percentage.
+| Its value depends on the frequency of radiation considered: unqualified, ii usually refers to some appropriate average across the spectrum of visible light.
+| In general, the albedo depends on the direction and directional distribution of incoming radiation.
+| Exceptions are Lambertian surfaces, which scatter radiation in all directions in a cosine function, so their albedo does not depend on the incoming distribution.
+| In realistic causes, a bidirectional reflectance distribution function (BRDF) is required top characterize the scattering properties of a surface accurately, although albedos re a very useful first approximation.
+| Terrestrial albedo.
+| Albedos of typical materials in visible light range from up to 0.9 for fresh snow, to about 0.04 or charcoal, one of the darkest substances.
+
+---
+
+with a corresponding correction file starting like this. The numbers index the sentence, token, and *subtoken* positions.  
+
+(The subtoken positions are all '0' in this example, but refer to tokens that are considered separate even though they occur within the same whitespace bounded-string.  For example the if the string "(I'm not sure)" occurred in the text, it would be interpreted as the following three tokens: ["(I'm", "not", "sure)"], and the following subtokens: [["(", "I", "'m"], ["not"], ["sure", ")"]].  This allows subtoken analysis while preserving the original boundaries.  Details in the `recluse`_ package.):
+
+---
+
+| [2, [[6, 0, "from", "form"]]]
+| [3, [[6, 0, "off", "of"]]]
+| [4, [[10, 0, "boy", "body"]]]
+| [5, [[4, 0, "form", "from"]]]
+| [6, [[9, 0, "so", "to"]]]
+| [7, [[6, 0, "ii", "in"]]]
+| [8, [[2, 0, "i", "it"]]]
+| [9, [[10, 0, "ii", "it"]]]
+| [12, [[2, 0, "causes", "cases"], [11, 0, "top", "to"], [22, 0, "re", "are"]]]
+| [14, [[18, 0, "or", "for"]]]
+
+---
+
+The same input and process give the adversarial task file that starts like this:
+
+---
+
+| ["It is therefore a more specific form of the term reflectivity.", "It is therefore a more specific from of the term reflectivity."]
+| ["Albedo is defined as the ratio of total-reflected to incident electromagnetic radiation.", "Albedo is defined as the ratio off total-reflected to incident electromagnetic radiation."]
+| ["It is a unitless measure indicative of a surface's or body's diffuse reflectivity.", "It is a unitless measure indicative of a surface's or boy's diffuse reflectivity."]
+| ["The word is derived form Latin \"albedo\" \"whiteness\", in turn from \"albus\" \"white\", and was introduced into optics by Johann Heinrich Lambert in his 1760 work \"Photometria\".", "The word is derived from Latin \"albedo\" \"whiteness\", in turn from \"albus\" \"white\", and was introduced into optics by Johann Heinrich Lambert in his 1760 work \"Photometria\"."]
+| ["The range of possible values is from 0 (dark) so 1 (bright).", "The range of possible values is from 0 (dark) to 1 (bright)."]
+| ["The albedo is an important concept ii climatology and astronomy, as well as in computer graphics and computer vision.", "The albedo is an important concept in climatology and astronomy, as well as in computer graphics and computer vision."]
+| ["In climatology i is sometimes expressed as a percentage.", "In climatology it is sometimes expressed as a percentage."]
+| ["Its value depends on the frequency of radiation considered: unqualified, ii usually refers to some appropriate average across the spectrum of visible light.", "Its value depends on the frequency of radiation considered: unqualified, it usually refers to some appropriate average across the spectrum of visible light."]
+| ["In realistic cases, a bidirectional reflectance distribution function (BRDF) is required to characterize the scattering properties of a surface accurately, although albedos are a very useful first approximation.", "In realistic causes, a bidirectional reflectance distribution function (BRDF) is required top characterize the scattering properties of a surface accurately, although albedos re a very useful first approximation."]
+| ["Albedos of typical materials in visible light range from up to 0.9 for fresh snow, to about 0.04 for charcoal, one of the darkest substances.", "Albedos of typical materials in visible light range from up to 0.9 for fresh snow, to about 0.04 or charcoal, one of the darkest substances."]
+
+---
+
+with an answer key file that begins like this:
+
+---
+
+0001111100
+
+---
+
+
 ============
 Dependencies
 ============
