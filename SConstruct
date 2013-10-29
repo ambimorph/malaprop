@@ -11,8 +11,9 @@ import codecs, bz2, gzip, random, subprocess, os, StringIO, filecmp, shutil, jso
 from math import ceil
 from recluse import article_randomiser, vocabulary_generator, nltk_based_segmenter_tokeniser
 from recluse.utils import *
+from DamerauLevenshteinDerivor import cderivor
 from malaprop.error_insertion import real_word_vocabulary_extractor
-from malaprop.error_insertion.damerau_levenshtein_channel import *
+from malaprop.error_insertion.confusion_set_channel import *
 from malaprop.error_insertion.real_word_error_inserter import *
 
 def randomise_articles(target, source, env):
@@ -106,9 +107,8 @@ def create_error_sets(target, source, env):
     split_file_into_chunks(source[0].path, chunk_directory, lines_per_chunk)
 
     rand_obj = random.Random(33)
-    uniform_error_rate = error_rate / 4
-    vocabulary, symbols = vocabulary_file_to_sets(open_with_unicode(source[1].path, None, 'r'))
-    error_channel = DamerauLevenshteinChannel(rand_obj, ErrorProbabilities(1-error_rate, uniform_error_rate, uniform_error_rate, uniform_error_rate, uniform_error_rate), symbols, None)
+    derivor = cderivor.Derivor(source[1].path)
+    error_channel = ConfusionSetChannel(rand_obj, error_rate, derivor.variations, None)
 
     file_dict = {}
     if correction_task:
@@ -122,6 +122,7 @@ def create_error_sets(target, source, env):
         file_dict['key'] = bz2.BZ2File(target[1].path, 'w')
     
     sentence_id = 0
+    vocabulary, symbols = vocabulary_file_to_sets(open_with_unicode(source[1].path, None, 'r'))
     for chunk in [chunk_directory + s for s in os.listdir(chunk_directory)]:
         segmenter_tokeniser = NLTKBasedSegmenterTokeniser(bz2.BZ2File(chunk, 'r'))
         rwei = RealWordErrorInserter(segmenter_tokeniser, vocabulary, error_channel)
@@ -134,10 +135,10 @@ def create_error_sets(target, source, env):
 
     # Regression tests
     if TEST:
-        assert filecmp.cmp(data_directory + 'corrupted_error_rate_0.2_0.05K_vocabulary.bz2', 'malaprop/test/data/corrupted_error_rate_0.2_0.05K_vocabulary.bz2', shallow=False), "Test result corrupted_error_rate_0.2_0.05K_vocabulary.bz2 differs from expected."
-        assert filecmp.cmp(data_directory + 'corrections_error_rate_0.2_0.05K_vocabulary.bz2', 'malaprop/test/data/corrections_error_rate_0.2_0.05K_vocabulary.bz2', shallow=False), "Test result corrections_error_rate_0.2_0.05K_vocabulary.bz2 differs from expected."
-        assert filecmp.cmp(data_directory + 'adversarial_error_rate_0.2_0.05K_vocabulary.bz2', 'malaprop/test/data/adversarial_error_rate_0.2_0.05K_vocabulary.bz2', shallow=False), "Test result adversarial_error_rate_0.2_0.05K_vocabulary.bz2 differs from expected."
-        assert filecmp.cmp(data_directory + 'key_error_rate_0.2_0.05K_vocabulary.bz2', 'malaprop/test/data/key_error_rate_0.2_0.05K_vocabulary.bz2', shallow=False), "Test result key_error_rate_0.2_0.05K_vocabulary.bz2 differs from expected."
+        assert filecmp.cmp(data_directory + 'corrupted_error_rate_0.1_2K_vocabulary.bz2', 'malaprop/test/data/corrupted_error_rate_0.1_2K_vocabulary.bz2', shallow=False), "Test result corrupted_error_rate_0.1_2K_vocabulary.bz2 differs from expected."
+        assert filecmp.cmp(data_directory + 'corrections_error_rate_0.1_2K_vocabulary.bz2', 'malaprop/test/data/corrections_error_rate_0.1_2K_vocabulary.bz2', shallow=False), "Test result corrections_error_rate_0.1_2K_vocabulary.bz2 differs from expected."
+        assert filecmp.cmp(data_directory + 'adversarial_error_rate_0.1_2K_vocabulary.bz2', 'malaprop/test/data/adversarial_error_rate_0.1_2K_vocabulary.bz2', shallow=False), "Test result adversarial_error_rate_0.1_2K_vocabulary.bz2 differs from expected."
+        assert filecmp.cmp(data_directory + 'key_error_rate_0.1_2K_vocabulary.bz2', 'malaprop/test/data/key_error_rate_0.1_2K_vocabulary.bz2', shallow=False), "Test result key_error_rate_0.1_2K_vocabulary.bz2 differs from expected."
 
     return None
 
@@ -161,9 +162,9 @@ except:
 
 if [x for x in ARGLIST if x[0] == "test"]:
     TEST = True
-    vocabulary_size = 0.05
+    vocabulary_size = 2
     lines_per_chunk = 25
-    error_rate = .2
+    error_rate = .1
     correction_task = True
     adversarial_task = True
 
