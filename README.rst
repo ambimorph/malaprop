@@ -15,6 +15,10 @@ Malaprop is written with `the adversarial evaluation paradigm for natural langua
 
 The damerau_levenshtein_channel module emulates a noisy channel, randomly inserting `Damerau-Levenshtein`_  errors at the character level as a word is passed through. If the resulting string is a *real word* — that is, a sufficiently frequent word in the original corpus — the new word replaces the original.
 
+The confusion_set_channel module substitutes known words in a text with other known words probabilistically according to a given confusion set function.  For example, when used with `DamerauLevenshteinDerivor`_ it substitutes words that are within one Damerau-Levenshtein edit distance from the original word.
+
+
+
 This version includes code to 
 
 (1) Divide a corpus of text articles (e.g. Wikipedia) into training, development, and test sets (from `recluse`_).
@@ -33,16 +37,17 @@ Dependencies
 ============
 Malaprop requires:
 
-Python, `recluse`_, SCons, NLTK, and SRILM.
+Python, `recluse`_, SCons, NLTK, `DamerauLevenshteinDerivor`_, and SRILM.
 
 It was tested under the following versions:
 
-* Ubuntu 12.04.2 LTS
+* Ubuntu 12.04.3 LTS
 * Python 2.7.3
 * recluse 0.2.4
 * SCons v2.1.0.r5357
 * NLTK 2.0b9
 * SRILM 1.5.5
+* DamerauLevenshteinDerivor 0.0.2
 
 =================
 Running the tests
@@ -53,7 +58,7 @@ Unit tests: Run
 
  $ python -m unittest discover
 
-This should find 14 tests.
+This should find 22 tests.
 
 SCons test:
 Create a directory DIR for testing, and copy or link test/data/Wikipedia_small_subset.bz2 as corpus.bz2.
@@ -133,3 +138,5 @@ Zooko Wilcox-O'Hearn contributed endless hours to engineering and debuggery advi
 .. _Damerau-Levenshtein: http://en.wikipedia.org/wiki/Damerau%E2%80%93Levenshtein_distance
 
 .. _recluse: https://pypi.python.org/pypi/recluse
+
+.. _DamerauLevenshteinDerivor: https://github.com/lamber/DamerauLevenshteinDerivor

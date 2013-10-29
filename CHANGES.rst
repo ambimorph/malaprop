@@ -1,6 +1,11 @@
 =========
 MALAPROP
 =========
+Release 0.3.0 (2013-10-28)
+..........................
+* Added a new channel model to use confusion sets instead of operating by character.
+* SCons now uses DamerauLevenshteinDerivor to generate confusion sets for the error set creation.
+
 Release 0.2.0 (2013-10-23)
 ..........................
 * Refactored the channel model, and changed its interface.
