@@ -81,10 +81,10 @@ class RealWordErrorInserter():
                     corrupted_file_unicode_writer.write(corruption)
                     corrections_file_unicode_writer.write(json.dumps([sentence_id,  corrections]) + '\n')
                 if adversarial_task:
-                    alternatives = [sentence, corruption]
+                    alternatives = [sentence.strip(), corruption.strip()]
                     alternatives.sort()
                     adversarial_file_unicode_writer.write(json.dumps(alternatives) + '\n')
-                    key_file_unicode_writer.write(unicode(int(alternatives[1] == sentence)))
+                    key_file_unicode_writer.write(unicode(int(alternatives[1] == sentence.strip())))
             sentence_id += 1
 
         return sentence_id - first_sentence_id
