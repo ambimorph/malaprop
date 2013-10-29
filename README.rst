@@ -66,7 +66,7 @@ The corrupted file begins with these lines:
 
 with a corresponding correction file starting like this. The numbers index the sentence, token, and *subtoken* positions.  
 
-(The subtoken positions are all '0' in this example, but refer to tokens that are considered separate even though they occur within the same whitespace bounded-string.  For example the if the string "(I'm not sure)" occurred in the text, it would be interpreted as the following three tokens: ["(I'm", "not", "sure)"], and the following subtokens: [["(", "I", "'m"], ["not"], ["sure", ")"]].  This allows subtoken analysis while preserving the original boundaries.  Details in the `recluse`_ package.):
+(The subtoken positions are all '0' in this example, but refer to tokens that are considered separate even though they occur within the same whitespace-bounded string.  For example the if the string "(I'm not sure)" occurred in the text, it would be interpreted as the following three tokens: ["(I'm", "not", "sure)"], and the following subtokens: [["(", "I", "'m"], ["not"], ["sure", ")"]].  This allows subtoken analysis while preserving the original boundaries.  Details in the `recluse`_ package.):
 
 ---
 
