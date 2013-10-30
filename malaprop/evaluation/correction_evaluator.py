@@ -28,7 +28,8 @@ xyx = 'True Positive'
 xyy = 'False Negative'
 xyz = 'Detection True Positive, Correction False Negative, Correction False Positive'
 
-from collections import Counter
+from collections import Counter, deque
+import json
 
 class CorrectionEvaluator():
 
@@ -84,6 +85,60 @@ class CorrectionEvaluator():
             self.distributions[xyy][(error, original)] += 1
             return
 
+    def process_all_corrections(self, true_corrections_file, proposed_corrections_file):
+
+        true_queue = deque()
+        proposed_queue = deque()
+
+        def parse_correction(correction):
+            sentence_id = correction[0]
+            result = []
+            for c in correction[1]:
+                token_id = c[0]
+                subtoken_id = c[1]
+                strings = c[2:]
+                result.append(((sentence_id, token_id, subtoken_id), strings))
+            return result
+
+        def pop(f, q):
+
+            try:
+                next_item = q.popleft()
+            except IndexError:
+                line = f.readline()
+                if line:
+                    [q.append(c) for c in parse_correction(json.loads(line))]
+                    next_item = q.popleft()
+                else:
+                    next_item = 'END'
+            return next_item
+
+        next_true = pop(true_corrections_file, true_queue)
+        next_proposed = pop(proposed_corrections_file, proposed_queue)
+        while not (next_true == 'END' or next_proposed == 'END'):
+            error, original = next_true[1]
+            observed, correction = next_proposed[1]
+            if next_true[0] == next_proposed[0]:
+                self.classify_correction_instance(original, error, observed, correction)
+                next_true = pop(true_corrections_file, true_queue)
+                next_proposed = pop(proposed_corrections_file, proposed_queue)
+            elif next_true[0] < next_proposed[0]:
+                self.classify_correction_instance(original, error, None, None)
+                next_true = pop(true_corrections_file, true_queue)
+            else:
+                self.classify_correction_instance(None, None, observed, correction)
+                next_proposed = pop(proposed_corrections_file, proposed_queue)
+                
+        while not next_true == 'END':
+            error, original = next_true[1]
+            self.classify_correction_instance(original, error, None, None)
+            next_true = pop(true_corrections_file, true_queue)
+
+        while not next_proposed == 'END':
+            observed, correction = next_true[1]
+            self.classify_correction_instance(None, None, observed, correction)
+            next_proposed = pop(proposed_corrections_file, proposed_queue)
+        
 
 
 if __name__ == '__main__':
