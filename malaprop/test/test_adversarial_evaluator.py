@@ -14,3 +14,7 @@ class AdversarialEvaluatorTest(unittest.TestCase):
         result = report_accuracy(key_file, proposed_file)
         expected_result = 0.27272727
         self.assertAlmostEqual(result, expected_result), result
+
+if __name__ == '__main__':
+    unittest.main()
+

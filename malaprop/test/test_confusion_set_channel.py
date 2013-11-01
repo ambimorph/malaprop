@@ -50,3 +50,6 @@ class ConfusionSetChannelTest(unittest.TestCase):
         self.assertEqual(csc.tokens, 1), csc.tokens
         self.assertEqual(csc.errors, 0), csc.errors
 
+
+if __name__ == '__main__':
+    unittest.main()
