@@ -29,6 +29,7 @@ xyy = 'False Negative'
 xyz = 'Detection True Positive, Correction False Negative, Correction False Positive'
 
 from collections import Counter, deque
+from recluse.utils import precision_recall_f_measure
 import json
 
 class CorrectionEvaluator():
@@ -138,7 +139,21 @@ class CorrectionEvaluator():
             observed, correction = next_true[1]
             self.classify_correction_instance(None, None, observed, correction)
             next_proposed = pop(proposed_corrections_file, proposed_queue)
+
+    def report(self, number_of_examples):
+
+        result = {}
+
+        result['Detection Precision'], result['Detection Recall'], result['Detection F-measure'] = \
+            precision_recall_f_measure(self.detection_true_positives, self.detection_false_positives, self.detection_false_negatives)
         
+        result['Correction Precision'], result['Correction Recall'], result['Correction F-measure'] = \
+            precision_recall_f_measure(self.correction_true_positives, self.correction_false_positives, self.correction_false_negatives)
+
+        for error in self.distributions.keys():
+            result[error] = self.distributions[error].most_common(number_of_examples)
+
+        return result
 
 
 if __name__ == '__main__':

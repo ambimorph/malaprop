@@ -124,6 +124,28 @@ class CorrectionEvaluatorTest(unittest.TestCase):
         self.assertDictEqual(ce.distributions[xyy], Counter({(u're', u'are'): 1, (u'so', u'to'): 1})), ce.distributions
         self.assertDictEqual(ce.distributions[xyz], Counter({(u'top', u'to', u'stop'): 1})), ce.distributions
 
+    def test_report(self):
+
+        ce = CorrectionEvaluator()
+        true_corrections_file = StringIO.StringIO(u'[4, [[10, 0, "boy", "body"]]]\n[6, [[9, 0, "so", "to"]]]\n[12, [[2, 0, "causes", "cases"], [11, 0, "top", "to"], [22, 0, "re", "are"]]]\n')
+        proposed_corrections_file = StringIO.StringIO(u'[3, [[6, 0, "off", "of"]]]\n[4, [[10, 0, "boy", "body"]]]\n[12, [[2, 0, "causes", "cases"], [11, 0, "top", "stop"]]]\n')
+        ce.process_all_corrections(true_corrections_file, proposed_corrections_file)
+        result = ce.report(5)
+
+        expected_result = {
+            'Detection Precision': 0.75, 
+            'Detection Recall': 0.6, 
+            'Detection F-measure': 0.6666666666666665, 
+            'Correction Precision': 0.5, 
+            'Correction Recall': 0.4,
+            'Correction F-measure': 0.4444444444444445, 
+            'False Negative': [((u're', u'are'), 1), ((u'so', u'to'), 1)], 
+            'False Positive': [((u'off', u'of'), 1)], 
+            'True Positive': [((u'boy', u'body'), 1), ((u'causes', u'cases'), 1)], 
+            'Detection True Positive, Correction False Negative, Correction False Positive': [((u'top', u'to', u'stop'), 1)]
+            }
+        self.assertDictEqual(result, expected_result), result
+        
 
     
 if __name__ == '__main__':
