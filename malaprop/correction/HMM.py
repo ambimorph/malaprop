@@ -34,16 +34,19 @@ class HMM():
 
         first_two_words = ['<s>', '<s>']
         variations = self.confusion_set_function(sentence[0])
+        if verbose: print 'variations', variations
         states = [sentence[0]] + variations
         observation_emission_probability = {var:log10(self.error_rate/len(self.confusion_set_function(var))) for var in variations}
         observation_emission_probability[sentence[0]] = log10(1-self.error_rate)
 
         path_probabilities = [{('<s>', var): self.trigram_probability_function(first_two_words + [var]) + observation_emission_probability[var] for var in states}]
         backtrace = {('<s>', var):['<s>', var] for var in states}
+        if verbose: print 'path probabilities', path_probabilities
 
         for position in range(1, len(sentence)):
             
             variations = self.confusion_set_function(sentence[position])
+            if verbose: print 'variations of ', sentence[position], variations
             states = [sentence[position]] + variations
             observation_emission_probability = {var:log10(self.error_rate/len(self.confusion_set_function(var))) for var in variations}
             observation_emission_probability[sentence[position]] = log10(1-self.error_rate)
@@ -55,6 +58,7 @@ class HMM():
                 probabilities_to_this_var = [(path_probabilities[position-1][prior_state] + self.trigram_probability_function(prior_state + (var,)) + observation_emission_probability[var], prior_state) for prior_state in path_probabilities[position-1].keys()]
                 max_probability, max_prior_state = max(probabilities_to_this_var)
                 path_probabilities[position][(max_prior_state[-1], var)] = max_probability
+                if verbose: print 'path probabilities', path_probabilities
                 new_backtrace[(max_prior_state[-1],var)] = backtrace[max_prior_state] + [var]
  
             backtrace = new_backtrace
