@@ -197,22 +197,18 @@ trigram_model_builder =Builder(action = create_trigram_model)
 env = Environment(BUILDERS = {'learning_sets' : learning_sets_builder, 'vocabulary' : vocabulary_builder, 'real_word_vocabulary_files' : real_word_vocabulary_builder, 'error_sets' : error_set_builder, 'trigram_model' : trigram_model_builder})
 
 env.learning_sets([data_directory + f for f in ['training_set.bz2', 'development_set.bz2', 'test_set.bz2', 'article_index']], data_file)
-
 env.Alias('learning_sets', [data_directory + set_name for set_name in ['training_set.bz2', 'development_set.bz2', 'test_set.bz2']])
+env.Precious('learning_sets')
 
 env.vocabulary([data_directory + str(vocabulary_size) + 'K.vocab'], [data_directory + 'training_set.bz2'])
-
 env.Alias('vocabulary', [data_directory + str(vocabulary_size) + 'K.vocab'])
 
 env.real_word_vocabulary_files([data_directory + str(vocabulary_size) + 'K.real_word_vocab'], [data_directory + str(vocabulary_size) + 'K.vocab'])
-
 env.Alias('real_word_vocabulary_files', [data_directory + str(vocabulary_size) + 'K.real_word_vocab'])
 
 env.error_sets([data_directory + x + '_error_rate_' + str(error_rate) + '_' + str(vocabulary_size) + 'K_vocabulary.bz2' for x in error_set_targets], [data_directory + 'development_set.bz2', data_directory + str(vocabulary_size) + 'K.real_word_vocab'])
-
 env.Alias('error_sets', [data_directory + x + '_error_rate_' + str(error_rate) + '_' + str(vocabulary_size) + 'K_vocabulary.bz2' for x in error_set_targets])
 
 env.trigram_model([data_directory + 'trigram_model_' + str(vocabulary_size) + 'K.arpa'], [data_directory + 'training_set.bz2', data_directory + str(vocabulary_size) + 'K.vocab'])
-
 env.Alias('trigram_model', ['trigram_model_' + str(vocabulary_size) + 'K.arpa'])
 
