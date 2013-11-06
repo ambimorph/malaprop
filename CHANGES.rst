@@ -1,6 +1,12 @@
 =========
 MALAPROP
 =========
+Release 0.4.0 (2013-11-06)
+..........................
+* Now uses recluses article_selector to get a much smaller subset of the original corpus, and store an index to those articles.
+* Implements a trigram-based chooser for the adversarial task.
+* Includes data sets for replication.
+
 Release 0.3.0 (2013-10-28)
 ..........................
 * Added a new channel model to use confusion sets instead of operating by character.
