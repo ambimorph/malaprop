@@ -11,9 +11,11 @@ from math import ceil
 from recluse import article_selector, vocabulary_generator, nltk_based_segmenter_tokeniser
 from recluse.utils import *
 from DamerauLevenshteinDerivor import cderivor
+from BackOffTrigramModel.BackOffTrigramModelPipe import BackOffTMPipe
 from malaprop.error_insertion import real_word_vocabulary_extractor
 from malaprop.error_insertion.confusion_set_channel import *
 from malaprop.error_insertion.real_word_error_inserter import *
+from malaprop.choosing.trigram_based_chooser import *
 
 def randomise_articles(target, source, env):
     """
@@ -136,9 +138,25 @@ def create_trigram_model(target, source, env):
 
     return None
 
+def choose(target, source, env):
+
+    segmenter_tokeniser = NLTKBasedSegmenterTokeniser(bz2.BZ2File(source[0].path, 'r'))
+    path_to_botmp = subprocess.check_output(['which', 'BackOffTrigramModelPipe']).strip()
+    arpa_file_name = source[1].path
+    botmp = BackOffTMPipe(path_to_botmp, arpa_file_name)
+
+    chooser = TrigramBasedChooser(segmenter_tokeniser, botmp.trigram_probability)
+    choices_file = open_with_unicode(target[0].path, 'bzip2', 'w')
+    for line in open_with_unicode(source[2].path, 'bzip2', 'r'):
+        pair = json.loads(line)
+        choice = chooser.choose(pair)
+        choices_file.write(unicode(choice))
+        
+
 
 # Get and set configuration:
 # These are defaults that may be reset by the commandline:
+new_corpus = False
 data_directory = ''
 experiment_size = 20
 vocabulary_size = 0.5
@@ -156,19 +174,22 @@ except:
 
 if [x for x in ARGLIST if x[0] == "test"]:
     TEST = True
-    experiment_size = 10
     vocabulary_size = 2
     error_rate = .1
     correction_task = True
     adversarial_task = True
 
 elif [x for x in ARGLIST if x[0] == "replicate"]:
-    vocabulary_sizes = 100
+    vocabulary_size = 100
     error_rate = .05
+    correction_task = True
+    adversarial_task = True
 
 else:
     for key, value in ARGLIST:
-        if key == "experiment_size":
+        if key == "new_corpus":
+            new_corpus = bool(value)
+        elif key == "experiment_size":
             experiment_size = int(value)
         elif key == "vocabulary_size":
             vocabulary_size = float(value)
@@ -188,17 +209,22 @@ if adversarial_task: error_set_targets += ['adversarial', 'key']
 
 # SConstruct dependency information
 
-learning_sets_builder = Builder(action = randomise_articles)
 vocabulary_builder = Builder(action = create_vocabulary)
 real_word_vocabulary_builder = Builder(action = extract_real_word_vocabulary)
 error_set_builder = Builder(action = create_error_sets)
 trigram_model_builder =Builder(action = create_trigram_model)
+trigram_choices_builder = Builder(action = choose)
 
-env = Environment(BUILDERS = {'learning_sets' : learning_sets_builder, 'vocabulary' : vocabulary_builder, 'real_word_vocabulary_files' : real_word_vocabulary_builder, 'error_sets' : error_set_builder, 'trigram_model' : trigram_model_builder})
+if new_corpus:
 
-env.learning_sets([data_directory + f for f in ['training_set.bz2', 'development_set.bz2', 'test_set.bz2', 'article_index']], data_file)
-env.Alias('learning_sets', [data_directory + set_name for set_name in ['training_set.bz2', 'development_set.bz2', 'test_set.bz2']])
-env.Precious('learning_sets')
+    learning_sets_builder = Builder(action = randomise_articles)
+    env = Environment(BUILDERS = {'learning_sets' : learning_sets_builder, 'vocabulary' : vocabulary_builder, 'real_word_vocabulary_files' : real_word_vocabulary_builder, 'error_sets' : error_set_builder, 'trigram_model' : trigram_model_builder, 'trigram_choices' : trigram_choices_builder})
+    env.learning_sets([data_directory + f for f in ['training_set.bz2', 'development_set.bz2', 'test_set.bz2', 'article_index']], data_file)
+    env.Alias('learning_sets', [data_directory + set_name for set_name in ['training_set.bz2', 'development_set.bz2', 'test_set.bz2']])
+
+else:
+    env = Environment(BUILDERS = {'vocabulary' : vocabulary_builder, 'real_word_vocabulary_files' : real_word_vocabulary_builder, 'error_sets' : error_set_builder, 'trigram_model' : trigram_model_builder, 'trigram_choices' : trigram_choices_builder})
+
 
 env.vocabulary([data_directory + str(vocabulary_size) + 'K.vocab'], [data_directory + 'training_set.bz2'])
 env.Alias('vocabulary', [data_directory + str(vocabulary_size) + 'K.vocab'])
@@ -211,4 +237,8 @@ env.Alias('error_sets', [data_directory + x + '_error_rate_' + str(error_rate) +
 
 env.trigram_model([data_directory + 'trigram_model_' + str(vocabulary_size) + 'K.arpa'], [data_directory + 'training_set.bz2', data_directory + str(vocabulary_size) + 'K.vocab'])
 env.Alias('trigram_model', ['trigram_model_' + str(vocabulary_size) + 'K.arpa'])
+
+env.trigram_choices([data_directory + 'trigram_choices_error_rate_' + str(error_rate) + '_' + str(vocabulary_size) + 'K_vocabulary.bz2'], [data_directory + 'training_set.bz2', data_directory + 'trigram_model_' + str(vocabulary_size) + 'K.arpa', data_directory + 'adversarial' + '_error_rate_' + str(error_rate) + '_' + str(vocabulary_size) + 'K_vocabulary.bz2'])
+env.Alias('trigram_choices', [data_directory + 'trigram_choices_error_rate_' + str(error_rate) + '_' + str(vocabulary_size) + 'K_vocabulary.bz2'])
+
 
