@@ -15,24 +15,35 @@ class RealWordVocabExtractor():
         letters, and if there are symbols in it, they have to be
         either apostrophes or periods.  In addition, it cannot be the
         special end.of.document word in Westbury Lab's Wikipedia.
+
+        There is also a temporary ban on words containing unicode
+        characters, while I figure out how to get
+        DamerauLevenshteinDerivor, which is written in C to handle
+        unicode.
         """
         for line in self.unicode_vocabfile_obj.readlines():
             word = line.strip()
 
             if word == u'end.of.document':
                 real_word = False
-
+                
             else:
+                try:
+                    word.decode('ascii')
+                except UnicodeEncodeError:
+                    real_word = False
+
+                else:
             
-                contains_letters = False
-                real_word = True
-                for char in word:
-                    if unicodedata.category(char)[0] == 'L':
-                        contains_letters = True
-                    elif char != u'.' and char != u"'":
-                        real_word = False
-                        break
-                if not contains_letters: real_word = False
+                    contains_letters = False
+                    real_word = True
+                    for char in word:
+                        if unicodedata.category(char)[0] == 'L':
+                            contains_letters = True
+                        elif char != u'.' and char != u"'":
+                            real_word = False
+                            break
+                    if not contains_letters: real_word = False
 
             if real_word:
                 self.unicode_outfile_obj.write(word + u'\n')
