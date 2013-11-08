@@ -158,9 +158,9 @@ def choose(target, source, env):
 # These are defaults that may be reset by the commandline:
 new_corpus = False
 data_directory = ''
-experiment_size = 20
-vocabulary_size = 0.5
-error_rate = .05
+experiment_size = 0
+vocabulary_size = 0
+error_rate = 0
 proportions = [.6,.2,.2]
 correction_task = False
 adversarial_task = False
