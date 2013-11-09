@@ -42,7 +42,9 @@ class Corrector():
         else:
             return self.backoff_trigram_model_pipe.trigram_probability(three_words)
 
-    def correct(self, sentence):
+    def correct(self, sentence, output='corrections'):
+
+        assert output in ['corrections', 'sentence']
 
         subtoken_list = [subtokenise(t, abbreviation_list=self.segmenter_tokeniser.sbd._params.abbrev_types) for t in sentence.split()]
 
@@ -57,17 +59,27 @@ class Corrector():
         flat_correction = []
         for i in range(subtoken_count):
             if i in regularised_indices:
-                flat_correction.append(flat_subtokens[i])
+                flat_correction.append([flat_subtokens[i], None])
             else:
-                flat_correction.append(match_case(flat_subtokens[i], flat_regular_correction[i]))
-            
+                proposed = match_case(flat_subtokens[i], flat_regular_correction[i])
+                if proposed == flat_subtokens[i]:
+                    flat_correction.append([flat_subtokens[i], None])
+                else:
+                    flat_correction.append([proposed, [flat_subtokens[i], proposed]])
+                                                 
         corrected_words = (c for c in flat_correction)
         structured_correction = []
-        for t in subtoken_list:
+        corrections = []
+        for i in range(len(subtoken_list)):
+            t = subtoken_list[i]
             structured_correction.append([])
-            for s in t:
-                structured_correction[-1].append(corrected_words.next())
-
+            for j in range(len(t)):
+                s = t[j]
+                next_corrected_word = corrected_words.next()
+                structured_correction[-1].append(next_corrected_word[0])
+                if next_corrected_word[1] is not None:
+                    corrections.append([i,j] + next_corrected_word[1])
+                
+        if output == 'corrections':
+            return corrections
         return u' '.join([u''.join(subtoken) for subtoken in structured_correction])
-        
-        

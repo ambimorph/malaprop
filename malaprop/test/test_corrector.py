@@ -40,11 +40,18 @@ class CorrectorTest(unittest.TestCase):
 
         sentence  = 'It is therefore a more specific from of the term reflectivity.'
         result = self.c.correct(sentence)
+        expected_result = [[6,0, 'from', 'form'], [9,0, 'term', 'team']]
+        self.assertListEqual(result, expected_result), result
+        result = self.c.correct(sentence, output='sentence')
         expected_result = 'It is therefore a more specific form of the team reflectivity.'
         self.assertEqual(result, expected_result), result
 
+
         sentence  = 'Most land areas are in in albedo range of 0.1 to 0.4.'
         result = self.c.correct(sentence)
+        expected_result = [[2,0, 'areas', 'area'], [4,0, 'in', 'win']]
+        self.assertListEqual(result, expected_result), result
+        result = self.c.correct(sentence, output='sentence')
         expected_result = 'Most land area are win in albedo range of 0.1 to 0.4.'
         self.assertEqual(result, expected_result), result
 
