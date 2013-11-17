@@ -29,45 +29,60 @@ class HMM():
 
     def viterbi(self, original_sentence, verbose=False):
 
+        """
+        For the trigram transitions, states have to be two words instead of one.
+        """
+        if verbose: print '.'
+
         assert len(original_sentence) > 0
         sentence = original_sentence + ['</s>', '</s>']
 
         variations = self.confusion_set_function(sentence[0])
-        if verbose: print 'variations', variations
-        states = [ ('<s>', '<s>', v) for v in [sentence[0]] + variations ]
-        observation_emission_probability = { state : log10(self.error_rate/len(self.confusion_set_function(state[2]))) for state in states if state[2] != sentence[0] }
-        observation_emission_probability.update( { state : log10(1-self.error_rate) for state in states if state[2] == sentence[0] } )
-        path_probabilities = [ { state : self.trigram_probability_function(state) + observation_emission_probability[state] for state in states } ]
-        backtrace = { state : (state[2],) for state in states }
-        if verbose: print 'path probabilities', path_probabilities
+        if verbose == 2: print 'variations', variations
+        states = set([ ('<s>', v) for v in [sentence[0]] + variations ])
+        if verbose == 2: print 'states', states
+        observation_emission_probability = { state : log10(self.error_rate/len(self.confusion_set_function(state[1]))) for state in states if state[1] != sentence[0] }
+        observation_emission_probability.update( { state : log10(1-self.error_rate) for state in states if state[1] == sentence[0] } )
+        if verbose == 2: print 'observation_emission_probability', observation_emission_probability
+        path_probabilities = [ { state : self.trigram_probability_function(('<s>',) + state) + observation_emission_probability[state] for state in states } ]
+        if verbose == 2: print 'path probabilities', path_probabilities
+        backtrace = { state : (state[1],) for state in states }
+        if verbose == 2: print 'backtrace', backtrace, '\n'
 
         for position in range(1, len(sentence)):
             
-            if verbose: print "Position %d" % position
+            if verbose == 2: print "Position %d" % position
             variations = self.confusion_set_function(sentence[position])
-            if verbose: print 'variations of ', sentence[position], variations
-            states = [ (prior_state[-2], prior_state[-1], v) for v in [sentence[position]] + variations for prior_state in path_probabilities[position-1].keys()]
-            observation_emission_probability = { state : log10(self.error_rate/len(self.confusion_set_function(state[2]))) if state[2] != sentence[position] \
+            if verbose == 2: print 'variations of ', sentence[position].encode('utf-8'), 
+            if verbose == 2: print variations
+            states = set([ (prior_state[-1], v) for v in [sentence[position]] + variations for prior_state in path_probabilities[position-1].keys()])
+            if verbose == 2: print 'states', states, '\n'
+            observation_emission_probability = { state : log10(self.error_rate/len(self.confusion_set_function(state[1]))) if state[1] != sentence[position] \
                                                      else log10(1-self.error_rate) for state in states }
             path_probabilities.append({})
             new_backtrace = {}
 
+            path_probability_list = []
             for state in states:
 
+                if verbose == 2: print 'state', state
                 probabilities_to_this_state = [(path_probabilities[position-1][prior_state] + \
-                                                    self.trigram_probability_function(state) + \
-                                                    observation_emission_probability[state], 
-                                                prior_state) \
+                                                    self.trigram_probability_function((prior_state[-1],) + state) + \
+                                                    observation_emission_probability[state], prior_state) \
                                                    for prior_state in path_probabilities[position-1].keys() \
-                                                   if (prior_state[-2], prior_state[-1]) == (state[0], state[1])]
+                                                   if prior_state[-1] == state[0]]
 
                 max_probability, max_prior_state = max(probabilities_to_this_state)
-                if verbose: print max_probability, max_prior_state
                 path_probabilities[position][state] = max_probability
-                if verbose: print 'path probabilities', path_probabilities
-                new_backtrace[state] = backtrace[max_prior_state] + (state[2],)
+                if verbose == 2: print 'path probability to this state', path_probabilities[position][state]
+                if verbose == 2: print 'Max probability to state, from', max_probability, max_prior_state,'\n'
+                new_backtrace[state] = backtrace[max_prior_state] + (state[1],)
  
             backtrace = new_backtrace
+            if verbose == 2: 
+                print 'backtrace', 
+                for k,v in backtrace.iteritems(): print k,v
+                print
 
-        (final_probability, final_state) = max((path_probabilities[position][states], states) for states in states)
+        (final_probability, final_state) = max((path_probabilities[position][state], state) for state in states)
         return backtrace[final_state][:-2]

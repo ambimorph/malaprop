@@ -40,10 +40,10 @@ class CorrectorTest(unittest.TestCase):
 
         sentence  = 'It is therefore a more specific from of the term reflectivity.'
         result = self.c.correct(sentence)
-        expected_result = [[9,0, 'term', 'team']]
+        expected_result = [[6, 0, 'from', 'form'], [9, 0, 'term', 'team']]
         self.assertListEqual(result, expected_result), result
         result = self.c.correct(sentence, output='sentence')
-        expected_result = 'It is therefore a more specific from of the team reflectivity.'
+        expected_result = 'It is therefore a more specific form of the team reflectivity.'
         self.assertEqual(result, expected_result), result
 
 
