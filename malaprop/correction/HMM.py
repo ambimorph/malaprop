@@ -1,6 +1,9 @@
 # HMM.py
 
 from math import log10
+import bisect
+
+THRESH = 5
 
 class HMM():
 
@@ -73,11 +76,14 @@ class HMM():
                                                    if prior_state[-1] == state[0]]
 
                 max_probability, max_prior_state = max(probabilities_to_this_state)
+                bisect.insort( path_probability_list, (max_probability, state) )
                 path_probabilities[position][state] = max_probability
                 if verbose == 2: print 'path probability to this state', path_probabilities[position][state]
                 if verbose == 2: print 'Max probability to state, from', max_probability, max_prior_state,'\n'
                 new_backtrace[state] = backtrace[max_prior_state] + (state[1],)
  
+            for (p,s) in path_probability_list[-THRESH:]:
+                path_probabilities[position][s] = p
             backtrace = new_backtrace
             if verbose == 2: 
                 print 'backtrace', 
