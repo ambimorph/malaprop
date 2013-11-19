@@ -5,7 +5,7 @@
 import sys
 del sys.modules['pickle']
 
-import codecs, bz2, gzip, random, subprocess, os, StringIO, filecmp, shutil, json
+import codecs, bz2, gzip, random, subprocess, os, StringIO, filecmp, shutil, json, cPickle
 
 from math import ceil
 from recluse import article_selector, vocabulary_generator, nltk_based_segmenter_tokeniser
@@ -16,6 +16,7 @@ from malaprop.error_insertion import real_word_vocabulary_extractor
 from malaprop.error_insertion.confusion_set_channel import *
 from malaprop.error_insertion.real_word_error_inserter import *
 from malaprop.choosing.trigram_based_chooser import *
+from malaprop.correction.corrector import *
 
 def randomise_articles(target, source, env):
     """
@@ -40,13 +41,18 @@ def create_vocabulary(target, source, env):
 
     """
     Create vocabulary: Gets the unigram counts from the source files
-    and puts the n thousand most frequent words in the vocabulary
-    file.
+    and puts the n thousand most frequent words of frequency at least
+    2 in the vocabulary file.
     """
 
     vocab_gen = vocabulary_generator.VocabularyGenerator([source[0].path])
-    size = int(1000*vocabulary_size)
-    vocab_gen.generate_vocabulary(size, open_with_unicode(target[0].path, None, 'w'))
+    n = int(1000*vocabulary_size)
+    vocab_gen.generate_vocabulary(open_with_unicode(target[0].path, None, 'w'), size=n, min_frequency=2)
+
+def create_segmenter_tokeniser(target, source, env):
+
+    segmenter_tokeniser = NLTKBasedSegmenterTokeniser(bz2.BZ2File(source[0].path, 'r'))
+    cPickle.dump(segmenter_tokeniser.sbd, open(target[0].path, 'w'))
 
 def extract_real_word_vocabulary(target, source, env):
 
@@ -88,9 +94,10 @@ def create_error_sets(target, source, env):
     
     sentence_id = 0
     vocabulary, symbols = vocabulary_file_to_sets(open_with_unicode(source[1].path, None, 'r'))
-    segmenter_tokeniser = NLTKBasedSegmenterTokeniser(bz2.BZ2File(source[0].path, 'r'))
+    segmenter_tokeniser = NLTKBasedSegmenterTokeniser(punkt_obj=cPickle.load(open(source[0].path, 'r')))
     rwei = RealWordErrorInserter(segmenter_tokeniser, vocabulary, error_channel)
-    sentence_id += rwei.corrupt(segmenter_tokeniser.text, file_dict, correction_task, adversarial_task, sentence_id)
+    text = open_with_unicode(source[2].path, 'bzip2', 'r').read()
+    sentence_id += rwei.corrupt(text, file_dict, correction_task, adversarial_task, sentence_id)
 
     for f in file_dict.values():
         f.close()
@@ -140,7 +147,7 @@ def create_trigram_model(target, source, env):
 
 def choose(target, source, env):
 
-    segmenter_tokeniser = NLTKBasedSegmenterTokeniser(bz2.BZ2File(source[0].path, 'r'))
+    segmenter_tokeniser = NLTKBasedSegmenterTokeniser(punkt_obj=cPickle.load(open(source[0].path, 'r')))
     path_to_botmp = subprocess.check_output(['which', 'BackOffTrigramModelPipe']).strip()
     arpa_file_name = source[1].path
     botmp = BackOffTMPipe(path_to_botmp, arpa_file_name)
@@ -151,6 +158,30 @@ def choose(target, source, env):
         pair = json.loads(line)
         choice = chooser.choose(pair)
         choices_file.write(unicode(choice))
+
+def propose(target, source, env):
+
+    segmenter_tokeniser = NLTKBasedSegmenterTokeniser(punkt_obj=cPickle.load(open(source[0].path, 'r')))
+    d = cderivor.Derivor(source[1].path)
+    vocabulary, symbols = vocabulary_file_to_sets(open_with_unicode(source[1].path, None, 'r'))
+    def confusion_set_function(token):
+        if token in vocabulary:
+            return d.variations(token)
+        return []
+    path_to_botmp = subprocess.check_output(['which', 'BackOffTrigramModelPipe']).strip()
+    arpa_file_name = source[2].path
+    botmp = BackOffTMPipe(path_to_botmp, arpa_file_name)
+    proposer = Corrector(segmenter_tokeniser, confusion_set_function, botmp, 1-alpha)
+
+    proposed_file = open_with_unicode(target[0].path, 'bzip2', 'w')
+    sentence_id = 0
+    for line in open_with_unicode(source[3].path, 'bzip2', 'r'):
+        if sentence_id % 100 == 0: print '.',
+        correction = proposer.correct(line)
+        if correction != []:
+            proposed_file.write(json.dumps([sentence_id, correction]) + '\n')
+        sentence_id +=1
+    print 'Corrected', sentence_id, 'sentences'
         
 
 
@@ -164,6 +195,7 @@ error_rate = 0
 proportions = [.6,.2,.2]
 correction_task = False
 adversarial_task = False
+alpha = 1 - error_rate
 TEST = False
 
 try:
@@ -178,12 +210,16 @@ if [x for x in ARGLIST if x[0] == "test"]:
     error_rate = .1
     correction_task = True
     adversarial_task = True
+    alpha = 1 - error_rate
 
 elif [x for x in ARGLIST if x[0] == "replicate"]:
     vocabulary_size = 100
     error_rate = .05
     correction_task = True
     adversarial_task = True
+    for key, value in ARGLIST:
+        if key == "alpha":
+            alpha = float(value)
 
 else:
     for key, value in ARGLIST:
@@ -210,35 +246,45 @@ if adversarial_task: error_set_targets += ['adversarial', 'key']
 # SConstruct dependency information
 
 vocabulary_builder = Builder(action = create_vocabulary)
+segmenter_tokeniser_builder = Builder(action = create_segmenter_tokeniser)
 real_word_vocabulary_builder = Builder(action = extract_real_word_vocabulary)
 error_set_builder = Builder(action = create_error_sets)
 trigram_model_builder =Builder(action = create_trigram_model)
 trigram_choices_builder = Builder(action = choose)
+trigram_proposed_corrections_builder = Builder(action = propose)
 
 if new_corpus:
 
     learning_sets_builder = Builder(action = randomise_articles)
-    env = Environment(BUILDERS = {'learning_sets' : learning_sets_builder, 'vocabulary' : vocabulary_builder, 'real_word_vocabulary_files' : real_word_vocabulary_builder, 'error_sets' : error_set_builder, 'trigram_model' : trigram_model_builder, 'trigram_choices' : trigram_choices_builder})
+    env = Environment(BUILDERS = {'learning_sets' : learning_sets_builder, 'vocabulary' : vocabulary_builder, 'segmenter_tokeniser' : segmenter_tokeniser_builder, 'real_word_vocabulary_files' : real_word_vocabulary_builder, 'error_sets' : error_set_builder, 'trigram_model' : trigram_model_builder, 'trigram_choices' : trigram_choices_builder, 'trigram_proposed_corrections' : trigram_proposed_corrections_builder})
     env.learning_sets([data_directory + f for f in ['training_set.bz2', 'development_set.bz2', 'test_set.bz2', 'article_index']], data_file)
     env.Alias('learning_sets', [data_directory + set_name for set_name in ['training_set.bz2', 'development_set.bz2', 'test_set.bz2']])
 
 else:
-    env = Environment(BUILDERS = {'vocabulary' : vocabulary_builder, 'real_word_vocabulary_files' : real_word_vocabulary_builder, 'error_sets' : error_set_builder, 'trigram_model' : trigram_model_builder, 'trigram_choices' : trigram_choices_builder})
+    env = Environment(BUILDERS = {'vocabulary' : vocabulary_builder, 'segmenter_tokeniser' : segmenter_tokeniser_builder, 'real_word_vocabulary_files' : real_word_vocabulary_builder, 'error_sets' : error_set_builder, 'trigram_model' : trigram_model_builder, 'trigram_choices' : trigram_choices_builder, 'trigram_proposed_corrections' : trigram_proposed_corrections_builder})
 
 
 env.vocabulary([data_directory + str(vocabulary_size) + 'K.vocab'], [data_directory + 'training_set.bz2'])
 env.Alias('vocabulary', [data_directory + str(vocabulary_size) + 'K.vocab'])
 
+env.segmenter_tokeniser([data_directory + 'segmenter_tokeniser.pkl'], [data_directory + 'training_set.bz2'])
+env.Alias('segmenter_tokeniser', [data_directory + 'segmenter_tokeniser.pkl'])
+
 env.real_word_vocabulary_files([data_directory + str(vocabulary_size) + 'K.real_word_vocab'], [data_directory + str(vocabulary_size) + 'K.vocab'])
 env.Alias('real_word_vocabulary_files', [data_directory + str(vocabulary_size) + 'K.real_word_vocab'])
 
-env.error_sets([data_directory + x + '_error_rate_' + str(error_rate) + '_' + str(vocabulary_size) + 'K_vocabulary.bz2' for x in error_set_targets], [data_directory + 'development_set.bz2', data_directory + str(vocabulary_size) + 'K.real_word_vocab'])
-env.Alias('error_sets', [data_directory + x + '_error_rate_' + str(error_rate) + '_' + str(vocabulary_size) + 'K_vocabulary.bz2' for x in error_set_targets])
+suffix =  '_error_rate_' + str(error_rate) + '_' + str(vocabulary_size) + 'K_vocabulary.bz2'
+
+env.error_sets([data_directory + x + suffix for x in error_set_targets], [data_directory + 'segmenter_tokeniser.pkl', data_directory + str(vocabulary_size) + 'K.real_word_vocab', data_directory + 'development_set.bz2'])
+env.Alias('error_sets', [data_directory + x + suffix for x in error_set_targets])
 
 env.trigram_model([data_directory + 'trigram_model_' + str(vocabulary_size) + 'K.arpa'], [data_directory + 'training_set.bz2', data_directory + str(vocabulary_size) + 'K.vocab'])
 env.Alias('trigram_model', ['trigram_model_' + str(vocabulary_size) + 'K.arpa'])
 
-env.trigram_choices([data_directory + 'trigram_choices_error_rate_' + str(error_rate) + '_' + str(vocabulary_size) + 'K_vocabulary.bz2'], [data_directory + 'training_set.bz2', data_directory + 'trigram_model_' + str(vocabulary_size) + 'K.arpa', data_directory + 'adversarial' + '_error_rate_' + str(error_rate) + '_' + str(vocabulary_size) + 'K_vocabulary.bz2'])
-env.Alias('trigram_choices', [data_directory + 'trigram_choices_error_rate_' + str(error_rate) + '_' + str(vocabulary_size) + 'K_vocabulary.bz2'])
+env.trigram_choices([data_directory + 'trigram_choices' + suffix], [data_directory + 'segmenter_tokeniser.pkl', data_directory + 'trigram_model_' + str(vocabulary_size) + 'K.arpa', data_directory + 'adversarial' + suffix])
+env.Alias('trigram_choices', [data_directory + 'trigram_choices' + suffix])
+
+env.trigram_proposed_corrections([data_directory + 'trigram_proposed_corrections_alpha_' + str(alpha) + suffix], [data_directory + 'segmenter_tokeniser.pkl', data_directory +  str(vocabulary_size) + 'K.real_word_vocab', data_directory + 'trigram_model_' + str(vocabulary_size) + 'K.arpa', data_directory + 'corrupted' + suffix])
+env.Alias('trigram_proposed_corrections', [data_directory + 'trigram_proposed_corrections_alpha_' + str(alpha) + suffix])
 
 
