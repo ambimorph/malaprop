@@ -3,8 +3,6 @@
 from math import log10
 import bisect
 
-THRESH = 5
-
 class HMM():
 
     """
@@ -24,15 +22,50 @@ class HMM():
         word).
     """
 
-    def __init__(self, confusion_set_function, trigram_probability_function, error_rate, viterbi_type=2):
+    def __init__(self, confusion_set_function, trigram_model_pipe, error_rate, viterbi_type, prune_to=None, surprise_index=None):
 
         self.confusion_set_function = confusion_set_function
-        self.trigram_probability_function = trigram_probability_function
+        self.trigram_model_pipe = trigram_model_pipe
         self.error_rate = error_rate
         if viterbi_type == 2:
             self.viterbi = self.viterbi_two
         elif viterbi_type == 3:
             self.viterbi =self.viterbi_three
+        self.prune_to = prune_to
+        self.surprise_index = surprise_index
+
+    def trigram_probability(self, three_words):
+
+        """
+        This is a little hack to use for now with BackOffTrigramModel
+        and SRILM trigram models.
+
+        The issue is that SRILM uses only one BOS and EOS marker for
+        every level of language model.  The client is then expected to
+        reduce the order of the query at the sentence boundaries.  For
+        example, using a trigram model to estimate the probability of
+        the sentence "<s> It was . </s>", we use P(It|<s>) * P(was|<s>
+        It) * P(.|It was) * P(</s>|.).
+
+        However, BackOffTrigramModel does not currently support bigram
+        queries.  Until it does, we will substitute "<last_token> </s>
+        </s>" with "</s> last_token </s>".  Since nothing ever appears
+        after </s>, this will always give us the second bigram.
+        """
+
+        if three_words[1] == '</s>':
+            bigram_inducer = ('</s>', three_words[0], three_words[1])
+            return self.trigram_model_pipe.trigram_probability(bigram_inducer)
+        else:
+            return self.trigram_model_pipe.trigram_probability(three_words)
+
+    def surprise_threshold_function(self, three_words):
+
+        if three_words[1] == '</s>':
+            return self.trigram_model_pipe.unigram_backoff(three_words[0]) - self.surprise_index
+        if self.trigram_model_pipe.in_bigrams(three_words[:2]):
+            return self.trigram_model_pipe.bigram_backoff(three_words[:2]) - self.surprise_index
+        return self.trigram_model_pipe.unigram_backoff(three_words[1]) - self.surprise_index
 
     def viterbi_three(self, original_sentence, verbose=False):
 
@@ -51,7 +84,7 @@ class HMM():
         observation_emission_probability = { state : log10(self.error_rate/len(self.confusion_set_function(state[1]))) for state in states if state[1] != sentence[0] }
         observation_emission_probability.update( { state : log10(1-self.error_rate) for state in states if state[1] == sentence[0] } )
         if verbose == 2: print 'observation_emission_probability', observation_emission_probability
-        path_probabilities = [ { state : self.trigram_probability_function(('<s>',) + state) + observation_emission_probability[state] for state in states } ]
+        path_probabilities = [ { state : self.trigram_probability(('<s>',) + state) + observation_emission_probability[state] for state in states } ]
         if verbose == 2: print 'path probabilities', path_probabilities
         backtrace = { state : (state[1],) for state in states }
         if verbose == 2: print 'backtrace', backtrace, '\n'
@@ -74,7 +107,7 @@ class HMM():
 
                 if verbose == 2: print 'state', state
                 probabilities_to_this_state = [(path_probabilities[position-1][prior_state] + \
-                                                    self.trigram_probability_function((prior_state[-1],) + state) + \
+                                                    self.trigram_probability((prior_state[-1],) + state) + \
                                                     observation_emission_probability[state], prior_state) \
                                                    for prior_state in path_probabilities[position-1].keys() \
                                                    if prior_state[-1] == state[0]]
@@ -86,7 +119,7 @@ class HMM():
                 if verbose == 2: print 'Max probability to state, from', max_probability, max_prior_state,'\n'
                 new_backtrace[state] = backtrace[max_prior_state] + (state[1],)
  
-            for (p,s) in path_probability_list[-THRESH:]:
+            for (p,s) in path_probability_list[-self.prune_to:]:
                 path_probabilities[position][s] = p
             backtrace = new_backtrace
             if verbose == 2: 
@@ -106,39 +139,56 @@ class HMM():
         one word.  This corresponds to using only the first two
         trigrams for a given word.
         """
+        if verbose: print '.'
 
         assert len(original_sentence) > 0
         sentence = original_sentence + ['</s>', '</s>']
 
         first_two_words = ('<s>', '<s>')
-        variations = self.confusion_set_function(sentence[0])
-        if verbose: print 'variations', variations
-        states = [sentence[0]] + variations
-        observation_emission_probability = {var:log10(self.error_rate/len(self.confusion_set_function(var))) for var in variations}
-        observation_emission_probability[sentence[0]] = log10(1-self.error_rate)
-
-        path_probabilities = [{('<s>', var): self.trigram_probability_function(first_two_words + (var,)) + observation_emission_probability[var] for var in states}]
-        backtrace = {('<s>', var):('<s>', var) for var in states}
-        if verbose: print 'path probabilities', path_probabilities
+        if self.surprise_index is None or self.trigram_probability(first_two_words + (sentence[0],)) < self.surprise_threshold_function(first_two_words + (sentence[0],)):
+            states = set([sentence[0]] + self.confusion_set_function(sentence[0]))
+        else:
+            states = set([sentence[0]])
+        if verbose == 2: print 'states', states
+        observation_emission_probability = { state : log10(self.error_rate/len(self.confusion_set_function(state))) if state != sentence[0] else log10(1-self.error_rate) for state in states }
+        path_probabilities = [ {('<s>', state): self.trigram_probability(first_two_words + (state,)) + observation_emission_probability[state] for state in states} ]
+        backtrace = {('<s>', state):('<s>', state) for state in states}
+        if verbose == 2: print 'path probabilities', path_probabilities, '\n'
 
         for position in range(1, len(sentence)):
+
+            if verbose == 2: print 'Position %d, word %s' % (position, sentence[position])
             
-            variations = self.confusion_set_function(sentence[position])
-            if verbose: print 'variations of ', sentence[position], variations
-            states = [sentence[position]] + variations
-            observation_emission_probability = {var:log10(self.error_rate/len(self.confusion_set_function(var))) for var in variations}
-            observation_emission_probability[sentence[position]] = log10(1-self.error_rate)
+            suspicious_prior_bigrams = []
+            for prior_bigram in path_probabilities[position-1].keys():
+                if self.surprise_index is None or self.trigram_probability(prior_bigram + (sentence[position],)) < self.surprise_threshold_function(prior_bigram + (sentence[position],)):
+                    suspicious_prior_bigrams.append(prior_bigram)
+            if suspicious_prior_bigrams == []:
+                variations = []
+            else:
+                variations = self.confusion_set_function(sentence[position])
+            if verbose == 2: print 'variations', variations
+            observation_emission_probability = { sentence[position] : log10(1-self.error_rate) }
+            observation_emission_probability.update({ var : log10(self.error_rate/len(self.confusion_set_function(var))) for var in variations })
+                    
 
             path_probabilities.append({})
             new_backtrace = {}
 
-            for var in states:
-                probabilities_to_this_var = [(path_probabilities[position-1][prior_state] + self.trigram_probability_function(prior_state + (var,)) + observation_emission_probability[var], prior_state) for prior_state in path_probabilities[position-1].keys()]
-                max_probability, max_prior_state = max(probabilities_to_this_var)
-                path_probabilities[position][(max_prior_state[-1], var)] = max_probability
-                if verbose: print 'path probabilities', path_probabilities
-                new_backtrace[(max_prior_state[-1],var)] = backtrace[max_prior_state] + (var,)
+            # Always get the transitions to the observed word
+            probabilities_to_observed = [(path_probabilities[position-1][prior_bigram] + self.trigram_probability(prior_bigram + (sentence[position],)) + observation_emission_probability[sentence[position]], prior_bigram) for prior_bigram in path_probabilities[position-1].keys()]
+            max_probability, max_prior_bigram = max(probabilities_to_observed)
+            path_probabilities[position][(max_prior_bigram[-1], sentence[position])] = max_probability
+            new_backtrace[(max_prior_bigram[-1], sentence[position])] = backtrace[max_prior_bigram] + ( sentence[position],)
+
+            # Get the transitions to variations
+            for var in variations:
+                probabilities_to_this_var = [(path_probabilities[position-1][prior_bigram] + self.trigram_probability(prior_bigram + (var,)) + observation_emission_probability[var], prior_bigram) for prior_bigram in suspicious_prior_bigrams]
+                max_probability, max_prior_bigram = max(probabilities_to_this_var)
+                path_probabilities[position][(max_prior_bigram[-1], var)] = max_probability
+                new_backtrace[(max_prior_bigram[-1],var)] = backtrace[max_prior_bigram] + (var,)
  
             backtrace = new_backtrace
 
+        if verbose == 2: print 'path probabilities', path_probabilities, '\n'
         return backtrace[('</s>', '</s>')][1:-2]

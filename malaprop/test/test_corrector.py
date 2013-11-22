@@ -30,7 +30,8 @@ class CorrectorTest(unittest.TestCase):
         botmp = BackOffTMPipe(path_to_botmp, arpa_file_name)
         error_rate = 0.3
         d = Derivor('malaprop/test/data/1K_test_real_word_vocab')
-        self.c = Corrector(segmenter_tokeniser, d.variations, botmp, error_rate)
+        hmm = HMM(d.variations, botmp, error_rate, 2)
+        self.c = Corrector(segmenter_tokeniser, hmm)
 
     def test_correct(self):
 
