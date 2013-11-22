@@ -44,21 +44,33 @@ class MockTrigramModelPipe():
     def bigram_backoff(self, bigram):
         return 0
 
+    def unigram_backoff(self, bigram):
+        return 0
+
 class HMMTest(unittest.TestCase):
 
     def test_viterbi_two(self):
 
         sentence = ['hit', 'was', '.']
-        error_rate = 0.4
-
         mock_tmp = MockTrigramModelPipe()
+
+        error_rate = 0.4
         hmm = HMM(confusion, mock_tmp, error_rate, 2)
         result = hmm.viterbi(sentence)
         expected_result = ('it', 'was', '.')
         self.assertTupleEqual(result, expected_result), result
 
-        error_rate = 0.2
+        hmm = HMM(confusion, mock_tmp, error_rate, 2, surprise_index=3)
+        result = hmm.viterbi(sentence)
+        expected_result = ('it', 'was', '.')
+        self.assertTupleEqual(result, expected_result), result
 
+        hmm = HMM(confusion, mock_tmp, error_rate, 2, surprise_index=9)
+        result = hmm.viterbi(sentence)
+        expected_result = ('hit', 'was', '.')
+        self.assertTupleEqual(result, expected_result), result
+
+        error_rate = 0.2
         hmm = HMM(confusion, mock_tmp, error_rate, 2)
         result = hmm.viterbi(sentence)
         expected_result = ('hit', 'was', '.')

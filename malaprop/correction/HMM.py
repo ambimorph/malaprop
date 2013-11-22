@@ -24,6 +24,11 @@ class HMM():
 
     def __init__(self, confusion_set_function, trigram_model_pipe, error_rate, viterbi_type, prune_to=None, surprise_index=None):
 
+        """
+        error_rate and surprise_index are given in non-log form,
+        trigram_model_pipe gives log forms.
+        """
+
         self.confusion_set_function = confusion_set_function
         self.trigram_model_pipe = trigram_model_pipe
         self.error_rate = error_rate
@@ -32,7 +37,10 @@ class HMM():
         elif viterbi_type == 3:
             self.viterbi =self.viterbi_three
         self.prune_to = prune_to
-        self.surprise_index = surprise_index
+        if surprise_index is None:
+            self.surprise_index = surprise_index
+        else:
+            self.surprise_index = log10(surprise_index)
 
     def trigram_probability(self, three_words):
 
@@ -62,10 +70,12 @@ class HMM():
     def surprise_threshold_function(self, three_words):
 
         if three_words[1] == '</s>':
-            return self.trigram_model_pipe.unigram_backoff(three_words[0]) - self.surprise_index
+            surprise_threshold = self.trigram_model_pipe.unigram_backoff(three_words[0]) - self.surprise_index
         if self.trigram_model_pipe.in_bigrams(three_words[:2]):
-            return self.trigram_model_pipe.bigram_backoff(three_words[:2]) - self.surprise_index
-        return self.trigram_model_pipe.unigram_backoff(three_words[1]) - self.surprise_index
+            surprise_threshold = self.trigram_model_pipe.bigram_backoff(three_words[:2]) - self.surprise_index
+        else:
+            surprise_threshold = self.trigram_model_pipe.unigram_backoff(three_words[1]) - self.surprise_index
+        return surprise_threshold
 
     def viterbi_three(self, original_sentence, verbose=False):
 
