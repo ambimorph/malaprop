@@ -7,7 +7,6 @@ del sys.modules['pickle']
 
 import codecs, bz2, gzip, random, subprocess, os, StringIO, filecmp, shutil, json, cPickle
 
-from math import ceil
 from recluse import article_selector, vocabulary_generator, nltk_based_segmenter_tokeniser
 from recluse.utils import *
 from DamerauLevenshteinDerivor import cderivor
@@ -17,6 +16,8 @@ from malaprop.error_insertion.confusion_set_channel import *
 from malaprop.error_insertion.real_word_error_inserter import *
 from malaprop.choosing.trigram_based_chooser import *
 from malaprop.correction.corrector import *
+from malaprop.evaluation.adversarial_evaluator import *
+from malaprop.evaluation.correction_evaluator import *
 
 def randomise_articles(target, source, env):
     """
@@ -102,14 +103,6 @@ def create_error_sets(target, source, env):
     for f in file_dict.values():
         f.close()
 
-
-    # Regression tests
-#    if TEST:
-#        assert filecmp.cmp(data_directory + 'corrupted_error_rate_0.1_2K_vocabulary.bz2', 'malaprop/test/data/corrupted_error_rate_0.1_2K_vocabulary.bz2', shallow=False), "Test result corrupted_error_rate_0.1_2K_vocabulary.bz2 differs from expected."
-#        assert filecmp.cmp(data_directory + 'corrections_error_rate_0.1_2K_vocabulary.bz2', 'malaprop/test/data/corrections_error_rate_0.1_2K_vocabulary.bz2', shallow=False), "Test result corrections_error_rate_0.1_2K_vocabulary.bz2 differs from expected."
-#        assert filecmp.cmp(data_directory + 'adversarial_error_rate_0.1_2K_vocabulary.bz2', 'malaprop/test/data/adversarial_error_rate_0.1_2K_vocabulary.bz2', shallow=False), "Test result adversarial_error_rate_0.1_2K_vocabulary.bz2 differs from expected."
-#        assert filecmp.cmp(data_directory + 'key_error_rate_0.1_2K_vocabulary.bz2', 'malaprop/test/data/key_error_rate_0.1_2K_vocabulary.bz2', shallow=False), "Test result key_error_rate_0.1_2K_vocabulary.bz2 differs from expected."
-
     return None
 
 def create_trigram_model(target, source, env):
@@ -154,10 +147,24 @@ def choose(target, source, env):
 
     chooser = TrigramBasedChooser(segmenter_tokeniser, botmp.trigram_probability)
     choices_file = open_with_unicode(target[0].path, 'bzip2', 'w')
+    if TEST:
+        line_count = 0
     for line in open_with_unicode(source[2].path, 'bzip2', 'r'):
         pair = json.loads(line)
         choice = chooser.choose(pair)
         choices_file.write(unicode(choice))
+        if TEST:
+            if line_count > max_lines: break
+            line_count += 1
+
+def evaluate_chooser(target, source, env):
+
+    acc, errs = report_accuracy_and_errors(open_with_unicode(source[0].path, 'bzip2', 'r'), open_with_unicode(source[1].path, 'bzip2', 'r'), open_with_unicode(source[2].path, 'bzip2', 'r'))
+    evaluation_file = open_with_unicode(target[0].path, None, 'w')
+    evaluation_file.write('Accuracy %f\n' % acc)
+    evaluation_file.write('Errors:\n')
+    for err in errs:
+        evaluation_file.write(err + '\n')
 
 def propose(target, source, env):
 
@@ -171,18 +178,49 @@ def propose(target, source, env):
     path_to_botmp = subprocess.check_output(['which', 'BackOffTrigramModelPipe']).strip()
     arpa_file_name = source[2].path
     botmp = BackOffTMPipe(path_to_botmp, arpa_file_name)
-    proposer = Corrector(segmenter_tokeniser, confusion_set_function, botmp, 1-alpha)
+    hmm = HMM(confusion_set_function, botmp, 1-alpha, viterbi_type, prune_to, backoff_threshold)
+    proposer = Corrector(segmenter_tokeniser, hmm)
 
     proposed_file = open_with_unicode(target[0].path, 'bzip2', 'w')
     sentence_id = 0
+    if TEST:
+        line_count = 0
     for line in open_with_unicode(source[3].path, 'bzip2', 'r'):
         if sentence_id % 100 == 0: print '.',
         correction = proposer.correct(line)
         if correction != []:
             proposed_file.write(json.dumps([sentence_id, correction]) + '\n')
         sentence_id +=1
+        if TEST:
+            if line_count > max_lines: break
+            line_count += 1
     print 'Corrected', sentence_id, 'sentences'
         
+def evaluate_proposer(target, source, env):
+    
+    ce = CorrectionEvaluator()
+    ce.process_all_corrections(bz2.BZ2File(source[0].path, 'r'), bz2.BZ2File(source[1].path, 'r'))
+    evaluation_file = open(target[0].path, 'w')
+    report_dict = ce.report(corrections_report_size)
+    evaluation_file.write('Detection Precision: %f\n' % report_dict['Detection Precision'])
+    evaluation_file.write('Detection Recall: %f\n' % report_dict['Detection Recall'])
+    evaluation_file.write('Detection F-measure: %f\n' % report_dict['Detection F-measure'])
+    evaluation_file.write('Correction Precision: %f\n' % report_dict['Correction Precision'])
+    evaluation_file.write('Correction Recall: %f\n' % report_dict['Correction Recall'])
+    evaluation_file.write('Correction F-measure: %f\n' % report_dict['Correction F-measure'])
+    evaluation_file.write('False Negatives: ')
+    for el in report_dict['False Negative']:
+        evaluation_file.write('%s: %d\n' % (el[0], el[1]))
+    evaluation_file.write('False Positives: ')
+    for el in report_dict['False Positive']:
+        evaluation_file.write('%s: %d\n' % (el[0], el[1]))
+    evaluation_file.write('True Positives: ')
+    for el in report_dict['True Positive']:
+        evaluation_file.write('%s: %d\n' % (el[0], el[1]))
+    evaluation_file.write('Miscorrections: ')
+    for el in report_dict['Detection True Positive, Correction False Negative, Correction False Positive']:
+        evaluation_file.write('%s: %d\n' % (el[0], el[1]))
+                          
 
 
 # Get and set configuration:
@@ -196,6 +234,11 @@ proportions = [.6,.2,.2]
 correction_task = False
 adversarial_task = False
 alpha = 1 - error_rate
+viterbi_type = 2
+prune_to = None
+backoff_threshold = None
+verbosity = True
+corrections_report_size = 0
 TEST = False
 
 try:
@@ -208,33 +251,45 @@ if [x for x in ARGLIST if x[0] == "test"]:
     TEST = True
     vocabulary_size = 2
     error_rate = .1
+    max_lines = 100
     correction_task = True
     adversarial_task = True
     alpha = 1 - error_rate
+    corrections_report_size = 5
 
 elif [x for x in ARGLIST if x[0] == "replicate"]:
     vocabulary_size = 100
     error_rate = .05
     correction_task = True
     adversarial_task = True
-    for key, value in ARGLIST:
-        if key == "alpha":
-            alpha = float(value)
+    corrections_report_size = 20
 
-else:
-    for key, value in ARGLIST:
-        if key == "new_corpus":
-            new_corpus = bool(value)
-        elif key == "experiment_size":
-            experiment_size = int(value)
-        elif key == "vocabulary_size":
-            vocabulary_size = float(value)
-        elif key == "error_rate":
-            error_rate = float(value)
-        elif key == "correction_task":
-            correction_task = True
-        elif key == "adversarial_task":
-            adversarial_task = True
+for key, value in ARGLIST:
+    if key == "new_corpus":
+        new_corpus = bool(value)
+    elif key == "experiment_size":
+        experiment_size = int(value)
+    elif key == "vocabulary_size":
+        vocabulary_size = float(value)
+    elif key == "error_rate":
+        error_rate = float(value)
+    elif key == "correction_task":
+        correction_task = True
+    elif key == "adversarial_task":
+        adversarial_task = True
+    elif key == alpha:
+        alpha = float(value)
+    elif key == viterbi_type:
+        viterbi_type = int(value)
+    elif key == prune_to:
+        viterbi_type = int(prune_to)
+    elif key == backoff_threshold:
+        backoff_threshold = float(value)
+    elif key == verbosity:
+        verbosity = int(value)
+    elif key == corrections_report_size:
+        corrections_report_size = int(value)
+        
 
 # These are settings are derived from the above:
 data_file = data_directory + 'corpus.bz2'
@@ -252,39 +307,47 @@ error_set_builder = Builder(action = create_error_sets)
 trigram_model_builder =Builder(action = create_trigram_model)
 trigram_choices_builder = Builder(action = choose)
 trigram_proposed_corrections_builder = Builder(action = propose)
+chooser_evaluation_builder = Builder(action = evaluate_chooser)
+proposer_evaluation_builder = Builder(action = evaluate_proposer)
+
+builders = {'vocabulary' : vocabulary_builder, 'segmenter_tokeniser' : segmenter_tokeniser_builder, 'real_word_vocabulary' : real_word_vocabulary_builder, 'error_sets' : error_set_builder, 'trigram_model' : trigram_model_builder, 'trigram_choices' : trigram_choices_builder, 'trigram_proposed_corrections' : trigram_proposed_corrections_builder, 'chooser_evaluation' : chooser_evaluation_builder, 'proposer_evaluation': proposer_evaluation_builder}
 
 if new_corpus:
 
     learning_sets_builder = Builder(action = randomise_articles)
-    env = Environment(BUILDERS = {'learning_sets' : learning_sets_builder, 'vocabulary' : vocabulary_builder, 'segmenter_tokeniser' : segmenter_tokeniser_builder, 'real_word_vocabulary_files' : real_word_vocabulary_builder, 'error_sets' : error_set_builder, 'trigram_model' : trigram_model_builder, 'trigram_choices' : trigram_choices_builder, 'trigram_proposed_corrections' : trigram_proposed_corrections_builder})
+    builders['learning_sets'] = learning_sets_builder
     env.learning_sets([data_directory + f for f in ['training_set.bz2', 'development_set.bz2', 'test_set.bz2', 'article_index']], data_file)
     env.Alias('learning_sets', [data_directory + set_name for set_name in ['training_set.bz2', 'development_set.bz2', 'test_set.bz2']])
 
-else:
-    env = Environment(BUILDERS = {'vocabulary' : vocabulary_builder, 'segmenter_tokeniser' : segmenter_tokeniser_builder, 'real_word_vocabulary_files' : real_word_vocabulary_builder, 'error_sets' : error_set_builder, 'trigram_model' : trigram_model_builder, 'trigram_choices' : trigram_choices_builder, 'trigram_proposed_corrections' : trigram_proposed_corrections_builder})
+env = Environment(BUILDERS = builders)
 
-
-env.vocabulary([data_directory + str(vocabulary_size) + 'K.vocab'], [data_directory + 'training_set.bz2'])
-env.Alias('vocabulary', [data_directory + str(vocabulary_size) + 'K.vocab'])
+env.vocabulary([data_directory + str(vocabulary_size) + 'K_vocabulary'], [data_directory + 'training_set.bz2'])
+env.Alias('vocabulary', [data_directory + str(vocabulary_size) + 'K_vocabulary'])
 
 env.segmenter_tokeniser([data_directory + 'segmenter_tokeniser.pkl'], [data_directory + 'training_set.bz2'])
 env.Alias('segmenter_tokeniser', [data_directory + 'segmenter_tokeniser.pkl'])
 
-env.real_word_vocabulary_files([data_directory + str(vocabulary_size) + 'K.real_word_vocab'], [data_directory + str(vocabulary_size) + 'K.vocab'])
-env.Alias('real_word_vocabulary_files', [data_directory + str(vocabulary_size) + 'K.real_word_vocab'])
+env.real_word_vocabulary([data_directory + 'real_word_vocabulary'], [data_directory + str(vocabulary_size) + 'K_vocabulary'])
+env.Alias('real_word_vocabulary', [data_directory +'real_word_vocabulary'])
 
-suffix =  '_error_rate_' + str(error_rate) + '_' + str(vocabulary_size) + 'K_vocabulary.bz2'
+env.error_sets([data_directory + x + '_error_rate_' + str(error_rate) + '.bz2' for x in error_set_targets], [data_directory + 'segmenter_tokeniser.pkl', data_directory + 'real_word_vocabulary', data_directory + 'development_set.bz2'])
+env.Alias('error_sets', [data_directory + x + '_error_rate_' + str(error_rate) + '.bz2' for x in error_set_targets])
 
-env.error_sets([data_directory + x + suffix for x in error_set_targets], [data_directory + 'segmenter_tokeniser.pkl', data_directory + str(vocabulary_size) + 'K.real_word_vocab', data_directory + 'development_set.bz2'])
-env.Alias('error_sets', [data_directory + x + suffix for x in error_set_targets])
+env.trigram_model([data_directory + str(vocabulary_size) + 'K_trigram_model.arpa'], [data_directory + 'training_set.bz2', data_directory + str(vocabulary_size) + 'K_vocabulary'])
+env.Alias('trigram_model', [data_directory + str(vocabulary_size) + 'K_trigram_model.arpa'])
 
-env.trigram_model([data_directory + 'trigram_model_' + str(vocabulary_size) + 'K.arpa'], [data_directory + 'training_set.bz2', data_directory + str(vocabulary_size) + 'K.vocab'])
-env.Alias('trigram_model', ['trigram_model_' + str(vocabulary_size) + 'K.arpa'])
+env.trigram_choices([data_directory + 'trigram_choices_error_rate_' + str(error_rate) + '.bz2'], [data_directory + 'segmenter_tokeniser.pkl', data_directory + str(vocabulary_size) + 'K_trigram_model.arpa', data_directory + 'adversarial_error_rate_' + str(error_rate) + '.bz2'])
+env.Alias('trigram_choices', [data_directory + 'trigram_choices.bz2'])
 
-env.trigram_choices([data_directory + 'trigram_choices' + suffix], [data_directory + 'segmenter_tokeniser.pkl', data_directory + 'trigram_model_' + str(vocabulary_size) + 'K.arpa', data_directory + 'adversarial' + suffix])
-env.Alias('trigram_choices', [data_directory + 'trigram_choices' + suffix])
+subdirectory = data_directory + 'alpha_' + str(alpha) + '_viterbi_' + str(viterbi_type) + '_backoff_' + str(backoff_threshold) + '/'
+if not os.path.exists(subdirectory): os.mkdir(subdirectory)
 
-env.trigram_proposed_corrections([data_directory + 'trigram_proposed_corrections_alpha_' + str(alpha) + suffix], [data_directory + 'segmenter_tokeniser.pkl', data_directory +  str(vocabulary_size) + 'K.real_word_vocab', data_directory + 'trigram_model_' + str(vocabulary_size) + 'K.arpa', data_directory + 'corrupted' + suffix])
-env.Alias('trigram_proposed_corrections', [data_directory + 'trigram_proposed_corrections_alpha_' + str(alpha) + suffix])
+env.trigram_proposed_corrections([subdirectory + 'trigram_proposed_corrections_error_rate_'  + str(error_rate) + '.bz2'], [data_directory + 'segmenter_tokeniser.pkl', data_directory +  'real_word_vocabulary', data_directory + str(vocabulary_size) + 'K_trigram_model.arpa', data_directory + 'corrupted_error_rate_' + str(error_rate) + '.bz2'])
+env.Alias('trigram_proposed_corrections', [subdirectory + 'trigram_proposed_corrections_error_rate_' + str(error_rate) + '.bz2'])
 
+env.chooser_evaluation([data_directory + 'evaluation_trigram_choices_error_rate_' +  str(error_rate)], [data_directory + 'key_error_rate_' + str(error_rate) + '.bz2', data_directory + 'trigram_choices_error_rate_' + str(error_rate) + '.bz2', data_directory + 'adversarial_error_rate_' + str(error_rate) + '.bz2'])
+env.Alias('chooser_evaluation', [data_directory + 'evaluation_trigram_choices_error_rate_' +  str(error_rate)])
+
+env.proposer_evaluation([subdirectory + 'evaluation_trigram_proposed_corrections_error_rate_' +  str(error_rate)], [data_directory + 'corrections_error_rate_' + str(error_rate) + '.bz2', subdirectory + 'trigram_proposed_corrections_error_rate_' + str(error_rate) + '.bz2'])
+env.Alias('proposer_evaluation', [subdirectory + 'evaluation_trigram_proposed_corrections_error_rate_' +  str(error_rate)])
 
