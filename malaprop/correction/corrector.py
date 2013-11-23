@@ -28,7 +28,7 @@ class Corrector():
         flat_regular_subtokens = [regularise(subtoken.lower()) for subtoken in flat_subtokens]
         regularised_indices = [i for i in range(subtoken_count) if flat_regular_subtokens[i]!=flat_subtokens[i].lower()]
 
-        flat_regular_correction = self.hmm.viterbi(flat_regular_subtokens, verbose=True)
+        flat_regular_correction = self.hmm.viterbi(flat_regular_subtokens)
 
         flat_correction = []
         for i in range(subtoken_count):

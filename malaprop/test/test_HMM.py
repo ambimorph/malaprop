@@ -49,6 +49,8 @@ class MockTrigramModelPipe():
 
 class HMMTest(unittest.TestCase):
 
+    
+
     def test_viterbi_two(self):
 
         sentence = ['hit', 'was', '.']

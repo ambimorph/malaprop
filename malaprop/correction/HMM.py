@@ -22,7 +22,9 @@ class HMM():
         word).
     """
 
-    def __init__(self, confusion_set_function, trigram_model_pipe, error_rate, viterbi_type, prune_to=None, surprise_index=None):
+    def __init__(self, confusion_set_function, trigram_model_pipe, error_rate, viterbi_type, prune_to=None, surprise_index=None, verbose=False):
+
+        print 'prune to %d' % prune_to
 
         """
         error_rate and surprise_index are given in non-log form,
@@ -42,6 +44,7 @@ class HMM():
             self.log_surprise_index = surprise_index
         else:
             self.log_surprise_index = log10(surprise_index)
+        self.verbose = verbose
 
     def trigram_probability(self, three_words):
 
@@ -85,33 +88,33 @@ class HMM():
         else:
             return log10(self.error_rate/len(self.confusion_set_function(var)))
 
-    def viterbi_three(self, original_sentence, verbose=False):
+    def viterbi_three(self, original_sentence):
 
         """
         For the trigram transitions, states have to be two words instead of one.
         """
 
         assert self.prune_to is not None
-        if verbose: sys.stdout.write('.')
+        if self.verbose: sys.stdout.write('.')
 
         assert len(original_sentence) > 0
         sentence = original_sentence + ['</s>', '</s>']
 
         variations = self.confusion_set_function(sentence[0])
-        if verbose == 2: print 'variations', variations
+        if self.verbose == 2: print 'variations', variations
 
         states = set([ ('<s>', v) for v in [sentence[0]] + variations ])
-        if verbose == 2: print 'states', states
+        if self.verbose == 2: print 'states', states
 
         path_probabilities = [{}]
         path_probability_list = [ (self.trigram_probability(('<s>',) + state) + self.observation_emission_probability(state[-1], sentence[0]), state) for state in states ]
         path_probability_list.sort()
         for (p,s) in path_probability_list[-self.prune_to:]:
             path_probabilities[0][s] = p
-        if verbose == 2: print 'path probabilities', path_probabilities
+        if self.verbose == 2: print 'path probabilities', path_probabilities
 
         backtrace = { state : (state[1],) for state in states }
-        if verbose == 2: print 'backtrace', backtrace, '\n'
+        if self.verbose == 2: print 'backtrace', backtrace, '\n'
 
         def probability_to_this_state(position, state, prior_state):
 
@@ -123,40 +126,37 @@ class HMM():
 
         for position in range(1, len(sentence)):
             
-            if verbose == 2: print "Position %d" % position
+            if self.verbose == 2: print "Position %d" % position
             variations = self.confusion_set_function(sentence[position])
-            if verbose == 2: print 'variations of ', sentence[position].encode('utf-8'), 
-            if verbose == 2: print variations
+            if self.verbose == 2: print 'variations of ', sentence[position].encode('utf-8'), 
+            if self.verbose == 2: print variations
             states = set([ (prior_state[-1], v) for v in [sentence[position]] + variations for prior_state in path_probabilities[position-1].keys()])
-            if verbose == 2: print 'states', states, '\n'
+            if self.verbose == 2: print 'states', states, '\n'
             path_probabilities.append({})
             new_backtrace = {}
 
             path_probability_list = []
             for state in states:
-                if verbose == 2: print 'state', state
+                if self.verbose == 2: print 'state', state
                     
                 for prior_state in path_probabilities[position-1].keys():
-                    if verbose == 2: print 'prior state', prior_state
-                    if verbose == 2: print 'prior state probability', path_probabilities[position-1][prior_state]
+                    if self.verbose == 2: print 'prior state', prior_state
+                    if self.verbose == 2: print 'prior state probability', path_probabilities[position-1][prior_state]
 
 
                 probabilities_to_this_state = [ (probability_to_this_state(position, state, prior_state), prior_state) \
                                                    for prior_state in path_probabilities[position-1].keys() \
                                                    if prior_state[1] == state[0] ]
 
-                if verbose == 2: print 'probabilities to this state', probabilities_to_this_state
+                if self.verbose == 2: print 'probabilities to this state', probabilities_to_this_state
                 max_probability, max_prior_state = max(probabilities_to_this_state)
                 bisect.insort( path_probability_list, (max_probability, state) )
-                path_probabilities[position][state] = max_probability
-                if verbose == 2: print 'path probability to this state', path_probabilities[position][state]
-                if verbose == 2: print 'Max probability to state, from', max_probability, max_prior_state,'\n'
                 new_backtrace[state] = backtrace[max_prior_state] + (state[1],)
  
             for (p,s) in path_probability_list[-self.prune_to:]:
                 path_probabilities[position][s] = p
             backtrace = new_backtrace
-            if verbose == 2: 
+            if self.verbose == 2: 
                 print 'backtrace', 
                 for k,v in backtrace.iteritems(): print k,v
                 print
@@ -166,14 +166,14 @@ class HMM():
 
    ###################
 
-    def viterbi_two(self, original_sentence, verbose=False):
+    def viterbi_two(self, original_sentence):
 
         """
         Computes with trigram probabilities, but the states are only
         one word.  This corresponds to using only the first two
         trigrams for a given word.
         """
-        if verbose: sys.stdout.write('.')
+        if self.verbose: sys.stdout.write('.')
 
         assert len(original_sentence) > 0
         sentence = original_sentence + ['</s>', '</s>']
@@ -183,14 +183,14 @@ class HMM():
             states = set([sentence[0]] + self.confusion_set_function(sentence[0]))
         else:
             states = set([sentence[0]])
-        if verbose == 2: print 'states', states
+        if self.verbose == 2: print 'states', states
         path_probabilities = [ {('<s>', state): self.trigram_probability(first_two_words + (state,)) + self.observation_emission_probability(state, sentence[0]) for state in states} ]
         backtrace = {('<s>', state):('<s>', state) for state in states}
-        if verbose == 2: print 'path probabilities', path_probabilities, '\n'
+        if self.verbose == 2: print 'path probabilities', path_probabilities, '\n'
 
         for position in range(1, len(sentence)):
 
-            if verbose == 2: print 'Position %d, word %s' % (position, sentence[position])
+            if self.verbose == 2: print 'Position %d, word %s' % (position, sentence[position])
             
             suspicious_prior_bigrams = []
             for prior_bigram in path_probabilities[position-1].keys():
@@ -200,14 +200,14 @@ class HMM():
                 variations = []
             else:
                 variations = self.confusion_set_function(sentence[position])
-            if verbose == 2: print 'variations', variations
+            if self.verbose == 2: print 'variations', variations
 
             path_probabilities.append({})
             new_backtrace = {}
 
             # Always get the transitions to the observed word
             probabilities_to_observed = [(path_probabilities[position-1][prior_bigram] + self.trigram_probability(prior_bigram + (sentence[position],)) + self.observation_emission_probability(sentence[position], sentence[position]), prior_bigram) for prior_bigram in path_probabilities[position-1].keys()]
-            if verbose == 2: print 'probabilities_to_observed ', probabilities_to_observed, '\n'
+            if self.verbose == 2: print 'probabilities_to_observed ', probabilities_to_observed, '\n'
             max_probability, max_prior_bigram = max(probabilities_to_observed)
             path_probabilities[position][(max_prior_bigram[-1], sentence[position])] = max_probability
             new_backtrace[(max_prior_bigram[-1], sentence[position])] = backtrace[max_prior_bigram] + ( sentence[position],)
@@ -215,12 +215,12 @@ class HMM():
             # Get the transitions to variations
             for var in variations:
                 probabilities_to_this_var = [(path_probabilities[position-1][prior_bigram] + self.trigram_probability(prior_bigram + (var,)) + self.observation_emission_probability(var, sentence[position]), prior_bigram) for prior_bigram in suspicious_prior_bigrams]
-                if verbose == 2: print 'probabilities_to_this_var ', probabilities_to_this_var, '\n'
+                if self.verbose == 2: print 'probabilities_to_this_var ', probabilities_to_this_var, '\n'
                 max_probability, max_prior_bigram = max(probabilities_to_this_var)
                 path_probabilities[position][(max_prior_bigram[-1], var)] = max_probability
                 new_backtrace[(max_prior_bigram[-1],var)] = backtrace[max_prior_bigram] + (var,)
  
             backtrace = new_backtrace
-            if verbose == 2: print 'path probabilities', path_probabilities, '\n'
+            if self.verbose == 2: print 'path probabilities', path_probabilities, '\n'
 
         return backtrace[('</s>', '</s>')][1:-2]

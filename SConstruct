@@ -178,7 +178,7 @@ def propose(target, source, env):
     path_to_botmp = subprocess.check_output(['which', 'BackOffTrigramModelPipe']).strip()
     arpa_file_name = source[2].path
     botmp = BackOffTMPipe(path_to_botmp, arpa_file_name)
-    hmm = HMM(confusion_set_function, botmp, 1-alpha, viterbi_type, prune_to, backoff_threshold)
+    hmm = HMM(confusion_set_function, botmp, 1-alpha, viterbi_type, prune_to, surprise_index, verbosity)
     proposer = Corrector(segmenter_tokeniser, hmm)
 
     proposed_file = open_with_unicode(target[0].path, 'bzip2', 'w')
@@ -236,7 +236,7 @@ adversarial_task = False
 alpha = 1 - error_rate
 viterbi_type = 2
 prune_to = None
-backoff_threshold = None
+surprise_index = None
 verbosity = True
 corrections_report_size = 0
 TEST = False
@@ -277,17 +277,17 @@ for key, value in ARGLIST:
         correction_task = True
     elif key == "adversarial_task":
         adversarial_task = True
-    elif key == alpha:
+    elif key == 'alpha':
         alpha = float(value)
-    elif key == viterbi_type:
+    elif key == 'viterbi_type':
         viterbi_type = int(value)
-    elif key == prune_to:
-        viterbi_type = int(prune_to)
-    elif key == backoff_threshold:
-        backoff_threshold = float(value)
-    elif key == verbosity:
+    elif key == 'prune_to':
+        prune_to = int(value)
+    elif key == 'surprise_index':
+        surprise_index = float(value)
+    elif key == 'verbosity':
         verbosity = int(value)
-    elif key == corrections_report_size:
+    elif key == 'corrections_report_size':
         corrections_report_size = int(value)
         
 
@@ -339,7 +339,7 @@ env.Alias('trigram_model', [data_directory + str(vocabulary_size) + 'K_trigram_m
 env.trigram_choices([data_directory + 'trigram_choices_error_rate_' + str(error_rate) + '.bz2'], [data_directory + 'segmenter_tokeniser.pkl', data_directory + str(vocabulary_size) + 'K_trigram_model.arpa', data_directory + 'adversarial_error_rate_' + str(error_rate) + '.bz2'])
 env.Alias('trigram_choices', [data_directory + 'trigram_choices.bz2'])
 
-subdirectory = data_directory + 'alpha_' + str(alpha) + '_viterbi_' + str(viterbi_type) + '_backoff_' + str(backoff_threshold) + '/'
+subdirectory = data_directory + 'alpha_' + str(alpha) + '_viterbi_' + str(viterbi_type) + '_prune_to_' + str(prune_to) + '_surprise_index_' + str(surprise_index) + '/'
 if not os.path.exists(subdirectory): os.mkdir(subdirectory)
 
 env.trigram_proposed_corrections([subdirectory + 'trigram_proposed_corrections_error_rate_'  + str(error_rate) + '.bz2'], [data_directory + 'segmenter_tokeniser.pkl', data_directory +  'real_word_vocabulary', data_directory + str(vocabulary_size) + 'K_trigram_model.arpa', data_directory + 'corrupted_error_rate_' + str(error_rate) + '.bz2'])
