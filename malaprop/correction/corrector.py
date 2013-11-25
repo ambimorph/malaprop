@@ -7,7 +7,26 @@ def match_case(token_to_emulate, lowered_token):
 
     if token_to_emulate.istitle(): return lowered_token.title()
     if token_to_emulate.isupper(): return lowered_token.upper()
-    return lowered_token
+    if token_to_emulate.islower(): return lowered_token
+    if token_to_emulate.lower() == lowered_token: return token_to_emulate
+    if len(token_to_emulate) == len(lowered_token): 
+        return ''.join([ lowered_token[i].upper() if i in [j for j in range(len(token_to_emulate)) if token_to_emulate[i].isupper()] else lowered_token[i] for i in range(len(lowered_token))])
+    result = ''
+    if len(token_to_emulate) < len(lowered_token):
+        i = 0
+        while token_to_emulate.lower()[i] == lowered_token[i]:
+            result += token_to_emulate[i]
+            i += 1
+        result += lowered_token[i] + token_to_emulate[i:]
+        return result
+                
+    i = 0
+    while token_to_emulate.lower()[i] == lowered_token[i]:
+        result += token_to_emulate[i]
+        i += 1
+    result += token_to_emulate[i+1:]
+    return result
+                
 
 class Corrector():
 

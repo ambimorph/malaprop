@@ -24,8 +24,6 @@ class HMM():
 
     def __init__(self, confusion_set_function, trigram_model_pipe, error_rate, viterbi_type, prune_to=None, surprise_index=None, verbose=False):
 
-        print 'prune to %d' % prune_to
-
         """
         error_rate and surprise_index are given in non-log form,
         trigram_model_pipe gives log forms.
@@ -45,6 +43,7 @@ class HMM():
         else:
             self.log_surprise_index = log10(surprise_index)
         self.verbose = verbose
+        self.observation_emission_probabilities = {}
 
     def trigram_probability(self, three_words):
 
@@ -81,13 +80,6 @@ class HMM():
             surprise_threshold = self.trigram_model_pipe.unigram_backoff(three_words[1]) - self.log_surprise_index
         return surprise_threshold
 
-    def observation_emission_probability(self, var, observed):
-
-        if var == observed:
-            return self.log_alpha
-        else:
-            return log10(self.error_rate/len(self.confusion_set_function(var)))
-
     def viterbi_three(self, original_sentence):
 
         """
@@ -103,11 +95,19 @@ class HMM():
         variations = self.confusion_set_function(sentence[0])
         if self.verbose == 2: print 'variations', variations
 
+        """
+        Building a cache of observation emission probabilities:
+        a dict { observed : {variation : probability} }.
+        """
+        self.observation_emission_probabilities[sentence[0]] = { sentence[0] : log10(1-self.error_rate) }
+        self.observation_emission_probabilities[sentence[0]].update( { var : log10(self.error_rate/len(self.confusion_set_function(var))) for var in variations} )
+        if self.verbose == 2: print 'observation_emission_probabilities', self.observation_emission_probabilities
+
         states = set([ ('<s>', v) for v in [sentence[0]] + variations ])
         if self.verbose == 2: print 'states', states
 
         path_probabilities = [{}]
-        path_probability_list = [ (self.trigram_probability(('<s>',) + state) + self.observation_emission_probability(state[-1], sentence[0]), state) for state in states ]
+        path_probability_list = [ (self.trigram_probability(('<s>',) + state) + self.observation_emission_probabilities[sentence[0]][state[1]], state) for state in states ]
         path_probability_list.sort()
         for (p,s) in path_probability_list[-self.prune_to:]:
             path_probabilities[0][s] = p
@@ -121,28 +121,32 @@ class HMM():
             assert prior_state[1] == state[0]
             return path_probabilities[position-1][prior_state] + \
                 self.trigram_probability((prior_state[0],) + state) + \
-                self.observation_emission_probability(state[1], sentence[position])
+                self.observation_emission_probabilities[sentence[position]][state[1]]
 
 
         for position in range(1, len(sentence)):
             
             if self.verbose == 2: print "Position %d" % position
             variations = self.confusion_set_function(sentence[position])
-            if self.verbose == 2: print 'variations of ', sentence[position].encode('utf-8'), 
-            if self.verbose == 2: print variations
+            if self.verbose == 2: print 'variations of ', sentence[position].encode('utf-8'), variations
             states = set([ (prior_state[-1], v) for v in [sentence[position]] + variations for prior_state in path_probabilities[position-1].keys()])
             if self.verbose == 2: print 'states', states, '\n'
             path_probabilities.append({})
             new_backtrace = {}
 
+            if sentence[position] not in self.observation_emission_probabilities.keys():
+                self.observation_emission_probabilities[sentence[position]] = { sentence[position] : log10(1-self.error_rate) }
+                self.observation_emission_probabilities[sentence[position]].update( { var : log10(self.error_rate/len(self.confusion_set_function(var))) for var in variations} )
+            if self.verbose == 2: print 'observation_emission_probabilities', self.observation_emission_probabilities
+
             path_probability_list = []
             for state in states:
                 if self.verbose == 2: print 'state', state
                     
-                for prior_state in path_probabilities[position-1].keys():
-                    if self.verbose == 2: print 'prior state', prior_state
-                    if self.verbose == 2: print 'prior state probability', path_probabilities[position-1][prior_state]
-
+                if self.verbose == 2:
+                    for prior_state, probability in path_probabilities[position-1].iteritems():
+                        print 'prior state: ', prior_state,
+                        print 'prior state probability', probability
 
                 probabilities_to_this_state = [ (probability_to_this_state(position, state, prior_state), prior_state) \
                                                    for prior_state in path_probabilities[position-1].keys() \
@@ -180,11 +184,21 @@ class HMM():
 
         first_two_words = ('<s>', '<s>')
         if self.log_surprise_index is None or self.trigram_probability(first_two_words + (sentence[0],)) < self.surprise_threshold_function(first_two_words + (sentence[0],)):
-            states = set([sentence[0]] + self.confusion_set_function(sentence[0]))
+            variations = self.confusion_set_function(sentence[0])
         else:
-            states = set([sentence[0]])
-        if self.verbose == 2: print 'states', states
-        path_probabilities = [ {('<s>', state): self.trigram_probability(first_two_words + (state,)) + self.observation_emission_probability(state, sentence[0]) for state in states} ]
+            variations = []
+        states = [sentence[0]] + variations
+        if self.verbose == 2: print 'variations, states:', variations, states
+
+        """
+        Building a cache of observation emission probabilities:
+        a dict from (observed, var) to probability.
+        """
+        self.observation_emission_probabilities[sentence[0]] = { sentence[0] : log10(1-self.error_rate) }
+        self.observation_emission_probabilities[sentence[0]].update( { var : log10(self.error_rate/len(self.confusion_set_function(var))) for var in variations} )
+        if self.verbose == 2: print 'observation_emission_probabilities', self.observation_emission_probabilities
+
+        path_probabilities = [ {('<s>', state): self.trigram_probability(first_two_words + (state,)) + self.observation_emission_probabilities[sentence[0]][state] for state in states} ]
         backtrace = {('<s>', state):('<s>', state) for state in states}
         if self.verbose == 2: print 'path probabilities', path_probabilities, '\n'
 
@@ -202,23 +216,35 @@ class HMM():
                 variations = self.confusion_set_function(sentence[position])
             if self.verbose == 2: print 'variations', variations
 
+            if sentence[position] not in self.observation_emission_probabilities.keys():
+                self.observation_emission_probabilities[sentence[position]] = { sentence[position] : log10(1-self.error_rate) }
+                self.observation_emission_probabilities[sentence[position]].update( { var : log10(self.error_rate/len(self.confusion_set_function(var))) for var in variations} )
+            if self.verbose == 2: print 'observation_emission_probabilities', self.observation_emission_probabilities
+
             path_probabilities.append({})
             new_backtrace = {}
 
             # Always get the transitions to the observed word
-            probabilities_to_observed = [(path_probabilities[position-1][prior_bigram] + self.trigram_probability(prior_bigram + (sentence[position],)) + self.observation_emission_probability(sentence[position], sentence[position]), prior_bigram) for prior_bigram in path_probabilities[position-1].keys()]
-            if self.verbose == 2: print 'probabilities_to_observed ', probabilities_to_observed, '\n'
+            probabilities_to_observed = [(path_probabilities[position-1][prior_bigram] + \
+                                              self.trigram_probability(prior_bigram + (sentence[position],)) + \
+                                              self.observation_emission_probabilities[sentence[position]][sentence[position]], prior_bigram) \
+                                             for prior_bigram in path_probabilities[position-1].keys()]
+            if self.verbose == 2: print 'probabilities_to_observed ', probabilities_to_observed
             max_probability, max_prior_bigram = max(probabilities_to_observed)
             path_probabilities[position][(max_prior_bigram[-1], sentence[position])] = max_probability
             new_backtrace[(max_prior_bigram[-1], sentence[position])] = backtrace[max_prior_bigram] + ( sentence[position],)
 
             # Get the transitions to variations
             for var in variations:
-                probabilities_to_this_var = [(path_probabilities[position-1][prior_bigram] + self.trigram_probability(prior_bigram + (var,)) + self.observation_emission_probability(var, sentence[position]), prior_bigram) for prior_bigram in suspicious_prior_bigrams]
-                if self.verbose == 2: print 'probabilities_to_this_var ', probabilities_to_this_var, '\n'
+                probabilities_to_this_var = [ (path_probabilities[position-1][prior_bigram] + \
+                                                   self.trigram_probability(prior_bigram + (var,)) + \
+                                                   self.observation_emission_probabilities[sentence[position]][var], prior_bigram) \
+                                             for prior_bigram in suspicious_prior_bigrams]
+                if self.verbose == 2: print 'probabilities_to_this_var ', probabilities_to_this_var
                 max_probability, max_prior_bigram = max(probabilities_to_this_var)
                 path_probabilities[position][(max_prior_bigram[-1], var)] = max_probability
                 new_backtrace[(max_prior_bigram[-1],var)] = backtrace[max_prior_bigram] + (var,)
+            if self.verbose == 2: print 'backtrace ', backtrace
  
             backtrace = new_backtrace
             if self.verbose == 2: print 'path probabilities', path_probabilities, '\n'

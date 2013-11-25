@@ -183,17 +183,13 @@ def propose(target, source, env):
 
     proposed_file = open_with_unicode(target[0].path, 'bzip2', 'w')
     sentence_id = 0
-    if TEST:
-        line_count = 0
     for line in open_with_unicode(source[3].path, 'bzip2', 'r'):
-        if sentence_id % 100 == 0: print '.',
         correction = proposer.correct(line)
         if correction != []:
             proposed_file.write(json.dumps([sentence_id, correction]) + '\n')
         sentence_id +=1
         if TEST:
-            if line_count > max_lines: break
-            line_count += 1
+            if sentence_id > max_lines: break
     print 'Corrected', sentence_id, 'sentences'
         
 def evaluate_proposer(target, source, env):
@@ -249,7 +245,7 @@ except:
 
 if [x for x in ARGLIST if x[0] == "test"]:
     TEST = True
-    vocabulary_size = 2
+    vocabulary_size = 2.0
     error_rate = .1
     max_lines = 100
     correction_task = True
@@ -258,7 +254,7 @@ if [x for x in ARGLIST if x[0] == "test"]:
     corrections_report_size = 5
 
 elif [x for x in ARGLIST if x[0] == "replicate"]:
-    vocabulary_size = 100
+    vocabulary_size = 100.0
     error_rate = .05
     correction_task = True
     adversarial_task = True
@@ -289,6 +285,8 @@ for key, value in ARGLIST:
         verbosity = int(value)
     elif key == 'corrections_report_size':
         corrections_report_size = int(value)
+    elif key == 'max_lines':
+        max_lines = int(value)
         
 
 # These are settings are derived from the above:

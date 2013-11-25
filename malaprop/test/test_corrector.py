@@ -20,6 +20,18 @@ class MatchCaseTest(unittest.TestCase):
         result = match_case('THIS', 'that')
         self.assertEqual(result, 'THAT'), result
 
+        result = match_case('MacGregor', 'macgregor')
+        self.assertEqual(result, 'MacGregor'), result
+
+        result = match_case('MacGregor', 'macdregor')
+        self.assertEqual(result, 'MacDregor'), result
+
+        result = match_case('McGregor', 'macgregor')
+        self.assertEqual(result, 'MacGregor'), result
+
+        result = match_case('MacGregor', 'mcgregor')
+        self.assertEqual(result, 'McGregor'), result
+
 class CorrectorTest(unittest.TestCase):
 
     def setUp(self):
