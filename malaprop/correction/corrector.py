@@ -14,14 +14,15 @@ def match_case(token_to_emulate, lowered_token):
     result = ''
     if len(token_to_emulate) < len(lowered_token):
         i = 0
-        while token_to_emulate.lower()[i] == lowered_token[i]:
+        while i < len(token_to_emulate) and token_to_emulate.lower()[i] == lowered_token[i]:
             result += token_to_emulate[i]
             i += 1
         result += lowered_token[i] + token_to_emulate[i:]
         return result
                 
+    assert len(lowered_token) < len(token_to_emulate)
     i = 0
-    while token_to_emulate.lower()[i] == lowered_token[i]:
+    while i < len(lowered_token) and token_to_emulate.lower()[i] == lowered_token[i]:
         result += token_to_emulate[i]
         i += 1
     result += token_to_emulate[i+1:]

@@ -32,6 +32,12 @@ class MatchCaseTest(unittest.TestCase):
         result = match_case('MacGregor', 'mcgregor')
         self.assertEqual(result, 'McGregor'), result
 
+        result = match_case('OrC', 'or')
+        self.assertEqual(result, 'Or'), result
+
+        result = match_case('OrC', 'orca')
+        self.assertEqual(result, 'OrCa'), result
+
 class CorrectorTest(unittest.TestCase):
 
     def setUp(self):
