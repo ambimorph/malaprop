@@ -70,14 +70,14 @@ class HMM():
         else:
             return self.trigram_model_pipe.trigram_probability(three_words)
 
-    def surprise_threshold_function(self, three_words):
+    def surprise_threshold_function(self, bigram):
 
-        if three_words[1] == '</s>':
-            surprise_threshold = self.trigram_model_pipe.unigram_backoff(three_words[0]) - self.log_surprise_index
-        if self.trigram_model_pipe.in_bigrams(three_words[:2]):
-            surprise_threshold = self.trigram_model_pipe.bigram_backoff(three_words[:2]) - self.log_surprise_index
+        if bigram[1] == '</s>':
+            surprise_threshold = self.trigram_model_pipe.unigram_backoff(bigram[0]) - self.log_surprise_index
+        if self.trigram_model_pipe.in_bigrams(bigram):
+            surprise_threshold = self.trigram_model_pipe.bigram_backoff(bigram) - self.log_surprise_index
         else:
-            surprise_threshold = self.trigram_model_pipe.unigram_backoff(three_words[1]) - self.log_surprise_index
+            surprise_threshold = self.trigram_model_pipe.unigram_backoff(bigram[1]) - self.log_surprise_index
         return surprise_threshold
 
     def viterbi_three(self, original_sentence):
@@ -183,7 +183,7 @@ class HMM():
         sentence = original_sentence + ['</s>', '</s>']
 
         first_two_words = ('<s>', '<s>')
-        if self.log_surprise_index is None or self.trigram_probability(first_two_words + (sentence[0],)) < self.surprise_threshold_function(first_two_words + (sentence[0],)):
+        if self.log_surprise_index is None or self.trigram_probability(first_two_words + (sentence[0],)) < self.surprise_threshold_function(first_two_words):
             variations = self.confusion_set_function(sentence[0])
         else:
             variations = []
@@ -204,11 +204,11 @@ class HMM():
 
         for position in range(1, len(sentence)):
 
-            if self.verbose == 2: print 'Position %d, word %s' % (position, sentence[position])
+            if self.verbose == 2: print 'Position %d, word %s' % (position, sentence[position].encode('utf-8'))
             
             suspicious_prior_bigrams = []
             for prior_bigram in path_probabilities[position-1].keys():
-                if self.log_surprise_index is None or self.trigram_probability(prior_bigram + (sentence[position],)) < self.surprise_threshold_function(prior_bigram + (sentence[position],)):
+                if self.log_surprise_index is None or self.trigram_probability(prior_bigram + (sentence[position],)) < self.surprise_threshold_function(prior_bigram):
                     suspicious_prior_bigrams.append(prior_bigram)
             if suspicious_prior_bigrams == []:
                 variations = []
@@ -218,6 +218,7 @@ class HMM():
 
             if sentence[position] not in self.observation_emission_probabilities.keys():
                 self.observation_emission_probabilities[sentence[position]] = { sentence[position] : log10(1-self.error_rate) }
+            if variations != [] and variations[0] not in self.observation_emission_probabilities[sentence[position]].keys():
                 self.observation_emission_probabilities[sentence[position]].update( { var : log10(self.error_rate/len(self.confusion_set_function(var))) for var in variations} )
             if self.verbose == 2: print 'observation_emission_probabilities', self.observation_emission_probabilities
 
