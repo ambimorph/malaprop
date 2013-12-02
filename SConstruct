@@ -335,7 +335,7 @@ env.trigram_model([data_directory + str(vocabulary_size) + 'K_trigram_model.arpa
 env.Alias('trigram_model', [data_directory + str(vocabulary_size) + 'K_trigram_model.arpa'])
 
 env.trigram_choices([data_directory + 'trigram_choices_error_rate_' + str(error_rate) + '.bz2'], [data_directory + 'segmenter_tokeniser.pkl', data_directory + str(vocabulary_size) + 'K_trigram_model.arpa', data_directory + 'adversarial_error_rate_' + str(error_rate) + '.bz2'])
-env.Alias('trigram_choices', [data_directory + 'trigram_choices.bz2'])
+env.Alias('trigram_choices', [data_directory + 'trigram_choices_error_rate.bz2'])
 
 subdirectory = data_directory + 'alpha_' + str(alpha) + '_viterbi_' + str(viterbi_type) + '_prune_to_' + str(prune_to) + '_surprise_index_' + str(surprise_index) + '/'
 if not os.path.exists(subdirectory): os.mkdir(subdirectory)
