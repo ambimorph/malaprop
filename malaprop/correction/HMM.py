@@ -205,49 +205,52 @@ class HMM():
         for position in range(1, len(sentence)):
 
             if self.verbose == 2: print 'Position %d, word %s' % (position, sentence[position].encode('utf-8'))
-            
-            suspicious_prior_bigrams = []
-            for prior_bigram in path_probabilities[position-1].keys():
-                if self.log_surprise_index is None or self.trigram_probability(prior_bigram + (sentence[position],)) < self.surprise_threshold_function(prior_bigram):
-                    suspicious_prior_bigrams.append(prior_bigram)
-            if suspicious_prior_bigrams == []:
-                variations = []
-            else:
-                variations = self.confusion_set_function(sentence[position])
-            if self.verbose == 2: print 'variations', variations
 
-            if sentence[position] not in self.observation_emission_probabilities.keys():
+            observed_word_trigram_probabilities = {}
+            if sentence[position] in self.observation_emission_probabilities.keys():
+                variations = [k for k in self.observation_emission_probabilities[sentence[position]].keys() if k != sentence[position]]
+            else: 
                 self.observation_emission_probabilities[sentence[position]] = { sentence[position] : log10(1-self.error_rate) }
-            if variations != [] and variations[0] not in self.observation_emission_probabilities[sentence[position]].keys():
+                variations = self.confusion_set_function(sentence[position])
                 self.observation_emission_probabilities[sentence[position]].update( { var : log10(self.error_rate/len(self.confusion_set_function(var))) for var in variations} )
             if self.verbose == 2: print 'observation_emission_probabilities', self.observation_emission_probabilities
 
+            probabilities_to = { var:[] for var in variations + [sentence[position]] }
+
+            for prior_bigram in path_probabilities[position-1].keys():
+
+                observed_word_trigram_probabilities[prior_bigram] = self.trigram_probability(prior_bigram + (sentence[position],))
+
+                # Always get the transitions to the observed word
+                probabilities_to[sentence[position]].append( (path_probabilities[position-1][prior_bigram] + \
+                                                       observed_word_trigram_probabilities[prior_bigram] + \
+                                                       self.observation_emission_probabilities[sentence[position]][sentence[position]], prior_bigram) )
+
+                # Get the probabilities to each variation if surprised by the observed.
+                if self.log_surprise_index is None or observed_word_trigram_probabilities[prior_bigram] < self.surprise_threshold_function(prior_bigram):
+                    for var in variations:
+                        probabilities_to[var].append( (path_probabilities[position-1][prior_bigram] + \
+                                                            self.trigram_probability(prior_bigram + (var,)) +\
+                                                            self.observation_emission_probabilities[sentence[position]][var], prior_bigram) )
+                else:
+                    if self.verbose == 2 and self.log_surprise_index is not None:
+                        print 'surprise!', prior_bigram, sentence[position], observed_word_trigram_probabilities[prior_bigram], self.surprise_threshold_function(prior_bigram)
+                if self.verbose == 2: print 'variations', variations
+
+            if self.verbose == 2: print 'probabilities_to', probabilities_to
+
             path_probabilities.append({})
             new_backtrace = {}
+            for var in probabilities_to.keys():
 
-            # Always get the transitions to the observed word
-            probabilities_to_observed = [(path_probabilities[position-1][prior_bigram] + \
-                                              self.trigram_probability(prior_bigram + (sentence[position],)) + \
-                                              self.observation_emission_probabilities[sentence[position]][sentence[position]], prior_bigram) \
-                                             for prior_bigram in path_probabilities[position-1].keys()]
-            if self.verbose == 2: print 'probabilities_to_observed ', probabilities_to_observed
-            max_probability, max_prior_bigram = max(probabilities_to_observed)
-            path_probabilities[position][(max_prior_bigram[-1], sentence[position])] = max_probability
-            new_backtrace[(max_prior_bigram[-1], sentence[position])] = backtrace[max_prior_bigram] + ( sentence[position],)
+                if probabilities_to[var] != []:
+                    max_probability, max_prior_bigram = max(probabilities_to[var])
+                    path_probabilities[position][(max_prior_bigram[-1], var)] = max_probability
+                    new_backtrace[(max_prior_bigram[-1],var)] = backtrace[max_prior_bigram] + (var,)
 
-            # Get the transitions to variations
-            for var in variations:
-                probabilities_to_this_var = [ (path_probabilities[position-1][prior_bigram] + \
-                                                   self.trigram_probability(prior_bigram + (var,)) + \
-                                                   self.observation_emission_probabilities[sentence[position]][var], prior_bigram) \
-                                             for prior_bigram in suspicious_prior_bigrams]
-                if self.verbose == 2: print 'probabilities_to_this_var ', probabilities_to_this_var
-                max_probability, max_prior_bigram = max(probabilities_to_this_var)
-                path_probabilities[position][(max_prior_bigram[-1], var)] = max_probability
-                new_backtrace[(max_prior_bigram[-1],var)] = backtrace[max_prior_bigram] + (var,)
-            if self.verbose == 2: print 'backtrace ', backtrace
- 
-            backtrace = new_backtrace
+            if self.verbose == 2: print 'new_backtrace ', new_backtrace
             if self.verbose == 2: print 'path probabilities', path_probabilities, '\n'
+
+            backtrace = new_backtrace
 
         return backtrace[('</s>', '</s>')][1:-2]
