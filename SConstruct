@@ -255,7 +255,7 @@ if [x for x in ARGLIST if x[0] == "test"]:
 
 elif [x for x in ARGLIST if x[0] == "replicate"]:
     vocabulary_size = 100.0
-    error_rate = .05
+    error_rate = .005
     correction_task = True
     adversarial_task = True
     corrections_report_size = 20
