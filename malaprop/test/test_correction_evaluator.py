@@ -43,11 +43,11 @@ class CorrectionEvaluatorTest(unittest.TestCase):
         original, error, observed, correction = None, None, a, b
         ce.classify_correction_instance(original, error, observed, correction)
         self.assertEqual(ce.detection_true_positives, 0), ce.detection_true_positives
-        self.assertEqual(ce.correction_true_positives, 0), ce.detection_true_positives
-        self.assertEqual(ce.detection_false_positives, 1), ce.detection_true_positives
-        self.assertEqual(ce.correction_false_positives, 1), ce.detection_true_positives
-        self.assertEqual(ce.detection_false_negatives, 0), ce.detection_true_positives
-        self.assertEqual(ce.correction_false_negatives, 0), ce.detection_true_positives
+        self.assertEqual(ce.correction_true_positives, 0), ce.correction_true_positives
+        self.assertEqual(ce.detection_false_positives, 1), ce.detection_false_positives
+        self.assertEqual(ce.correction_false_positives, 1), ce.correction_false_positives
+        self.assertEqual(ce.detection_false_negatives, 0), ce.detection_false_negatives
+        self.assertEqual(ce.correction_false_negatives, 0), ce.correction_false_negatives
         self.assertDictEqual(ce.distributions[xxy], {(a,b):1}), ce.distributions
         self.assertDictEqual(ce.distributions[xyx], {}), ce.distributions
         self.assertDictEqual(ce.distributions[xyy], {}), ce.distributions
@@ -61,11 +61,11 @@ class CorrectionEvaluatorTest(unittest.TestCase):
         original, error, observed, correction = a, b, b, a
         ce.classify_correction_instance(original, error, observed, correction)
         self.assertEqual(ce.detection_true_positives, 1), ce.detection_true_positives
-        self.assertEqual(ce.correction_true_positives, 1), ce.detection_true_positives
-        self.assertEqual(ce.detection_false_positives, 0), ce.detection_true_positives
-        self.assertEqual(ce.correction_false_positives, 0), ce.detection_true_positives
-        self.assertEqual(ce.detection_false_negatives, 0), ce.detection_true_positives
-        self.assertEqual(ce.correction_false_negatives, 0), ce.detection_true_positives
+        self.assertEqual(ce.correction_true_positives, 1), ce.correction_true_positives
+        self.assertEqual(ce.detection_false_positives, 0), ce.detection_false_positives
+        self.assertEqual(ce.correction_false_positives, 0), ce.correction_false_positives
+        self.assertEqual(ce.detection_false_negatives, 0), ce.detection_false_negatives
+        self.assertEqual(ce.correction_false_negatives, 0), ce.correction_false_negatives
         self.assertDictEqual(ce.distributions[xxy], {}), ce.distributions
         self.assertDictEqual(ce.distributions[xyx], {(b,a):1}), ce.distributions
         self.assertDictEqual(ce.distributions[xyy], {}), ce.distributions
@@ -79,11 +79,11 @@ class CorrectionEvaluatorTest(unittest.TestCase):
         original, error, observed, correction = a, b, None, None
         ce.classify_correction_instance(original, error, observed, correction)
         self.assertEqual(ce.detection_true_positives, 0), ce.detection_true_positives
-        self.assertEqual(ce.correction_true_positives, 0), ce.detection_true_positives
-        self.assertEqual(ce.detection_false_positives, 0), ce.detection_true_positives
-        self.assertEqual(ce.correction_false_positives, 0), ce.detection_true_positives
-        self.assertEqual(ce.detection_false_negatives, 1), ce.detection_true_positives
-        self.assertEqual(ce.correction_false_negatives, 1), ce.detection_true_positives
+        self.assertEqual(ce.correction_true_positives, 0), ce.correction_true_positives
+        self.assertEqual(ce.detection_false_positives, 0), ce.detection_false_positives
+        self.assertEqual(ce.correction_false_positives, 0), ce.correction_false_positives
+        self.assertEqual(ce.detection_false_negatives, 1), ce.detection_false_negatives
+        self.assertEqual(ce.correction_false_negatives, 1), ce.correction_false_negatives
         self.assertDictEqual(ce.distributions[xxy], {}), ce.distributions
         self.assertDictEqual(ce.distributions[xyx], {}), ce.distributions
         self.assertDictEqual(ce.distributions[xyy], {(b,a):1}), ce.distributions
@@ -97,11 +97,11 @@ class CorrectionEvaluatorTest(unittest.TestCase):
         original, error, observed, correction = a, b, b, c
         ce.classify_correction_instance(original, error, observed, correction)
         self.assertEqual(ce.detection_true_positives, 1), ce.detection_true_positives
-        self.assertEqual(ce.correction_true_positives, 0), ce.detection_true_positives
-        self.assertEqual(ce.detection_false_positives, 0), ce.detection_true_positives
-        self.assertEqual(ce.correction_false_positives, 1), ce.detection_true_positives
-        self.assertEqual(ce.detection_false_negatives, 0), ce.detection_true_positives
-        self.assertEqual(ce.correction_false_negatives, 1), ce.detection_true_positives
+        self.assertEqual(ce.correction_true_positives, 0), ce.correction_true_positives
+        self.assertEqual(ce.detection_false_positives, 0), ce.detection_false_positives
+        self.assertEqual(ce.correction_false_positives, 1), ce.correction_false_positives
+        self.assertEqual(ce.detection_false_negatives, 0), ce.detection_false_negatives
+        self.assertEqual(ce.correction_false_negatives, 1), ce.correction_false_negatives
         self.assertDictEqual(ce.distributions[xxy], {}), ce.distributions
         self.assertDictEqual(ce.distributions[xyx], {}), ce.distributions
         self.assertDictEqual(ce.distributions[xyy], {}), ce.distributions
@@ -114,11 +114,11 @@ class CorrectionEvaluatorTest(unittest.TestCase):
         proposed_corrections_file = StringIO.StringIO(u'[3, [[6, 0, "off", "of"]]]\n[4, [[10, 0, "boy", "body"]]]\n[12, [[2, 0, "causes", "cases"], [11, 0, "top", "stop"]]]\n')
         ce.process_all_corrections(true_corrections_file, proposed_corrections_file)
         self.assertEqual(ce.detection_true_positives, 3), ce.detection_true_positives
-        self.assertEqual(ce.correction_true_positives, 2), ce.detection_true_positives
-        self.assertEqual(ce.detection_false_positives, 1), ce.detection_true_positives
-        self.assertEqual(ce.correction_false_positives, 2), ce.detection_true_positives
-        self.assertEqual(ce.detection_false_negatives, 2), ce.detection_true_positives
-        self.assertEqual(ce.correction_false_negatives, 3), ce.detection_true_positives
+        self.assertEqual(ce.correction_true_positives, 2), ce.correction_true_positives
+        self.assertEqual(ce.detection_false_positives, 1), ce.detection_false_positives
+        self.assertEqual(ce.correction_false_positives, 2), ce.correction_false_positives
+        self.assertEqual(ce.detection_false_negatives, 2), ce.detection_false_negatives
+        self.assertEqual(ce.correction_false_negatives, 3), ce.correction_false_negatives
         self.assertDictEqual(ce.distributions[xxy], Counter({(u'off', u'of'): 1})), ce.distributions
         self.assertDictEqual(ce.distributions[xyx], Counter({(u'boy', u'body'): 1, (u'causes', u'cases'): 1})), ce.distributions
         self.assertDictEqual(ce.distributions[xyy], Counter({(u're', u'are'): 1, (u'so', u'to'): 1})), ce.distributions
@@ -131,22 +131,22 @@ class CorrectionEvaluatorTest(unittest.TestCase):
         proposed_corrections_file = StringIO.StringIO(u'[3, [[6, 0, "off", "of"]]]\n')
         ce.process_all_corrections(true_corrections_file, proposed_corrections_file)
         self.assertEqual(ce.detection_true_positives, 0), ce.detection_true_positives
-        self.assertEqual(ce.correction_true_positives, 0), ce.detection_true_positives
-        self.assertEqual(ce.detection_false_positives, 1), ce.detection_true_positives
-        self.assertEqual(ce.correction_false_positives, 1), ce.detection_true_positives
-        self.assertEqual(ce.detection_false_negatives, 0), ce.detection_true_positives
-        self.assertEqual(ce.correction_false_negatives, 0), ce.detection_true_positives
+        self.assertEqual(ce.correction_true_positives, 0), ce.correction_true_positives
+        self.assertEqual(ce.detection_false_positives, 1), ce.detection_false_positives
+        self.assertEqual(ce.correction_false_positives, 1), ce.correction_false_positives
+        self.assertEqual(ce.detection_false_negatives, 0), ce.detection_false_negatives
+        self.assertEqual(ce.correction_false_negatives, 0), ce.correction_false_negatives
         self.assertDictEqual(ce.distributions[xxy], Counter({(u'off', u'of'): 1})), ce.distributions
 
         true_corrections_file = StringIO.StringIO(u'[3, [[6, 0, "off", "of"]]]\n')
         proposed_corrections_file = StringIO.StringIO(u'')
         ce.process_all_corrections(true_corrections_file, proposed_corrections_file)
         self.assertEqual(ce.detection_true_positives, 0), ce.detection_true_positives
-        self.assertEqual(ce.correction_true_positives, 0), ce.detection_true_positives
-        self.assertEqual(ce.detection_false_positives, 1), ce.detection_true_positives
-        self.assertEqual(ce.correction_false_positives, 1), ce.detection_true_positives
-        self.assertEqual(ce.detection_false_negatives, 1), ce.detection_true_positives
-        self.assertEqual(ce.correction_false_negatives, 1), ce.detection_true_positives
+        self.assertEqual(ce.correction_true_positives, 0), ce.correction_true_positives
+        self.assertEqual(ce.detection_false_positives, 1), ce.detection_false_positives
+        self.assertEqual(ce.correction_false_positives, 1), ce.correction_false_positives
+        self.assertEqual(ce.detection_false_negatives, 1), ce.detection_false_negatives
+        self.assertEqual(ce.correction_false_negatives, 1), ce.correction_false_negatives
         self.assertDictEqual(ce.distributions[xyy], Counter({(u'off', u'of'): 1})), ce.distributions
 
     def test_report(self):
