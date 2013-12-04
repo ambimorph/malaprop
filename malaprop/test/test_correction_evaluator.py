@@ -124,6 +124,31 @@ class CorrectionEvaluatorTest(unittest.TestCase):
         self.assertDictEqual(ce.distributions[xyy], Counter({(u're', u'are'): 1, (u'so', u'to'): 1})), ce.distributions
         self.assertDictEqual(ce.distributions[xyz], Counter({(u'top', u'to', u'stop'): 1})), ce.distributions
 
+    def test_different_last_lines(self):
+
+        ce = CorrectionEvaluator()
+        true_corrections_file = StringIO.StringIO(u'')
+        proposed_corrections_file = StringIO.StringIO(u'[3, [[6, 0, "off", "of"]]]\n')
+        ce.process_all_corrections(true_corrections_file, proposed_corrections_file)
+        self.assertEqual(ce.detection_true_positives, 0), ce.detection_true_positives
+        self.assertEqual(ce.correction_true_positives, 0), ce.detection_true_positives
+        self.assertEqual(ce.detection_false_positives, 1), ce.detection_true_positives
+        self.assertEqual(ce.correction_false_positives, 1), ce.detection_true_positives
+        self.assertEqual(ce.detection_false_negatives, 0), ce.detection_true_positives
+        self.assertEqual(ce.correction_false_negatives, 0), ce.detection_true_positives
+        self.assertDictEqual(ce.distributions[xxy], Counter({(u'off', u'of'): 1})), ce.distributions
+
+        true_corrections_file = StringIO.StringIO(u'[3, [[6, 0, "off", "of"]]]\n')
+        proposed_corrections_file = StringIO.StringIO(u'')
+        ce.process_all_corrections(true_corrections_file, proposed_corrections_file)
+        self.assertEqual(ce.detection_true_positives, 0), ce.detection_true_positives
+        self.assertEqual(ce.correction_true_positives, 0), ce.detection_true_positives
+        self.assertEqual(ce.detection_false_positives, 1), ce.detection_true_positives
+        self.assertEqual(ce.correction_false_positives, 1), ce.detection_true_positives
+        self.assertEqual(ce.detection_false_negatives, 1), ce.detection_true_positives
+        self.assertEqual(ce.correction_false_negatives, 1), ce.detection_true_positives
+        self.assertDictEqual(ce.distributions[xyy], Counter({(u'off', u'of'): 1})), ce.distributions
+
     def test_report(self):
 
         ce = CorrectionEvaluator()

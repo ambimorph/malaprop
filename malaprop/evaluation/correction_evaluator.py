@@ -136,7 +136,7 @@ class CorrectionEvaluator():
             next_true = pop(true_corrections_file, true_queue)
 
         while not next_proposed == 'END':
-            observed, correction = next_true[1]
+            observed, correction = next_proposed[1]
             self.classify_correction_instance(None, None, observed, correction)
             next_proposed = pop(proposed_corrections_file, proposed_queue)
 
