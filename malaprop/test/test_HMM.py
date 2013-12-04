@@ -94,6 +94,21 @@ class HMMTest(unittest.TestCase):
         expected_result = ('it', 'was', '.')
         self.assertTupleEqual(result, expected_result), result
 
+        hmm = HMM(confusion, mock_tmp, error_rate, 3, prune_to=100, simple_surprise=.4)
+        result = hmm.viterbi(sentence)
+        expected_result = ('it', 'was', '.')
+        self.assertTupleEqual(result, expected_result), result
+
+        hmm = HMM(confusion, mock_tmp, error_rate, 3, prune_to=100, surprise_index=.4)
+        result = hmm.viterbi(sentence)
+        expected_result = ('his', 'as', '.')
+        self.assertTupleEqual(result, expected_result), result
+
+        hmm = HMM(confusion, mock_tmp, error_rate, 3, prune_to=100, surprise_index=4)
+        result = hmm.viterbi(sentence)
+        expected_result = ('it', 'was', '.')
+        self.assertTupleEqual(result, expected_result), result
+
 
 if __name__ == '__main__':
     unittest.main()
