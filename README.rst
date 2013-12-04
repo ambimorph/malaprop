@@ -21,20 +21,23 @@ The confusion_set_channel module substitutes known words in a text with other kn
 
 This version includes code to 
 
-(1) Divide a corpus of text articles (e.g. Wikipedia) into training, development, and test sets (from `recluse`_).
+1. Divide a corpus of text articles (e.g. Wikipedia) into training, development, and test sets (from `recluse`_).
+   The article numbers are recorded, so that subsequent experiments could be made to exclude those articles already used.
+   TODO: Let this code take a do-not-use list.
 
-(2) Create fixed vocabularies from the training set.
+2. Create fixed vocabularies from the training set.
 
-(3) Create a correction task: a corpus of real-word errors embedded in a copy of the development set along with a separate index to the errors and their corrections.
+3. Create a correction task: a corpus of real-word errors embedded in a copy of the development set along with a separate index to the errors and their corrections.
 
-(4) Create an original text recognition task for adversarial evaluation: a set of pairs of sentences, one original, and one corrupted, and a key to identify them.
+4. Create an original text recognition task for adversarial evaluation: a set of pairs of sentences, one original, and one corrupted, and a key to identify them.
 
-(5) Evaluate an attempt on either task.
+5. Evaluate an attempt on either task.
 
-(6) Generate trigram models from a training set by wrapping some specific calls to the srilm tool-kit over text segmented and tokenised using a customised version of the NLTK sentence segmenter.
+6. Generate trigram models from a training set by wrapping some specific calls to the srilm tool-kit over text segmented and tokenised using a customised version of the NLTK sentence segmenter.
 
-(7) Generate a trigram-based baseline for the adversarial task.
+7. Generate a trigram-based baseline for the adversarial task.
 
+8. A few different approaches to the correction task are implemented: all are based on an HMM.
 
 *Reproducibility* is prioritised, so projects are completely built using SCons.
 This means that all files are generated in the same way every time.
@@ -136,8 +139,8 @@ It was tested under the following versions:
 * SCons v2.1.0.r5357
 * NLTK 2.0b9
 * SRILM 1.5.5
-* recluse 0.3.1
-* DamerauLevenshteinDerivor 0.0.2
+* recluse 0.4.3
+* DamerauLevenshteinDerivor 0.0.2-1-g1847720
 
 Notes:
 ======
@@ -199,69 +202,19 @@ Run some set of variables, but include new_corpus=1 and experiment_size=n, where
 
 Current possible targets: 
 
-* learning_sets
-    * DIR must contain corpus.bz2, which consists of articles divided by the following line:
-        "---END.OF.DOCUMENT---"
-    * no variables 
-
-    * -> divided into 60-20-20% training, development, and test, or change the (currently hardcoded) variable proportions.
-
-* vocabulary:
-    * DIR must contain training_set.bz2 OR dependencies for learning_sets
-    * vocabulary_size=n
-    * -> nK.vocab
-
-* real_word_vocabulary_files
-    * vocabulary_size=n 
-    * DIR must contain nK.vocab
-      OR
-    * dependencies met for language_models
-
-    * -> nK.real_word_vocab for n in vocabulary_size
-
+* learning_sets: breaks the data into training, development, test sets.
+* vocabulary: creates a vocabulary out of the training data.
+* segmenter_tokeniser: trains a segmenter-tokeniser from the training set.
+* real_word_vocabulary_files: limits the previous
 * error_sets and (correction_task or adversarial_task)
-    * DIR must contain development_set.bz2 or dependencies met for learning_sets
-    * lines_per_chunk=n (defaults to 100000)
-    * error_rate=e in {0,1} (defaults to .05)
-    * vocabulary_size=n
-    * DIR must contain nK.real_word_vocab 
-      OR 
-    * dependencies met for real_word_vocabulary_files
-
-    * correction task:
-      * -> corrupted_error_rate_e_nK_vocabulary.bz2
-      * -> corrections_error_rate_e_nK_vocabulary.bz2
-    * adversarial task:
-      * -> adversarial_error_rate_e_nK_vocabulary.bz2
-      * -> key_error_rate_e_nK_vocabulary.bz2
-
 * trigram_models:
-    * DIR must contain training_set.bz2 OR dependencies for learning_sets
-    * vocabulary_size=n
-    * -> trigram_model_nK.arpa
-
 * trigram_choices:
-    * DIR must contain training_set.bz2, nK.vocab, trigram_model_nK.arpa and adversarial_error_rate_e_nK_vocabulary.bz2, OR dependencies 
-    * vocabulary_size=n
-    * -> trigram_choices_error_rate_e_nK_vocabulary.bz2
+* trigram_proposed_corrections:
+* chooser_evaluation:
+* proposer_evaluation:
 
-Note: vocabulary_size is given in thousands.
+See the SConstruct file for dependencies.
 
-==========
-Evaluation
-==========
-
-Evaluation modules are implemented, but not yet in the build.
-
-You can get the results for the adversarial task by importing to an interpreter:
-
-    >>> from malaprop.evaluation.adversarial_evaluator import *
-    >>> from recluse.utils import *
-    >>> accuracy, errors = report_accuracy_and_errors(open_with_unicode('EXP/key_error_rate_0.05_0.5K_vocabulary.bz2', 'bzip2', 'r'), open_with_unicode('EXP/trigram_choices_error_rate_0.05', 'bzip2', 'r'), open_with_unicode('EXP/adversarial_error_rate_0.05_100K_vocabulary.bz2', 'bzip2', 'r'))
-    >>> accuracy
-    0.9681732
-    >>> errors[0]
-    u'["On 9 August 1973, in Cape Cod, Massachusetts, Berenson carried the actor Anthony Perkins.", "On 9 August 1973, in Cape Cod, Massachusetts, Berenson married the actor Anthony Perkins."]\n'
 
 ================
 Acknowledgements

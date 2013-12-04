@@ -1,6 +1,11 @@
 =========
 MALAPROP
 =========
+Release 0.5.0 (2013-12-04)
+..........................
+* Now includes a correction proposer with a variety of parameters.
+* Evaluation of chooser and proposer are now targets.
+
 Release 0.4.0 (2013-11-06)
 ..........................
 * Now uses recluses article_selector to get a much smaller subset of the original corpus, and store an index to those articles.
