@@ -178,7 +178,7 @@ def propose(target, source, env):
     path_to_botmp = subprocess.check_output(['which', 'BackOffTrigramModelPipe']).strip()
     arpa_file_name = source[2].path
     botmp = BackOffTMPipe(path_to_botmp, arpa_file_name)
-    hmm = HMM(confusion_set_function, botmp, 1-alpha, viterbi_type, prune_to, surprise_index, verbosity)
+    hmm = HMM(confusion_set_function, botmp, 1-alpha, viterbi_type, prune_to=prune_to, surprise_index=surprise_index, verbose=verbosity)
     proposer = Corrector(segmenter_tokeniser, hmm)
 
     proposed_file = open_with_unicode(target[0].path, 'bzip2', 'w')
